@@ -5,7 +5,12 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PatriTracker">
+<meta name="theme-color" content="#080b10">
 <title>PatriTracker — Maxime</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -324,6 +329,208 @@ main{padding:24px 30px;max-width:1600px;}
 #hdr-total, #hdr-total-lbl { transition: filter .35s cubic-bezier(.4,0,.2,1); }
 #hdr-total-wrap { -webkit-tap-highlight-color: transparent; }
 
+
+/* ══ PWA MOBILE STYLES ══════════════════════════════════════ */
+
+/* Safe areas for notch/home indicator */
+body {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Bottom navigation bar — mobile only */
+#pwa-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Hide top nav on mobile */
+  nav { display: none !important; }
+
+  /* Header compact */
+  header {
+    padding: 10px 16px;
+    padding-top: calc(10px + env(safe-area-inset-top));
+  }
+
+  /* Bottom nav bar */
+  #pwa-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--s1);
+    border-top: 1px solid var(--bd);
+    padding-bottom: env(safe-area-inset-bottom);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0;
+  }
+  #pwa-bottom-nav::-webkit-scrollbar { display: none; }
+
+  .pwa-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 60px;
+    padding: 8px 6px 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    color: var(--muted);
+    transition: color .15s;
+    flex-shrink: 0;
+  }
+  .pwa-nav-btn .pwa-icon { font-size: 20px; line-height: 1; }
+  .pwa-nav-btn.on { color: var(--gold); }
+  .pwa-nav-btn.on .pwa-icon { transform: scale(1.1); }
+
+  /* More menu overlay */
+  #pwa-more-menu {
+    display: none;
+    position: fixed;
+    bottom: calc(58px + env(safe-area-inset-bottom));
+    left: 0; right: 0;
+    background: var(--s1);
+    border-top: 1px solid var(--bd);
+    border-radius: 20px 20px 0 0;
+    z-index: 99;
+    padding: 16px 0 8px;
+    box-shadow: 0 -8px 30px #00000040;
+    transform: translateY(100%);
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  #pwa-more-menu.open {
+    display: block;
+    transform: translateY(0);
+  }
+  .pwa-more-handle {
+    width: 36px; height: 4px;
+    background: var(--bd);
+    border-radius: 2px;
+    margin: 0 auto 14px;
+  }
+  .pwa-more-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    padding: 0 8px;
+  }
+  .pwa-more-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 12px 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    color: var(--dim);
+    border-radius: 10px;
+    transition: all .15s;
+  }
+  .pwa-more-item:active { background: var(--s2); }
+  .pwa-more-item .mi-icon { font-size: 24px; }
+  .pwa-more-item.on { color: var(--gold); background: var(--s2); }
+
+  #pwa-more-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 98;
+    background: #00000060;
+  }
+  #pwa-more-overlay.open { display: block; }
+
+  /* Main content offset for bottom nav */
+  main {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  /* Touch-friendly improvements */
+  .btn { min-height: 36px; padding: 8px 14px; }
+  .btn.sm { min-height: 30px; }
+  .nb { padding: 12px 16px; }
+  .tbl td, .tbl th { padding: 10px 8px; }
+  .fg input, .fg select { min-height: 42px; font-size: 16px !important; } /* prevent iOS zoom */
+
+  /* Cards full width */
+  .g2, .g3 { grid-template-columns: 1fr !important; }
+  .krow { grid-template-columns: 1fr 1fr !important; }
+
+  /* Modal full screen on mobile */
+  .modal {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: 90vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+  }
+  .ov { align-items: flex-end !important; }
+
+  /* Donut chart adapt */
+  .flex-row { flex-direction: column; }
+  .donut-w { margin: 0 auto; }
+
+  /* Toast at top on mobile */
+  #toast {
+    bottom: auto !important;
+    top: calc(70px + env(safe-area-inset-top)) !important;
+    right: 16px !important;
+    left: 16px !important;
+  }
+}
+
+/* Pull-to-refresh indicator */
+#pwa-ptr {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), var(--blue), var(--gold));
+  background-size: 200% 100%;
+  z-index: 200;
+  animation: ptr-slide 1.2s linear infinite;
+}
+#pwa-ptr.show { display: block; }
+@keyframes ptr-slide { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+
+/* Install prompt banner */
+#pwa-install-banner {
+  display: none;
+  position: fixed;
+  top: calc(56px + env(safe-area-inset-top));
+  left: 12px; right: 12px;
+  background: var(--s1);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 12px 14px;
+  z-index: 150;
+  box-shadow: 0 4px 20px #00000040;
+  font-size: 12px;
+  display: none;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+#pwa-install-banner.show { display: flex; }
+#pwa-install-banner .pib-text { flex: 1; font-size: 12px; line-height: 1.4; }
+#pwa-install-banner .pib-text b { color: var(--gold); display: block; margin-bottom: 2px; }
+
 </style>
 </head>
 <body>
@@ -357,6 +564,20 @@ main{padding:24px 30px;max-width:1600px;}
   <button class="nb" data-page="actu">📰 Actualités</button>
   <button class="nb" data-page="history">🕐 Historique</button>
 </nav>
+
+<!-- PWA Bottom Navigation -->
+<div id="pwa-more-overlay" onclick="closePwaMore()"></div>
+<div id="pwa-more-menu">
+  <div class="pwa-more-handle"></div>
+  <div class="pwa-more-grid" id="pwa-more-grid">
+    <!-- populated by JS -->
+  </div>
+</div>
+<nav id="pwa-bottom-nav">
+  <!-- populated by JS -->
+</nav>
+<div id="pwa-ptr"></div>
+
 <main>
 
 <!-- ══════════ DASHBOARD ══════════ -->
@@ -8452,10 +8673,10 @@ var ACTU_FEEDS = [
     tag:'ETF',
     alert_keywords:['krach','correction','effondrement','bear market','récession','chute'],
     queries:[
-      'ETF MSCI S&P500 actions bourse 2025',
-      'BNP Easy S&P500 ETF performance',
-      'Amundi ETF actualité',
-      'bourse actions Wall Street Paris'
+      'ETF MSCI World S&P500 bourse mars avril 2026',
+      'Amundi BNP ETF performance 2026',
+      'bourse actions marchés financiers 2026',
+      'Wall Street CAC40 actualité mars 2026'
     ],
     sources:['boursorama.com','lesechos.fr','capital.fr','investir.lesechos.fr']
   },
@@ -8464,9 +8685,9 @@ var ACTU_FEEDS = [
     tag:'PEA',
     alert_keywords:['suppression PEA','réforme PEA','plafond PEA','fiscalité PEA'],
     queries:[
-      'PEA Plan Épargne Actions 2025 actualité',
-      'PEA fiscalité évolution réforme',
-      'plafond PEA modification loi'
+      'PEA Plan Épargne Actions actualité 2026',
+      'PEA fiscalité réforme mars avril 2026',
+      'plafond PEA modification loi 2026'
     ],
     sources:['moneyvox.fr','boursorama.com','cbanque.com']
   },
@@ -8475,10 +8696,10 @@ var ACTU_FEEDS = [
     tag:'AV',
     alert_keywords:['réforme assurance vie','flat tax','prélèvements sociaux','succession assurance vie'],
     queries:[
-      'assurance vie actualité 2025',
-      'fonds euros taux 2025',
-      'Linxea Spirit assurance vie',
-      'fiscalité assurance vie succession réforme'
+      'assurance vie actualité mars avril 2026',
+      'fonds euros taux rendement 2026',
+      'Linxea Spirit assurance vie 2026',
+      'fiscalité assurance vie succession 2026'
     ],
     sources:['moneyvox.fr','boursorama.com','capital.fr','fortuneo.fr']
   },
@@ -8487,11 +8708,10 @@ var ACTU_FEEDS = [
     tag:'Immo',
     alert_keywords:['interdiction LMNP','réforme LMNP','DPE obligation','encadrement loyers','taxe foncière hausse'],
     queries:[
-      'LMNP actualité 2025 réforme',
-      'DPE réglementation location 2025',
-      'investissement locatif actualité',
-      'immobilier Limoges prix marché',
-      'taxe foncière évolution'
+      'LMNP réforme actualité 2026',
+      'DPE réglementation location mars 2026',
+      'investissement locatif immobilier 2026',
+      'taxe foncière évolution 2026'
     ],
     sources:['bfmimmo.com','logic-immo.com','meilleurs-agents.com','capital.fr','service-public.fr']
   },
@@ -8500,10 +8720,10 @@ var ACTU_FEEDS = [
     tag:'Crédit',
     alert_keywords:['hausse taux','BCE relèvement','taux directeur','taux crédit immobilier hausse'],
     queries:[
-      'taux immobilier crédit 2025',
-      'BCE taux directeur décision',
-      'renégociation crédit immobilier',
-      'baromètre taux immobilier France'
+      'taux immobilier crédit mars avril 2026',
+      'BCE taux directeur décision 2026',
+      'baromètre taux immobilier France 2026',
+      'renégociation crédit immobilier 2026'
     ],
     sources:['meilleurstaux.com','pretto.fr','moneyvox.fr','banque-france.fr']
   },
@@ -8512,10 +8732,10 @@ var ACTU_FEEDS = [
     tag:'Fiscal',
     alert_keywords:['hausse impôts','flat tax modification','prélèvements sociaux','barème IR','contribution exceptionnelle'],
     queries:[
-      'fiscalité France réforme 2025',
-      'impôt revenu barème modification',
-      'prélèvements sociaux PFU flat tax',
-      'budget loi finances 2026 fiscalité'
+      'fiscalité France réforme mars avril 2026',
+      'impôt revenu barème modification 2026',
+      'prélèvements sociaux PFU flat tax 2026',
+      'budget loi finances 2026'
     ],
     sources:['impots.gouv.fr','legifrance.gouv.fr','capital.fr','lesechos.fr']
   },
@@ -8524,11 +8744,10 @@ var ACTU_FEEDS = [
     tag:'Loi',
     alert_keywords:['amendement','sénat vote','assemblée nationale','projet de loi','loi finances','article budget'],
     queries:[
-      'projet loi finances amendement sénat 2025',
-      'assemblée nationale fiscalité patrimoine vote',
-      'sénat loi immobilier locatif amendement',
-      'projet loi épargne investissement 2025',
-      'réforme fiscale amendement 2025 2026'
+      'loi finances amendement sénat mars avril 2026',
+      'assemblée nationale fiscalité patrimoine 2026',
+      'réforme fiscale épargne investissement 2026',
+      'sénat loi immobilier locatif 2026'
     ],
     sources:['senat.fr','assemblee-nationale.fr','legifrance.gouv.fr','lefigaro.fr','lesechos.fr']
   },
@@ -8679,10 +8898,15 @@ function parseRSSItems(xmlText, maxItems) {
       if (title.length < 6) return;
       var dateObj = pubDate ? new Date(pubDate) : new Date(0);
       var age = Math.round((Date.now() - dateObj) / 3600000);
+      // Filter out articles older than 90 days
+      if (dateObj.getTime() > 0 && age > 90 * 24) return;
       var ageLabel = age < 1 ? 'Il y a < 1h'
         : age < 24 ? 'Il y a ' + age + 'h'
-        : 'Il y a ' + Math.round(age/24) + 'j';
-      results.push({ title, link, source, ageLabel, dateObj });
+        : age < 48 ? 'Hier'
+        : age < 168 ? 'Il y a ' + Math.round(age/24) + 'j'
+        : age < 720 ? 'Il y a ' + Math.round(age/168) + ' sem.'
+        : 'Il y a ' + Math.round(age/720) + ' mois';
+      results.push({ title, link, source, ageLabel, dateObj, ageDays: Math.round(age/24) });
       count++;
     });
   } catch(e) {}
@@ -8749,14 +8973,15 @@ async function renderActu(forceRefresh) {
         html += '<div style="font-size:12px;color:var(--text);line-height:1.4;margin-bottom:4px;font-weight:500;">'+item.title+'</div>';
         html += '<div style="display:flex;gap:10px;font-size:10px;font-family:JetBrains Mono,monospace;color:var(--muted);">';
         if (item.source) html += '<span>'+item.source+'</span>';
-        html += '<span style="color:'+f.color+';">'+item.ageLabel+'</span>';
+        var ageColor = item.ageDays <= 2 ? 'var(--green)' : item.ageDays <= 14 ? f.color : 'var(--muted)';
+        html += '<span style="color:'+ageColor+';">'+item.ageLabel+'</span>';
         html += '</div></a>';
       });
     }
     html += '</div>';
   });
   html += '</div>';
-  html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:14px;text-align:center;">Source : Google News · Actualisation toutes les 15 min · Cliquez un titre pour lire l\'article</div>';
+  html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:14px;text-align:center;">Source : Google News · Articles des 90 derniers jours uniquement · Actualisation toutes les 15 min · <span style=\"color:var(--green)\">●</span> = récent &nbsp; <span style=\"color:'+ACTU_FEEDS[0].color+'\">●</span> = < 2 sem. &nbsp; <span style=\"color:var(--muted)\">●</span> = + ancien</div>';
 
   _actuCache = { html, ts: Date.now() };
   el.innerHTML = html;
@@ -8983,6 +9208,426 @@ initAVLinxeaFields();
 
 }); // DOMContentLoaded
 </script>
+
+<script>
+// ══ PWA — Service Worker ══════════════════════════════════════
+(function() {
+  if ('serviceWorker' in navigator) {
+    // Inline SW via blob
+    var swCode = `
+const CACHE = 'patritracker-v1';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(keys => Promise.all(
+    keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+  )));
+  self.clients.claim();
+});
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  e.respondWith(
+    fetch(e.request).then(resp => {
+      var clone = resp.clone();
+      caches.open(CACHE).then(c => c.put(e.request, clone));
+      return resp;
+    }).catch(() => caches.match(e.request))
+  );
+});
+`;
+    var blob = new Blob([swCode], {type: 'application/javascript'});
+    var url = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(url).catch(function(){});
+  }
+})();
+
+// ══ PWA — Bottom Navigation ════════════════════════════════════
+(function() {
+  var PAGES_MAIN = [
+    {page:'dashboard', icon:'🏠', label:'Accueil'},
+    {page:'enveloppes', icon:'💼', label:'Bourse'},
+    {page:'immo', icon:'🏘', label:'Immo'},
+    {page:'livrets', icon:'💰', label:'Livrets'},
+    {page:'charts', icon:'📊', label:'Charts'},
+  ];
+  var PAGES_MORE = [
+    {page:'analyse', icon:'🔬', label:'Analyse'},
+    {page:'fiscalite', icon:'⚖️', label:'Fiscalité'},
+    {page:'retraite', icon:'🏖', label:'Retraite'},
+    {page:'strategie', icon:'📋', label:'Stratégie'},
+    {page:'outils', icon:'🛠', label:'Outils'},
+    {page:'actu', icon:'📰', label:'Actus'},
+    {page:'history', icon:'🕐', label:'Historique'},
+  ];
+
+  var bottomNav = document.getElementById('pwa-bottom-nav');
+  var moreGrid = document.getElementById('pwa-more-grid');
+  if (!bottomNav) return;
+
+  // Build main tabs
+  PAGES_MAIN.forEach(function(p) {
+    var btn = document.createElement('button');
+    btn.className = 'pwa-nav-btn';
+    btn.dataset.page = p.page;
+    btn.innerHTML = '<span class="pwa-icon">' + p.icon + '</span><span>' + p.label + '</span>';
+    btn.addEventListener('click', function() {
+      closePwaMore();
+      if (window.showPage) window.showPage(p.page);
+      syncPwaBtns(p.page);
+    });
+    bottomNav.appendChild(btn);
+  });
+
+  // More button
+  var moreBtn = document.createElement('button');
+  moreBtn.className = 'pwa-nav-btn';
+  moreBtn.id = 'pwa-more-btn';
+  moreBtn.innerHTML = '<span class="pwa-icon">⋯</span><span>Plus</span>';
+  moreBtn.addEventListener('click', function() {
+    var menu = document.getElementById('pwa-more-menu');
+    var overlay = document.getElementById('pwa-more-overlay');
+    if (menu.classList.contains('open')) {
+      closePwaMore();
+    } else {
+      menu.classList.add('open');
+      overlay.classList.add('open');
+    }
+  });
+  bottomNav.appendChild(moreBtn);
+
+  // Build more grid
+  if (moreGrid) {
+    PAGES_MORE.forEach(function(p) {
+      var btn = document.createElement('button');
+      btn.className = 'pwa-more-item';
+      btn.dataset.page = p.page;
+      btn.innerHTML = '<span class="mi-icon">' + p.icon + '</span><span>' + p.label + '</span>';
+      btn.addEventListener('click', function() {
+        closePwaMore();
+        if (window.showPage) window.showPage(p.page);
+        syncPwaBtns(p.page);
+      });
+      moreGrid.appendChild(btn);
+    });
+  }
+
+  function syncPwaBtns(pageId) {
+    document.querySelectorAll('.pwa-nav-btn').forEach(function(b) {
+      b.classList.toggle('on', b.dataset.page === pageId);
+    });
+    document.querySelectorAll('.pwa-more-item').forEach(function(b) {
+      b.classList.toggle('on', b.dataset.page === pageId);
+    });
+    // Mark "More" btn active if current page is in the more menu
+    var inMore = PAGES_MORE.some(function(p){ return p.page === pageId; });
+    var moreB = document.getElementById('pwa-more-btn');
+    if (moreB) moreB.classList.toggle('on', inMore);
+  }
+
+  // Sync when top nav used
+  document.querySelectorAll('.nb').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      syncPwaBtns(btn.dataset.page);
+    });
+  });
+
+  // Set initial state
+  syncPwaBtns('dashboard');
+  document.querySelector('.pwa-nav-btn[data-page="dashboard"]') &&
+    document.querySelector('.pwa-nav-btn[data-page="dashboard"]').classList.add('on');
+
+  window.syncPwaBtns = syncPwaBtns;
+})();
+
+window.closePwaMore = function() {
+  var menu = document.getElementById('pwa-more-menu');
+  var overlay = document.getElementById('pwa-more-overlay');
+  if (menu) menu.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
+};
+
+// ══ PWA — Install prompt ══════════════════════════════════════
+(function() {
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Show a subtle install hint in header on desktop
+    var hint = document.createElement('button');
+    hint.className = 'btn gh sm';
+    hint.textContent = '📲 Installer';
+    hint.style.cssText = 'font-size:11px;';
+    hint.addEventListener('click', function() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function() { deferredPrompt = null; hint.remove(); });
+      }
+    });
+    var hdrRight = document.querySelector('.hdr-right');
+    if (hdrRight) hdrRight.insertBefore(hint, hdrRight.firstChild);
+  });
+})();
+
+// ══ PWA — Keyboard handling (back button) ════════════════════
+window.addEventListener('popstate', function() {
+  // no-op — prevents white screen on Android back button
+});
+history.pushState({}, '');
+</script>
+
+
+
+
+
+<script>
+// ══ FIREBASE SECURE — Google Auth + Sync ═════════════════════
+(function() {
+  var FB_CONFIG = {
+    apiKey: "AIzaSyCk7gq4KXvI3FDbNfs22V1lzjVwg6jZuAo",
+    authDomain: "patritracker.firebaseapp.com",
+    databaseURL: "https://patritracker-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "patritracker",
+    storageBucket: "patritracker.firebasestorage.app",
+    messagingSenderId: "588310777550",
+    appId: "1:588310777550:web:4c5f69ea6e2a0f6fcf4a9f"
+  };
+  var AUTHORIZED_EMAIL = ""; // laissé vide = tout compte Google autorisé (tu peux mettre ton email)
+  var _db = null;
+  var _uid = null;
+  var _syncEnabled = false;
+  var _lastHash = null;
+  var _ignoreNext = false;
+  var _saveTimer = null;
+
+  // ── Overlay login ────────────────────────────────────────────
+  function createLoginOverlay() {
+    var tpl = document.getElementById('fb-login-tpl');
+    if (!tpl) return;
+    var el = tpl.cloneNode(true);
+    el.id = 'fb-login-overlay';
+    el.style.display = 'flex';
+    document.body.appendChild(el);
+  }
+
+  function hideLoginOverlay() {
+    var el = document.getElementById('fb-login-overlay');
+    if (el) {
+      el.style.transition = 'opacity .4s';
+      el.style.opacity = '0';
+      setTimeout(function(){ el.remove(); }, 400);
+    }
+  }
+
+  // ── Sync indicator in header ─────────────────────────────────
+  function createSyncUI() {
+    var el = document.createElement('div');
+    el.id = 'fb-sync-indicator';
+    el.style.cssText = 'display:flex;align-items:center;gap:5px;font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid transparent;transition:all .2s;user-select:none;flex-shrink:0;';
+    el.innerHTML = '<span id="fb-dot" style="width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s;"></span><span id="fb-lbl">…</span>';
+    el.title = 'Synchronisation Firebase — clic pour forcer';
+    el.addEventListener('click', function(){ pushToFirebase(); window._toast && window._toast('🔄 Sync forcée…'); });
+    var hdrRight = document.querySelector('.hdr-right');
+    if (hdrRight) hdrRight.insertBefore(el, hdrRight.firstChild);
+
+    // Logout button
+    var logoutBtn = document.createElement('button');
+    logoutBtn.id = 'fb-logout-btn';
+    logoutBtn.className = 'btn gh sm';
+    logoutBtn.style.cssText = 'font-size:10px;padding:4px 8px;flex-shrink:0;';
+    logoutBtn.textContent = '⎋ Déconnexion';
+    logoutBtn.style.display = 'none';
+    logoutBtn.addEventListener('click', function(){
+      firebase.auth().signOut().then(function(){
+        window._toast && window._toast('👋 Déconnecté');
+        setTimeout(function(){ location.reload(); }, 800);
+      });
+    });
+    if (hdrRight) hdrRight.insertBefore(logoutBtn, hdrRight.firstChild);
+  }
+
+  function updateSyncUI(state) {
+    var dot = document.getElementById('fb-dot');
+    var lbl = document.getElementById('fb-lbl');
+    var logout = document.getElementById('fb-logout-btn');
+    if (!dot || !lbl) return;
+    var map = {
+      connecting: ['var(--muted)', '…'],
+      connected:  ['var(--green)', 'sync ✓'],
+      synced:     ['var(--gold)',  'envoi…'],
+      received:   ['var(--blue)', 'réception…'],
+      error:      ['var(--red)',  'hors-ligne'],
+    };
+    var s = map[state] || map.connecting;
+    dot.style.background = s[0];
+    lbl.textContent = s[1];
+    if (logout) logout.style.display = state === 'error' ? 'none' : 'inline-flex';
+  }
+
+  // ── Hash helper ──────────────────────────────────────────────
+  function hashStr(str) {
+    var h = 0;
+    for (var i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+    return h.toString(36);
+  }
+
+  // ── Firebase DB path for this user ───────────────────────────
+  function userRef() {
+    return _db.ref('patritracker/' + _uid + '/state');
+  }
+
+  // ── Push local → Firebase ────────────────────────────────────
+  function pushToFirebase() {
+    if (!_syncEnabled || !_uid) return;
+    var raw = localStorage.getItem('patrimoine_v8');
+    if (!raw) return;
+    var h = hashStr(raw);
+    if (h === _lastHash) return;
+    _ignoreNext = true;
+    updateSyncUI('synced');
+    userRef().set({ data: raw, ts: Date.now(), hash: h })
+      .then(function(){ _lastHash = h; updateSyncUI('connected'); setTimeout(function(){ updateSyncUI('connected'); }, 1500); })
+      .catch(function(){ updateSyncUI('error'); });
+  }
+
+  // ── Apply remote data to app ─────────────────────────────────
+  function applyRemote(raw) {
+    try {
+      var parsed = JSON.parse(raw);
+      localStorage.setItem('patrimoine_v8', raw);
+      var S = window._pState ? window._pState() : null;
+      if (S) {
+        Object.keys(parsed).forEach(function(k){ S[k] = parsed[k]; });
+        ['positions','immo','livrets','history','snapshots','actionsDone','pegRoulement'].forEach(function(k){ if(!S[k]) S[k]=[]; });
+      }
+      if (window._app && window._app.renderAll) window._app.renderAll();
+      window._toast && window._toast('🔄 Données synchronisées');
+    } catch(e) { console.warn('[FB] applyRemote error', e); }
+  }
+
+  // ── Listen for remote changes ────────────────────────────────
+  function startSync() {
+    // First: pull remote
+    userRef().once('value').then(function(snap) {
+      var val = snap.val();
+      if (val && val.data) {
+        var localRaw = localStorage.getItem('patrimoine_v8');
+        if (!localRaw || val.ts > (JSON.parse(localRaw)._ts || 0)) {
+          _lastHash = val.hash || hashStr(val.data);
+          applyRemote(val.data);
+        } else {
+          _lastHash = hashStr(localRaw);
+          pushToFirebase();
+        }
+      } else {
+        pushToFirebase(); // first device — seed the cloud
+      }
+      updateSyncUI('connected');
+    });
+
+    // Then: live listener
+    userRef().on('value', function(snap) {
+      if (_ignoreNext) { _ignoreNext = false; return; }
+      var val = snap.val();
+      if (!val || !val.data) return;
+      var h = val.hash || hashStr(val.data);
+      if (h === _lastHash) return;
+      _lastHash = h;
+      applyRemote(val.data);
+      updateSyncUI('received');
+      setTimeout(function(){ updateSyncUI('connected'); }, 1500);
+    });
+  }
+
+  // ── Hook localStorage.setItem ────────────────────────────────
+  function hookSave() {
+    var orig = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = function(key, value) {
+      orig(key, value);
+      if (key === 'patrimoine_v8' && _syncEnabled) {
+        clearTimeout(_saveTimer);
+        _saveTimer = setTimeout(pushToFirebase, 800);
+      }
+    };
+  }
+
+  // ── Load Firebase SDKs + boot ────────────────────────────────
+  function loadScript(src, cb) {
+    var s = document.createElement('script');
+    s.src = src; s.onload = cb;
+    document.head.appendChild(s);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    createSyncUI();
+    hookSave();
+
+    loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js', function() {
+      loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js', function() {
+        loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js', function() {
+          firebase.initializeApp(FB_CONFIG);
+          _db = firebase.database();
+
+          // Show login screen immediately
+          createLoginOverlay();
+
+          // Watch auth state
+          firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+              _uid = user.uid;
+              _syncEnabled = true;
+              hideLoginOverlay();
+              updateSyncUI('connecting');
+              startSync();
+              console.log('[FB] Connecté :', user.email);
+            } else {
+              _uid = null;
+              _syncEnabled = false;
+              updateSyncUI('error');
+            }
+          });
+        });
+      });
+    });
+  });
+
+  // Sync on visibility change
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && _syncEnabled && _uid) {
+      userRef().once('value').then(function(snap) {
+        var val = snap.val();
+        if (!val || !val.data) return;
+        var h = val.hash || hashStr(val.data);
+        if (h !== _lastHash) { _lastHash = h; applyRemote(val.data); }
+      });
+    }
+  });
+
+  window.addEventListener('beforeunload', function() { pushToFirebase(); });
+
+})();
+</script>
+
+
+<!-- Login overlay template (used by Firebase auth) -->
+<div id="fb-login-tpl" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:20px;font-family:'Outfit',sans-serif;">
+  <div style="text-align:center;">
+    <div style="font-family:'Playfair Display',serif;font-size:32px;color:var(--gold);margin-bottom:6px;">Patri<em style="font-style:italic;color:var(--text)">Tracker</em></div>
+    <div style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Tableau de bord patrimonial · Maxime</div>
+  </div>
+  <div style="background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:32px 36px;text-align:center;max-width:340px;width:90%;">
+    <div style="font-size:28px;margin-bottom:12px;">🔒</div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Accès privé</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:24px;line-height:1.5;">Connecte-toi avec ton compte Google pour accéder à tes données patrimoniales.</div>
+    <button id="fb-google-btn" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 20px;border-radius:10px;border:1px solid var(--bd);background:var(--s2);color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continuer avec Google
+    </button>
+    <div id="fb-login-error" style="margin-top:12px;font-size:11px;color:var(--red);display:none;"></div>
+  </div>
+  <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Données chiffrées · Accès personnel uniquement</div>
+</div>
+
 </body>
 </html>
   
