@@ -5320,6 +5320,10 @@ function showPage(id) {
   document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
   var pg=document.getElementById('pg-'+id); if(pg) pg.classList.add('on');
   document.querySelectorAll('.nb').forEach(function(b){if(b.dataset.page===id)b.classList.add('on');});
+  // Save current page so refresh restores it
+  try { sessionStorage.setItem('pwa-last-page', id); } catch(e) {}
+  // Sync PWA bottom nav
+  if (window.syncPwaBtns) window.syncPwaBtns(id);
   renderAll();
   if(id==='retraite') runProjection();
   if(id==='enveloppes') { setTimeout(initAVLinxeaFields,50); setTimeout(initPEGFields,50); setTimeout(renderPEGRoulement_mini,150); setTimeout(function(){ var a=parseInt(document.getElementById('peg-roul-annee')&&document.getElementById('peg-roul-annee').value); if(!a){var el=document.getElementById('peg-roul-annee'); if(el) el.value=new Date().getFullYear();} },200); }
@@ -8255,7 +8259,12 @@ if(isEmpty){
 }
 
 renderAll();
-showPage('dashboard');
+// Restore last visited page on refresh
+(function() {
+  var lastPage = 'dashboard';
+  try { lastPage = sessionStorage.getItem('pwa-last-page') || 'dashboard'; } catch(e) {}
+  showPage(lastPage);
+})();
 setInterval(refreshPrices,60000);
 
 // ══ NET / BRUT TOGGLE ════════════════════════════════════════
@@ -9378,11 +9387,14 @@ window.closePwaMore = function() {
   });
 })();
 
-// ══ PWA — Keyboard handling (back button) ════════════════════
+// ══ PWA — Back button: go to dashboard instead of leaving ══════
 window.addEventListener('popstate', function() {
-  // no-op — prevents white screen on Android back button
+  var lastPage = 'dashboard';
+  try { lastPage = sessionStorage.getItem('pwa-last-page') || 'dashboard'; } catch(e) {}
+  if (lastPage !== 'dashboard') {
+    showPage('dashboard');
+  }
 });
-history.pushState({}, '');
 </script>
 
 
@@ -9558,10 +9570,15 @@ history.pushState({}, '');
       var val = snap.val();
       if (val && val.data) {
         var localRaw = localStorage.getItem('patrimoine_v8');
-        if (!localRaw || val.ts > (JSON.parse(localRaw)._ts || 0)) {
+        var localTs = 0;
+        try { localTs = JSON.parse(localRaw)._ts || 0; } catch(e) {}
+        var remoteTs = val.ts || 0;
+        if (!localRaw || remoteTs > localTs) {
+          // Remote is newer — apply it
           _lastHash = val.hash || hashStr(val.data);
           applyRemote(val.data);
         } else {
+          // Local is newer — push to Firebase
           _lastHash = hashStr(localRaw);
           pushToFirebase();
         }
@@ -9589,6 +9606,14 @@ history.pushState({}, '');
   function hookSave() {
     var orig = localStorage.setItem.bind(localStorage);
     localStorage.setItem = function(key, value) {
+      // Inject timestamp into patrimoine_v8 saves for conflict resolution
+      if (key === 'patrimoine_v8') {
+        try {
+          var parsed = JSON.parse(value);
+          parsed._ts = Date.now();
+          value = JSON.stringify(parsed);
+        } catch(e) {}
+      }
       orig(key, value);
       if (key === 'patrimoine_v8' && _syncEnabled) {
         clearTimeout(_saveTimer);
