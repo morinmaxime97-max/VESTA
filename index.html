@@ -8918,49 +8918,60 @@ function parseRSSItems(xmlText, maxItems) {
 
 
 // ── Cache par feed indépendant ────────────────────────────────
-var _actuFeedCache = {}; // { feedId: { items, ts } }
+var _actuFeedCache   = {};  // { feedId: { items, ts } }
+var _actuFeedLoading = {};  // { feedId: bool } — anti double-lancement
 
-// ── Render un seul feed dans sa card ──────────────────────────
+// ── Fetch UN seul feed (queries une par une) ──────────────────
+async function fetchOneFeed(feed) {
+  for (var qi = 0; qi < feed.queries.length; qi++) {
+    var res = await fetchActuFeed(feed.queries[qi]);
+    if (res.length >= 3) return res.slice(0, 5);
+    if (res.length > 0 && qi === feed.queries.length - 1) return res.slice(0, 5);
+  }
+  return [];
+}
+
+// ── Render UNE seule card ─────────────────────────────────────
 async function renderFeedCard(feedId, forceRefresh) {
+  if (_actuFeedLoading[feedId]) return; // déjà en cours
+  _actuFeedLoading[feedId] = true;
+
   var feed = ACTU_FEEDS.find(function(f){ return f.id === feedId; });
-  if (!feed) return;
+  if (!feed) { _actuFeedLoading[feedId] = false; return; }
   var card = document.getElementById('actu-card-' + feedId);
-  if (!card) return;
+  if (!card) { _actuFeedLoading[feedId] = false; return; }
   var body = card.querySelector('.actu-card-body');
   var btn  = card.querySelector('.actu-cat-refresh');
   var lbl  = card.querySelector('.actu-card-time');
 
-  // Check per-feed cache (15 min)
+  // Cache 15 min
   var cache = _actuFeedCache[feedId];
   var cacheAge = cache ? (Date.now() - cache.ts) / 60000 : 999;
-  if (!forceRefresh && cacheAge < 15 && cache) {
+  if (!forceRefresh && cacheAge < 15 && cache && cache.items.length) {
     renderFeedItems(body, cache.items, feed, lbl);
+    _actuFeedLoading[feedId] = false;
     return;
   }
 
-  // Show loading state
-  if (btn) { btn.disabled = true; btn.textContent = '…'; }
-  body.innerHTML = '<div style="color:var(--muted);font-size:11px;font-family:JetBrains Mono,monospace;padding:14px 0;">Chargement…</div>';
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳'; }
+  body.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:14px 0;text-align:center;">Chargement…</div>';
 
-  // Fetch
-  var items = [];
-  for (var qi = 0; qi < feed.queries.length && items.length < 4; qi++) {
-    var res = await fetchActuFeed(feed.queries[qi]);
-    res.forEach(function(r) {
-      if (!items.some(function(i){ return i.title === r.title; })) items.push(r);
-    });
+  try {
+    var items = await fetchOneFeed(feed);
+    checkActuAlerts(feedId, items);
+    _actuFeedCache[feedId] = { items: items, ts: Date.now() };
+    renderFeedItems(body, items, feed, lbl);
+  } catch(e) {
+    body.innerHTML = '<div style="color:var(--red);font-size:11px;padding:10px 0;text-align:center;">❌ Erreur réseau</div>';
   }
-  items = items.slice(0, 5);
-  checkActuAlerts(feedId, items);
-  _actuFeedCache[feedId] = { items: items, ts: Date.now() };
-
-  renderFeedItems(body, items, feed, lbl);
-  if (btn) { btn.disabled = false; btn.textContent = '⟳'; }
+  if (btn) { btn.disabled = false; btn.innerHTML = '⟳'; }
+  _actuFeedLoading[feedId] = false;
 }
 
+// ── Affiche les articles ──────────────────────────────────────
 function renderFeedItems(body, items, feed, lbl) {
-  if (!items.length) {
-    body.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:10px 0;">Aucun article — vérifiez la connexion</div>';
+  if (!items || !items.length) {
+    body.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:16px 0;text-align:center;">Aucun article trouvé<br><span style="font-size:10px;">Clique ⟳ pour réessayer</span></div>';
     return;
   }
   var html = '';
@@ -8977,7 +8988,8 @@ function renderFeedItems(body, items, feed, lbl) {
   if (lbl) lbl.textContent = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
 }
 
-// ── Render la grille complète (structure) ─────────────────────
+// ── Construit la grille HTML ──────────────────────────────────
+var _actuGridBuilt = false;
 function renderActuGrid() {
   var el = document.getElementById('actu-content');
   if (!el) return;
@@ -8985,53 +8997,69 @@ function renderActuGrid() {
   ACTU_FEEDS.forEach(function(f) {
     html += '<div class="card actu-feed-card" id="actu-card-'+f.id+'" style="border-top:2px solid '+f.color+';padding:16px;">';
     html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
-    html += '<span style="font-family:Playfair Display,serif;font-size:14px;">'+f.icon+' '+f.label+'</span>';
+    html += '<span style="font-size:14px;font-weight:500;">'+f.icon+' '+f.label+'</span>';
     html += '<div style="display:flex;align-items:center;gap:8px;">';
     html += '<span class="actu-card-time" style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;"></span>';
-    html += '<button class="actu-cat-refresh btn gh sm" data-feed-id="'+f.id+'" style="font-size:10px;padding:3px 10px;">⟳</button>';
+    html += '<button class="actu-cat-refresh btn gh sm" data-feed-id="'+f.id+'" style="font-size:11px;padding:3px 10px;" title="Actualiser ce thème uniquement">⟳</button>';
     html += '</div></div>';
     html += '<div class="actu-card-body" style="min-height:60px;"></div>';
     html += '</div>';
   });
   html += '</div>';
-  html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:14px;text-align:center;">'+
-    'Google News · 90 derniers jours · <span style="color:var(--green);">●</span> &lt;2j &nbsp;'+
-    '<span style="color:'+ACTU_FEEDS[0].color+';">●</span> &lt;2sem &nbsp;'+
-    '<span style="color:var(--muted);">●</span> plus ancien</div>';
+  html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:14px;text-align:center;">';
+  html += 'Google News · 90 derniers jours &nbsp;·&nbsp; ';
+  html += '<span style="color:var(--green);">●</span> &lt;2j &nbsp;';
+  html += '<span style="color:'+ACTU_FEEDS[0].color+';">●</span> &lt;2sem &nbsp;';
+  html += '<span style="color:var(--muted);">●</span> plus ancien';
+  html += '</div>';
   el.innerHTML = html;
+  _actuGridBuilt = true;
 
-  // Wire per-feed refresh buttons
+  // Chaque bouton ⟳ n'actualise QUE son propre feed
   el.querySelectorAll('.actu-cat-refresh').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
+      e.preventDefault();
       e.stopPropagation();
       var feedId = btn.dataset.feedId;
-      delete _actuFeedCache[feedId]; // clear only this feed's cache
+      _actuFeedLoading[feedId] = false; // reset verrou
+      delete _actuFeedCache[feedId];    // vide cache de CE feed uniquement
       renderFeedCard(feedId, true);
     });
   });
 }
 
-// ── Render all feeds (lazy, one by one) ───────────────────────
+// ── Point d'entrée — appelé par showPage('actu') ─────────────
 async function renderActu(forceRefresh) {
   var el = document.getElementById('actu-content');
   if (!el) return;
-  if (forceRefresh) _actuFeedCache = {};
 
-  // Always rebuild the grid structure
-  renderActuGrid();
+  if (forceRefresh) {
+    _actuFeedCache   = {};
+    _actuFeedLoading = {};
+    _actuGridBuilt   = false;
+  }
 
-  // Load each feed independently (non-blocking)
-  ACTU_FEEDS.forEach(function(feed) {
-    renderFeedCard(feed.id, forceRefresh);
+  if (!_actuGridBuilt || forceRefresh) renderActuGrid();
+
+  // Charge les feeds avec 400ms d'écart pour ne pas saturer les proxies
+  ACTU_FEEDS.forEach(function(feed, fi) {
+    setTimeout(function() {
+      renderFeedCard(feed.id, forceRefresh);
+    }, fi * 400);
   });
 
   var updateEl = document.getElementById('actu-last-update');
-  if (updateEl) updateEl.textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+  if (updateEl) updateEl.textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
 }
 
-// Bouton refresh général — recharge tous les feeds
+// ── Bouton global ⟳ jaune = recharge TOUT ────────────────────
 var btnActu = document.getElementById('btn-refresh-actu');
-if (btnActu) btnActu.addEventListener('click', function(){ _actuFeedCache = {}; renderActu(true); });
+if (btnActu) btnActu.addEventListener('click', function(){
+  _actuFeedCache   = {};
+  _actuFeedLoading = {};
+  _actuGridBuilt   = false;
+  renderActu(true);
+});
 
 // showPage hook for actu
 
