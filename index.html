@@ -337,14 +337,14 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Bottom navigation bar — mobile only */
+/* Bottom navigation bar — mobile only, hidden on desktop */
 #pwa-bottom-nav {
-  display: none;
+  display: none !important;
 }
 
 @media (max-width: 768px) {
   /* Hide top nav on mobile */
-  nav { display: none !important; }
+  nav:not(#pwa-bottom-nav) { display: none !important; }
 
   /* Header compact */
   header {
@@ -354,7 +354,7 @@ body {
 
   /* Bottom nav bar */
   #pwa-bottom-nav {
-    display: flex;
+    display: flex !important;
     position: fixed;
     bottom: 0;
     left: 0;
