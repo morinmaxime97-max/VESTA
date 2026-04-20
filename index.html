@@ -573,16 +573,14 @@ body {
   <button class="nb" data-page="history">🕐 Historique</button>
 </nav>
 
-<!-- PWA Bottom Navigation -->
-<div id="pwa-more-overlay" onclick="closePwaMore()"></div>
-<div id="pwa-more-menu">
+<!-- PWA Bottom Navigation (mobile only) -->
+<div id="pwa-more-overlay" onclick="closePwaMore()" style="display:none"></div>
+<div id="pwa-more-menu" style="display:none">
   <div class="pwa-more-handle"></div>
-  <div class="pwa-more-grid" id="pwa-more-grid">
-    <!-- populated by JS -->
-  </div>
+  <div class="pwa-more-grid" id="pwa-more-grid"></div>
 </div>
-<div id="pwa-bottom-nav"><!-- populated by JS --></div>
-<div id="pwa-ptr"></div>
+<div id="pwa-bottom-nav" style="display:none"><!-- populated by JS --></div>
+<div id="pwa-ptr" style="display:none"></div>
 
 <main>
 
@@ -9271,6 +9269,11 @@ self.addEventListener('fetch', e => {
   var moreGrid = document.getElementById('pwa-more-grid');
   if (!bottomNav) return;
 
+  // Only activate PWA nav on mobile
+  var isMobileView = window.innerWidth <= 768;
+  if (!isMobileView) return; // desktop: do nothing, elements stay hidden
+  bottomNav.style.display = 'flex';
+
   // Build main tabs
   PAGES_MAIN.forEach(function(p) {
     var btn = document.createElement('button');
@@ -9426,15 +9429,16 @@ history.pushState({}, '');
         var provider = new firebase.auth.GoogleAuthProvider();
         provider.addScope('email');
         provider.addScope('profile');
-        // Always try popup first, fall back to redirect if blocked
+        // Use popup only — redirect causes "missing initial state" on GitHub Pages
         firebase.auth().signInWithPopup(provider).then(function() {
           // success handled by onAuthStateChanged
         }).catch(function(e) {
-          if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
-            // Fallback to redirect
-            firebase.auth().signInWithRedirect(provider).catch(function(e2) {
-              resetGoogleBtn(btn, e2.message);
-            });
+          if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+            // User closed popup — just reset button
+            resetGoogleBtn(btn, 'Fenêtre fermée. Réessaie.');
+          } else if (e.code === 'auth/popup-blocked') {
+            // Popup blocked — show manual instructions
+            resetGoogleBtn(btn, 'Popup bloqué. Autorise les popups pour ce site dans ton navigateur, puis réessaie.');
           } else {
             resetGoogleBtn(btn, e.message);
           }
@@ -9608,13 +9612,6 @@ history.pushState({}, '');
         loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js', function() {
           firebase.initializeApp(FB_CONFIG);
           _db = firebase.database();
-
-          // Handle redirect result first (mobile sign-in after redirect)
-          firebase.auth().getRedirectResult().then(function(result) {
-            // handled by onAuthStateChanged below
-          }).catch(function(e) {
-            console.warn('[FB] Redirect error:', e.message);
-          });
 
           // Watch auth state — show/hide login accordingly
           firebase.auth().onAuthStateChanged(function(user) {
