@@ -9518,7 +9518,8 @@ history.pushState({}, '');
 
   // ── Firebase DB path for this user ───────────────────────────
   function userRef() {
-    return _db.ref('patritracker/' + _uid + '/state');
+    // Fixed path — single user app, no need for per-uid path
+    return _db.ref('patritracker/state');
   }
 
   // ── Push local → Firebase ────────────────────────────────────
