@@ -5235,7 +5235,17 @@ function injectRPData() {
   saveState();
   console.log('RP injected into existing save');
 }
-function saveState() { try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){} }
+function saveState() {
+  try {
+    var data = JSON.stringify(S);
+    localStorage.setItem(SK, data);
+    // Notify Firebase sync if active
+    if (window._fbPush) {
+      clearTimeout(window._fbPushTimer);
+      window._fbPushTimer = setTimeout(window._fbPush, 1500);
+    }
+  } catch(e) {}
+}
 
 // ══ HELPERS ═════════════════════════════════════════════════
 function uid(){return Math.random().toString(36).slice(2,10);}
@@ -9536,20 +9546,20 @@ window.addEventListener('popstate', function() {
 
   // ── Push local → Firebase ────────────────────────────────────
   function pushToFirebase() {
+    window._fbPush = pushToFirebase; // expose for saveState hook
     if (!_syncEnabled || !_uid) return;
-    var raw = localStorage.getItem('patrimoine_v8');
-    if (!raw) return;
-    // Hash without _ts to avoid false "no change" detection
-    var dataForHash = raw;
-    try {
-      var tmp = JSON.parse(raw);
-      var tsVal = tmp._ts || Date.now();
-      delete tmp._ts;
-      dataForHash = JSON.stringify(tmp);
-    } catch(e) { var tsVal = Date.now(); }
-    var h = hashStr(dataForHash);
-    if (h === _lastHash) return; // truly no data change
+    // Get current state and add timestamp
+    var S = window._pState ? window._pState() : null;
+    if (!S) return;
+    var tsVal = Date.now();
+    var dataObj = JSON.parse(JSON.stringify(S)); // deep clone
+    var h = hashStr(JSON.stringify(dataObj));
+    if (h === _lastHash) return; // no real change
     _lastHash = h;
+    dataObj._ts = tsVal;
+    var raw = JSON.stringify(dataObj);
+    // Also update localStorage with _ts
+    try { localStorage.setItem('patrimoine_v8', raw); } catch(e) {}
     _ignoreNext = true;
     updateSyncUI('synced');
     userRef().set({ data: raw, ts: tsVal, hash: h })
@@ -9619,25 +9629,7 @@ window.addEventListener('popstate', function() {
   }
 
   // ── Hook localStorage.setItem ────────────────────────────────
-  function hookSave() {
-    var orig = localStorage.setItem.bind(localStorage);
-    localStorage.setItem = function(key, value) {
-      // Inject timestamp into patrimoine_v8 saves for conflict resolution
-      if (key === 'patrimoine_v8') {
-        try {
-          var parsed = JSON.parse(value);
-          parsed._ts = Date.now();
-          value = JSON.stringify(parsed);
-        } catch(e) {}
-      }
-      orig(key, value);
-      if (key === 'patrimoine_v8' && _syncEnabled) {
-        clearTimeout(_saveTimer);
-        // 1.5s debounce — ensures all rapid changes are batched
-        _saveTimer = setTimeout(pushToFirebase, 1500);
-      }
-    };
-  }
+  function hookSave() { window._fbPush = pushToFirebase; }
 
   // ── Load Firebase SDKs + boot ────────────────────────────────
   function loadScript(src, cb) {
