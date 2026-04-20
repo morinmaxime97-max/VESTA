@@ -9539,12 +9539,21 @@ window.addEventListener('popstate', function() {
     if (!_syncEnabled || !_uid) return;
     var raw = localStorage.getItem('patrimoine_v8');
     if (!raw) return;
-    var h = hashStr(raw);
-    if (h === _lastHash) return;
+    // Hash without _ts to avoid false "no change" detection
+    var dataForHash = raw;
+    try {
+      var tmp = JSON.parse(raw);
+      var tsVal = tmp._ts || Date.now();
+      delete tmp._ts;
+      dataForHash = JSON.stringify(tmp);
+    } catch(e) { var tsVal = Date.now(); }
+    var h = hashStr(dataForHash);
+    if (h === _lastHash) return; // truly no data change
+    _lastHash = h;
     _ignoreNext = true;
     updateSyncUI('synced');
-    userRef().set({ data: raw, ts: Date.now(), hash: h })
-      .then(function(){ _lastHash = h; updateSyncUI('connected'); setTimeout(function(){ updateSyncUI('connected'); }, 1500); })
+    userRef().set({ data: raw, ts: tsVal, hash: h })
+      .then(function(){ updateSyncUI('connected'); })
       .catch(function(){ updateSyncUI('error'); });
   }
 
@@ -9573,14 +9582,21 @@ window.addEventListener('popstate', function() {
         var localTs = 0;
         try { localTs = JSON.parse(localRaw)._ts || 0; } catch(e) {}
         var remoteTs = val.ts || 0;
-        if (!localRaw || remoteTs > localTs) {
-          // Remote is newer — apply it
+        // Give 5s grace to local — avoids overwriting just-made changes on refresh
+        var localIsNewer = localRaw && (localTs >= remoteTs - 5000);
+        if (!localRaw) {
+          // No local data — take remote
           _lastHash = val.hash || hashStr(val.data);
           applyRemote(val.data);
-        } else {
-          // Local is newer — push to Firebase
-          _lastHash = hashStr(localRaw);
+        } else if (localIsNewer) {
+          // Local is same age or newer — push local to Firebase
+          var tmp2 = JSON.parse(localRaw); delete tmp2._ts;
+          _lastHash = hashStr(JSON.stringify(tmp2));
           pushToFirebase();
+        } else {
+          // Remote is clearly newer — apply it
+          _lastHash = val.hash || hashStr(val.data);
+          applyRemote(val.data);
         }
       } else {
         pushToFirebase(); // first device — seed the cloud
@@ -9617,7 +9633,8 @@ window.addEventListener('popstate', function() {
       orig(key, value);
       if (key === 'patrimoine_v8' && _syncEnabled) {
         clearTimeout(_saveTimer);
-        _saveTimer = setTimeout(pushToFirebase, 800);
+        // 1.5s debounce — ensures all rapid changes are batched
+        _saveTimer = setTimeout(pushToFirebase, 1500);
       }
     };
   }
