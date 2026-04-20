@@ -1885,25 +1885,6 @@ body {
   <div id="actu-content"></div>
 
 
-
-
-
-id="pg-actu" class="pg">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
-    <div>
-      <h1 style="font-family:'Playfair Display',serif;font-size:20px;">📰 Actualités</h1>
-      <p style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:2px;">
-        Flux en temps réel — S&P500 · MSCI World · Émergents · LMNP · Taux immobiliers · PEA
-      </p>
-    </div>
-    <div class="brow">
-      <span id="actu-last-update" style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;"></span>
-      <button class="btn sm" id="btn-refresh-actu">⟳ Actualiser</button>
-    </div>
-  </div>
-  <div id="actu-content"></div>
-</div>
-
 <div id="pg-history" class="pg">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
     <h1 style="font-family:'Playfair Display',serif;font-size:20px;">Historique des opérations</h1>
@@ -2438,7 +2419,7 @@ function renderPEGRoulement() {
   kpis.forEach(function(k){
     html += '<div style="background:var(--s2);border-radius:8px;padding:10px 12px;border:1px solid var(--bd);">';
     html += '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">'+k.lbl.replace("\n","<br>")+'</div>';
-    html += '<div style="font-size:15px;font-family:\'Playfair Display\',serif;color:'+k.col+';">'+k.val+'</div>';
+    html += '<div style="font-size:15px;font-family:Playfair Display,serif;color:'+k.col+';">'+k.val+'</div>';
     html += '</div>';
   });
   html += '</div>';
@@ -4456,18 +4437,18 @@ function renderImmoValeurs(b, idx) {
   if (isRP) {
     html += '<div class="ms" style="border-left:3px solid var(--blue);padding:10px 12px;background:var(--s2);border-radius:8px;">';
     html += '<div class="ms-yr" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">🏠 Prix achat maison seule</div>';
-    html += '<div style="font-size:16px;font-family:\'Playfair Display\',serif;color:var(--blue);">'+ fmtK(v.prixMaisonSeule || 150000)+'</div>';
+    html += '<div style="font-size:16px;font-family:Playfair Display,serif;color:var(--blue);">'+ fmtK(v.prixMaisonSeule || 150000)+'</div>';
     html += '<div style="font-size:10px;color:var(--dim);margin-top:3px;">Net acheteur · hors travaux financement</div>';
     html += '</div>';
     html += '<div class="ms" style="border-left:3px solid var(--blue);padding:10px 12px;background:var(--s2);border-radius:8px;opacity:0.75;">';
     html += '<div class="ms-yr" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">💰 Total emprunts (FL9120+FL9107)</div>';
-    html += '<div style="font-size:14px;font-family:\'Playfair Display\',serif;color:var(--text);">'+ fmtK(v.prixAchat)+'</div>';
+    html += '<div style="font-size:14px;font-family:Playfair Display,serif;color:var(--text);">'+ fmtK(v.prixAchat)+'</div>';
     html += '<div style="font-size:10px;color:var(--dim);margin-top:3px;">QP Maxime 50% · incl. travaux énergétiques</div>';
     html += '</div>';
   } else {
     html += '<div class="ms" style="border-left:3px solid var(--blue);padding:10px 12px;background:var(--s2);border-radius:8px;">';
     html += '<div class="ms-yr" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">💰 Prix achat T2</div>';
-    html += '<div style="font-size:16px;font-family:\'Playfair Display\',serif;color:var(--blue);">62 000 €</div>';
+    html += '<div style="font-size:16px;font-family:Playfair Display,serif;color:var(--blue);">62 000 €</div>';
     html += '<div style="font-size:10px;color:var(--dim);margin-top:3px;">Prêt total 82 870€ (achat+notaire+travaux)</div>';
     html += '</div>';
   }
@@ -4475,14 +4456,14 @@ function renderImmoValeurs(b, idx) {
   // 2. Coût du crédit
   html += '<div class="ms" style="border-left:3px solid var(--red);padding:10px 12px;background:var(--s2);border-radius:8px;">';
   html += '<div class="ms-yr" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">📊 Coût crédit total</div>';
-  html += '<div style="font-size:16px;font-family:\'Playfair Display\',serif;color:var(--red);">'+ fmtK(v.coutCredit)+'</div>';
+  html += '<div style="font-size:16px;font-family:Playfair Display,serif;color:var(--red);">'+ fmtK(v.coutCredit)+'</div>';
   html += '<div style="font-size:10px;color:var(--dim);margin-top:3px;">Intérêts + assurance emprunteur</div>';
   html += '</div>';
 
   // 3. Coût total projet (couple net, avec ligne QP Maxime)
   html += '<div class="ms" style="border-left:3px solid var(--gold);padding:10px 12px;background:var(--s2);border-radius:8px;">';
   html += '<div class="ms-yr" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">🏗 Coût projet total net</div>';
-  html += '<div style="font-size:16px;font-family:\'Playfair Display\',serif;color:var(--gold);">'+ fmtK(v.coutTotalProjet)+'</div>';
+  html += '<div style="font-size:16px;font-family:Playfair Display,serif;color:var(--gold);">'+ fmtK(v.coutTotalProjet)+'</div>';
   if (isRP) {
     html += '<div style="font-size:10px;color:var(--dim);margin-top:3px;line-height:1.6;">'
           + 'Maison + frais + crédit − prime état<br>'
@@ -4498,21 +4479,21 @@ function renderImmoValeurs(b, idx) {
   html += '<div class="ms-yr" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">📈 Valeur marché estimée</div>';
   html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">';
   html += '<input type="number" id="vm-input-'+idx+'" value="'+(b.valeur||0)+'" step="1000" ';
-  html += 'style="width:90px;background:var(--s3);border:1px solid var(--green);border-radius:5px;padding:3px 6px;color:var(--green);font-family:\'JetBrains Mono\',monospace;font-size:13px;" ';
+  html += 'style="width:90px;background:var(--s3);border:1px solid var(--green);border-radius:5px;padding:3px 6px;color:var(--green);font-family:JetBrains Mono,monospace;font-size:13px;" ';
   html += 'oninput="previewValeurMarche('+idx+')">';
   html += '<button class="btn sm" onclick="saveValeurMarche('+idx+')" style="background:var(--green);color:#080b10;padding:3px 8px;font-size:11px;">✓ Sauver</button>';
   html += '<button class="btn gh sm" id="dvf-btn-'+idx+'" onclick="fetchValeurMarcheEstimee('+idx+')" style="font-size:11px;" title="Estimation automatique depuis les ventes DVF (données Etalab/État)">🔍 DVF</button>';
   html += '</div>';
-  html += '<div id="vm-preview-'+idx+'" style="font-size:10px;color:var(--green);margin-top:2px;font-family:\'JetBrains Mono\',monospace;">'
+  html += '<div id="vm-preview-'+idx+'" style="font-size:10px;color:var(--green);margin-top:2px;font-family:JetBrains Mono,monospace;">'
         + (pvBrut>=0?'▲':'▼') + fmtK(Math.abs(pvBrut)) + ' ('+fmtN(pvPct,1)+'%) · net QP '+fmtK(netQP)+'</div>';
-  html += '<div id="dvf-status-'+idx+'" style="font-size:9px;color:var(--muted);margin-top:3px;font-family:\'JetBrains Mono\',monospace;">💡 DVF = ventes réelles des 3 dernières années · données État</div>';
+  html += '<div id="dvf-status-'+idx+'" style="font-size:9px;color:var(--muted);margin-top:3px;font-family:JetBrains Mono,monospace;">💡 DVF = ventes réelles des 3 dernières années · données État</div>';
   html += '</div>';
 
 html += '</div>'; // /grid 4 valeurs
 
   // ── Détail paramètres (accordéon inline) ───────────────────────────────
   html += '<div style="background:var(--s2);border-radius:8px;padding:0;border:1px solid var(--bd);margin-bottom:12px;overflow:hidden;">';
-  html += '<button onclick="toggleValeursDetail(\'vd-'+idx+'\')" style="width:100%;text-align:left;background:transparent;border:none;padding:9px 14px;cursor:pointer;font-size:11px;color:var(--muted);font-family:\'JetBrains Mono\',monospace;display:flex;justify-content:space-between;">';
+  html += '<button onclick="toggleValeursDetail(\'vd-'+idx+'\')" style="width:100%;text-align:left;background:transparent;border:none;padding:9px 14px;cursor:pointer;font-size:11px;color:var(--muted);font-family:JetBrains Mono,monospace;display:flex;justify-content:space-between;">';
   html += '<span>⚙ Détail & édition manuelle des paramètres</span><span id="vd-'+idx+'-icon">▸</span>';
   html += '</button>';
   html += '<div id="vd-'+idx+'" style="display:none;padding:12px 14px;border-top:1px solid var(--bd);">';
@@ -4530,14 +4511,14 @@ html += '</div>'; // /grid 4 valeurs
   html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:10px;">';
   params.forEach(function(p) {
     html += '<div>';
-    html += '<label style="font-size:10px;color:var(--muted);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:3px;">'+p.lbl+'</label>';
+    html += '<label style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:3px;">'+p.lbl+'</label>';
     html += '<input type="number" id="'+p.id+'" value="'+p.val+'" step="100" oninput="recalcValeursDetail('+idx+')" ';
-    html += 'style="width:100%;background:var(--s3);border:1px solid var(--bd);border-radius:5px;padding:5px 7px;color:var(--text);font-family:\'JetBrains Mono\',monospace;font-size:12px;">';
+    html += 'style="width:100%;background:var(--s3);border:1px solid var(--bd);border-radius:5px;padding:5px 7px;color:var(--text);font-family:JetBrains Mono,monospace;font-size:12px;">';
     html += '<div style="font-size:9px;color:var(--dim);margin-top:2px;">'+p.hint+'</div>';
     html += '</div>';
   });
   html += '</div>';
-  html += '<div id="vd-'+idx+'-result" style="font-size:11px;font-family:\'JetBrains Mono\',monospace;color:var(--dim);"></div>';
+  html += '<div id="vd-'+idx+'-result" style="font-size:11px;font-family:JetBrains Mono,monospace;color:var(--dim);"></div>';
   html += '</div></div>'; // /detail
 
   return html;
@@ -4739,29 +4720,29 @@ function calcVente() {
   ].forEach(function(k,i) {
     var hl = (i===6);
     html += '<div style="background:var(--s2);border-radius:8px;padding:10px 12px;'+(hl?'border:1px solid var(--gold);':'')+'">';
-    html += '<div style="font-size:10px;color:var(--muted);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">'+k[0]+'</div>';
-    html += '<div style="font-size:'+(hl?'17':'14')+'px;font-family:\'Playfair Display\',serif;color:'+k[2]+';">'+k[1]+'</div>';
+    html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">'+k[0]+'</div>';
+    html += '<div style="font-size:'+(hl?'17':'14')+'px;font-family:Playfair Display,serif;color:'+k[2]+';">'+k[1]+'</div>';
     html += '<div style="font-size:10px;color:var(--dim);margin-top:2px;">'+k[3]+'</div>';
     html += '</div>';
   });
   html += '</div>';
 
   // Info notaire acheteur
-  html += '<div style="font-size:11px;color:var(--dim);margin-bottom:12px;padding:8px 12px;background:var(--s2);border-radius:6px;font-family:\'JetBrains Mono\',monospace;">';
+  html += '<div style="font-size:11px;color:var(--dim);margin-bottom:12px;padding:8px 12px;background:var(--s2);border-radius:6px;font-family:JetBrains Mono,monospace;">';
   html += '📝 Frais notaire acheteur ('+notairePct+'%) : <b>'+fmtK(Math.round(fraisNotaireAcq))+'</b> — à sa charge, ';
   html += 'impact sur le prix de marché effectif : acheteur supporte '+fmtK(Math.round(prix+fraisNotaireAcq))+' au total';
   html += '</div>';
 
   // Plus-value
   html += '<div style="background:var(--s2);border-radius:8px;padding:12px 14px;border:1px solid var(--bd);margin-bottom:12px;">';
-  html += '<div style="font-size:10px;font-weight:600;color:var(--muted);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Plus-value immobilière</div>';
+  html += '<div style="font-size:10px;font-weight:600;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Plus-value immobilière</div>';
   html += '<div style="font-size:12px;margin-bottom:4px;">Prix de vente '+fmtK(prix)+' − Prix d\'acquisition '+fmtK(achat)+' = <b style="color:'+(pvBrute>=0?'var(--green)':'var(--red)')+'">'+fmtK(pvBrute)+'</b></div>';
   html += '<div style="font-size:11px;">'+pvLabel+'</div>';
   html += '</div>';
 
   // Waterfall
   html += '<div style="background:var(--s2);border-radius:8px;padding:12px 14px;border:1px solid var(--bd);">';
-  html += '<div style="font-size:10px;font-weight:600;color:var(--muted);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Décomposition waterfall</div>';
+  html += '<div style="font-size:10px;font-weight:600;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Décomposition waterfall</div>';
   [
     ['+', fmtK(prix),                   'Prix de vente',              'var(--green)'],
     ['−', fmtK(Math.round(fraisAgence)),'Agence ('+agencePct+'%)',    'var(--red)'],
@@ -4773,8 +4754,8 @@ function calcVente() {
   ].forEach(function(row) {
     var isTot = row[0]==='=';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:'+(isTot?'8':'4')+'px 0;'+(isTot?'border-top:1px solid var(--bd);margin-top:4px;font-weight:600;':'border-bottom:1px dashed var(--bd)33;')+'">';
-    html += '<span style="color:var(--dim)"><span style="color:'+row[3]+';margin-right:8px;font-family:\'JetBrains Mono\',monospace;font-weight:600;">'+row[0]+'</span>'+row[2]+'</span>';
-    html += '<span style="font-family:\'JetBrains Mono\',monospace;font-size:13px;color:'+row[3]+';">'+row[1]+'</span>';
+    html += '<span style="color:var(--dim)"><span style="color:'+row[3]+';margin-right:8px;font-family:JetBrains Mono,monospace;font-weight:600;">'+row[0]+'</span>'+row[2]+'</span>';
+    html += '<span style="font-family:JetBrains Mono,monospace;font-size:13px;color:'+row[3]+';">'+row[1]+'</span>';
     html += '</div>';
   });
   html += '</div>';
@@ -5086,15 +5067,15 @@ function calcLMNP2033() {
     ['Déficit restant 2033',   fmtK2(-(rows.find(function(r){return r.year===2033;})||{deficitCumul:0}).deficitCumul), 'var(--muted)', 'Stock reportable'],
   ].forEach(function(k) {
     html += '<div style="background:var(--s2);border-radius:8px;padding:10px 12px;">';
-    html += '<div style="font-size:10px;color:var(--muted);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">'+k[0]+'</div>';
-    html += '<div style="font-size:16px;font-family:\'Playfair Display\',serif;color:'+k[2]+';">'+k[1]+'</div>';
+    html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">'+k[0]+'</div>';
+    html += '<div style="font-size:16px;font-family:Playfair Display,serif;color:'+k[2]+';">'+k[1]+'</div>';
     html += '<div style="font-size:10px;color:var(--dim);margin-top:2px;">'+k[3]+'</div>';
     html += '</div>';
   });
   html += '</div>';
 
   // Légende
-  html += '<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:10px;font-family:\'JetBrains Mono\',monospace;color:var(--muted);margin-bottom:10px;">';
+  html += '<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:10px;font-family:JetBrains Mono,monospace;color:var(--muted);margin-bottom:10px;">';
   html += '<span style="color:#9b72cf">■ DPE travaux</span>';
   html += '<span style="color:var(--gold)">■ Liasse obligatoire (≥2033)</span>';
   html += '<span style="color:var(--red)">■ BIC positif imposable</span>';
@@ -5144,7 +5125,7 @@ function calcLMNP2033() {
   html += '</tbody></table></div>';
 
   // Note pédagogique
-  html += '<div style="background:var(--s2);border-radius:8px;padding:12px 14px;margin-top:12px;font-size:11px;font-family:\'JetBrains Mono\',monospace;line-height:1.6;">';
+  html += '<div style="background:var(--s2);border-radius:8px;padding:12px 14px;margin-top:12px;font-size:11px;font-family:JetBrains Mono,monospace;line-height:1.6;">';
   html += '<b style="color:var(--gold);">📋 Liasse obligatoire dès 2033 :</b> Le régime LMNP au réel est obligatoire si CA > 77 700 € ou si vous dépassez 15 ans de location. ';
   html += 'Les amortissements non encore déduits sont reportables indéfiniment. ';
   html += 'Le <b>déficit "hors amortissements"</b> est imputable sur le revenu global (max 10 700 €/an), ';
@@ -8836,59 +8817,58 @@ var _actuFetching = false;
 async function fetchActuFeed(query) {
   var results = [];
 
-  // Source 1 : Google News RSS (principal)
-  try {
-    var rssGoogle = 'https://news.google.com/rss/search?q='
-      + encodeURIComponent(query + ' finance')
+  // Liste de proxies CORS à essayer dans l'ordre
+  var PROXIES = [
+    function(url){ return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url); },
+    function(url){ return 'https://corsproxy.io/?' + encodeURIComponent(url); },
+    function(url){ return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url); },
+    function(url){ return 'https://thingproxy.freeboard.io/fetch/' + url; },
+  ];
+
+  async function tryFetch(rssUrl, maxItems) {
+    for (var pi = 0; pi < PROXIES.length; pi++) {
+      try {
+        var proxyUrl = PROXIES[pi](rssUrl);
+        var ctrl = new AbortController();
+        var timer = setTimeout(function(){ ctrl.abort(); }, 6000);
+        var r = await fetch(proxyUrl, { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (r.ok) {
+          var text = await r.text();
+          if (text && !text.trim().startsWith('<html') && !text.trim().startsWith('<!') && text.includes('<item')) {
+            var parsed = parseRSSItems(text, maxItems);
+            if (parsed.length > 0) return parsed;
+          }
+        }
+      } catch(e) { /* try next proxy */ }
+    }
+    return [];
+  }
+
+  // Source 1 : Google News RSS (principal, meilleure source FR)
+  var rssGoogle = 'https://news.google.com/rss/search?q='
+    + encodeURIComponent(query)
+    + '&hl=fr&gl=FR&ceid=FR:fr';
+  var res1 = await tryFetch(rssGoogle, 6);
+  res1.forEach(function(item){ results.push(item); });
+
+  // Source 2 : si pas assez d'articles, essaie une variante de la query
+  if (results.length < 3) {
+    var queryShort = query.split(' ').slice(0, 4).join(' ');
+    var rssGoogle2 = 'https://news.google.com/rss/search?q='
+      + encodeURIComponent(queryShort)
       + '&hl=fr&gl=FR&ceid=FR:fr';
-    var proxy1 = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rssGoogle);
-    var ctrl1 = new AbortController();
-    setTimeout(function(){ ctrl1.abort(); }, 7000);
-    var r1 = await fetch(proxy1, { signal: ctrl1.signal });
-    if (r1.ok) {
-      var text1 = await r1.text();
-      var parsed1 = parseRSSItems(text1, 5);
-      parsed1.forEach(function(item){ results.push(item); });
-    }
-  } catch(e) {}
+    var res2 = await tryFetch(rssGoogle2, 4);
+    res2.forEach(function(item){
+      if (!results.some(function(r){ return r.title === item.title; }))
+        results.push(item);
+    });
+  }
 
-  // Source 2 : Bing News RSS
-  try {
-    var rssBing = 'https://www.bing.com/news/search?q='
-      + encodeURIComponent(query + ' finance')
-      + '&format=rss&setlang=fr-FR&setmkt=fr-FR';
-    var proxy2 = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rssBing);
-    var ctrl2 = new AbortController();
-    setTimeout(function(){ ctrl2.abort(); }, 6000);
-    var r2 = await fetch(proxy2, { signal: ctrl2.signal });
-    if (r2.ok) {
-      var text2 = await r2.text();
-      var parsed2 = parseRSSItems(text2, 3);
-      parsed2.forEach(function(item){ results.push(item); });
-    }
-  } catch(e2) {}
-
-  // Source 3 : Boursorama via RSS (finance FR, si disponible)
-  try {
-    var rssBSO = 'https://www.boursorama.com/actualites/rss/cours/action/';
-    // Only try if query contains ETF/action keywords
-    if (query.toLowerCase().includes('etf') || query.toLowerCase().includes('s&p') || query.toLowerCase().includes('bourse')) {
-      var proxy3 = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://www.boursorama.com/actualites/rss/');
-      var ctrl3 = new AbortController();
-      setTimeout(function(){ ctrl3.abort(); }, 5000);
-      var r3 = await fetch(proxy3, { signal: ctrl3.signal });
-      if (r3.ok) {
-        var text3 = await r3.text();
-        var parsed3 = parseRSSItems(text3, 2);
-        parsed3.forEach(function(item){ results.push(item); });
-      }
-    }
-  } catch(e3) {}
-
-  // Deduplicate by title similarity + sort by date (most recent first)
+  // Dédoublonner et trier par date
   var seen = {};
   results = results.filter(function(item) {
-    var key = item.title.slice(0, 40).toLowerCase();
+    var key = item.title.slice(0, 50).toLowerCase();
     if (seen[key]) return false;
     seen[key] = true;
     return true;
@@ -8937,97 +8917,121 @@ function parseRSSItems(xmlText, maxItems) {
 }
 
 
-async function renderActu(forceRefresh) {
-  var el = document.getElementById('actu-content');
-  var updateEl = document.getElementById('actu-last-update');
-  if (!el) return;
-  if (_actuFetching) return;
+// ── Cache par feed indépendant ────────────────────────────────
+var _actuFeedCache = {}; // { feedId: { items, ts } }
 
-  // Cache 15 minutes
-  var cacheAge = _actuCache.ts ? (Date.now() - _actuCache.ts) / 60000 : 999;
-  if (!forceRefresh && cacheAge < 15 && _actuCache.html) {
-    el.innerHTML = _actuCache.html;
+// ── Render un seul feed dans sa card ──────────────────────────
+async function renderFeedCard(feedId, forceRefresh) {
+  var feed = ACTU_FEEDS.find(function(f){ return f.id === feedId; });
+  if (!feed) return;
+  var card = document.getElementById('actu-card-' + feedId);
+  if (!card) return;
+  var body = card.querySelector('.actu-card-body');
+  var btn  = card.querySelector('.actu-cat-refresh');
+  var lbl  = card.querySelector('.actu-card-time');
+
+  // Check per-feed cache (15 min)
+  var cache = _actuFeedCache[feedId];
+  var cacheAge = cache ? (Date.now() - cache.ts) / 60000 : 999;
+  if (!forceRefresh && cacheAge < 15 && cache) {
+    renderFeedItems(body, cache.items, feed, lbl);
     return;
   }
 
-  _actuFetching = true;
-  el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">'
-    + ACTU_FEEDS.map(function(f){
-        return '<div class="card" style="border-top:2px solid '+f.color+';">'
-          +'<div class="chd" style="font-size:13px;">'+f.icon+' '+f.label
-          +' <span class="tag t-'+f.tag.toLowerCase()+'" style="font-size:10px;">'+f.tag+'</span></div>'
-          +'<div style="color:var(--muted);font-size:11px;font-family:JetBrains Mono,monospace;padding:12px 0;">Chargement en cours…</div>'
-          +'</div>';
-      }).join('') + '</div>';
+  // Show loading state
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  body.innerHTML = '<div style="color:var(--muted);font-size:11px;font-family:JetBrains Mono,monospace;padding:14px 0;">Chargement…</div>';
 
-  // Fetch all feeds in parallel
-  _actuAlerts = _actuAlerts || [];
-  var allResults = await Promise.all(ACTU_FEEDS.map(async function(feed) {
-    // Try first query, fallback to second
-    var items = [];
-    for (var qi = 0; qi < feed.queries.length && items.length < 3; qi++) {
-      var res = await fetchActuFeed(feed.queries[qi]);
-      res.forEach(function(r) {
-        // Deduplicate by title
-        if (!items.some(function(i){ return i.title === r.title; })) {
-          items.push(r);
-        }
-      });
-    }
-    checkActuAlerts(feed.id, items);
-    return { feed, items: items.slice(0, 5) };
-  }));
+  // Fetch
+  var items = [];
+  for (var qi = 0; qi < feed.queries.length && items.length < 4; qi++) {
+    var res = await fetchActuFeed(feed.queries[qi]);
+    res.forEach(function(r) {
+      if (!items.some(function(i){ return i.title === r.title; })) items.push(r);
+    });
+  }
+  items = items.slice(0, 5);
+  checkActuAlerts(feedId, items);
+  _actuFeedCache[feedId] = { items: items, ts: Date.now() };
 
-  // Build HTML
+  renderFeedItems(body, items, feed, lbl);
+  if (btn) { btn.disabled = false; btn.textContent = '⟳'; }
+}
+
+function renderFeedItems(body, items, feed, lbl) {
+  if (!items.length) {
+    body.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:10px 0;">Aucun article — vérifiez la connexion</div>';
+    return;
+  }
+  var html = '';
+  items.forEach(function(item) {
+    var ageColor = item.ageDays <= 2 ? 'var(--green)' : item.ageDays <= 14 ? feed.color : 'var(--muted)';
+    html += '<a href="'+item.link+'" target="_blank" rel="noopener" style="display:block;text-decoration:none;padding:9px 0;border-bottom:1px solid var(--bd);">';
+    html += '<div style="font-size:12px;color:var(--text);line-height:1.4;margin-bottom:3px;font-weight:500;">'+item.title+'</div>';
+    html += '<div style="display:flex;gap:8px;font-size:10px;font-family:JetBrains Mono,monospace;color:var(--muted);">';
+    if (item.source) html += '<span>'+item.source+'</span>';
+    html += '<span style="color:'+ageColor+';">'+item.ageLabel+'</span>';
+    html += '</div></a>';
+  });
+  body.innerHTML = html;
+  if (lbl) lbl.textContent = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── Render la grille complète (structure) ─────────────────────
+function renderActuGrid() {
+  var el = document.getElementById('actu-content');
+  if (!el) return;
   var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">';
-  allResults.forEach(function(result) {
-    var f = result.feed;
-    var items = result.items;
-    html += '<div class="card" style="border-top:2px solid '+f.color+';">';
-    html += '<div class="chd" style="font-size:13px;display:flex;align-items:center;justify-content:space-between;">';
-    html += '<span>'+f.icon+' '+f.label+' <span class="tag t-'+f.tag.toLowerCase()+'" style="font-size:10px;">'+f.tag+'</span></span>';
-    html += '<button class="btn gh sm actu-cat-refresh" data-feed-id="'+f.id+'" style="font-size:10px;padding:3px 8px;">⟳</button>';
-    html += '</div>';
-    if (!items.length) {
-      html += '<div style="color:var(--muted);font-size:11px;padding:8px 0;">Aucun article disponible — vérifiez votre connexion</div>';
-    } else {
-      items.forEach(function(item) {
-        html += '<a href="'+item.link+'" target="_blank" rel="noopener" style="display:block;text-decoration:none;padding:9px 0;border-bottom:1px solid var(--bd);cursor:pointer;">';
-        html += '<div style="font-size:12px;color:var(--text);line-height:1.4;margin-bottom:4px;font-weight:500;">'+item.title+'</div>';
-        html += '<div style="display:flex;gap:10px;font-size:10px;font-family:JetBrains Mono,monospace;color:var(--muted);">';
-        if (item.source) html += '<span>'+item.source+'</span>';
-        var ageColor = item.ageDays <= 2 ? 'var(--green)' : item.ageDays <= 14 ? f.color : 'var(--muted)';
-        html += '<span style="color:'+ageColor+';">'+item.ageLabel+'</span>';
-        html += '</div></a>';
-      });
-    }
+  ACTU_FEEDS.forEach(function(f) {
+    html += '<div class="card actu-feed-card" id="actu-card-'+f.id+'" style="border-top:2px solid '+f.color+';padding:16px;">';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
+    html += '<span style="font-family:Playfair Display,serif;font-size:14px;">'+f.icon+' '+f.label+'</span>';
+    html += '<div style="display:flex;align-items:center;gap:8px;">';
+    html += '<span class="actu-card-time" style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;"></span>';
+    html += '<button class="actu-cat-refresh btn gh sm" data-feed-id="'+f.id+'" style="font-size:10px;padding:3px 10px;">⟳</button>';
+    html += '</div></div>';
+    html += '<div class="actu-card-body" style="min-height:60px;"></div>';
     html += '</div>';
   });
   html += '</div>';
-  html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:14px;text-align:center;">Source : Google News · Articles des 90 derniers jours uniquement · Actualisation toutes les 15 min · <span style=\"color:var(--green)\">●</span> = récent &nbsp; <span style=\"color:'+ACTU_FEEDS[0].color+'\">●</span> = < 2 sem. &nbsp; <span style=\"color:var(--muted)\">●</span> = + ancien</div>';
-
-  _actuCache = { html, ts: Date.now() };
+  html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:14px;text-align:center;">'+
+    'Google News · 90 derniers jours · <span style="color:var(--green);">●</span> &lt;2j &nbsp;'+
+    '<span style="color:'+ACTU_FEEDS[0].color+';">●</span> &lt;2sem &nbsp;'+
+    '<span style="color:var(--muted);">●</span> plus ancien</div>';
   el.innerHTML = html;
-  // Wire per-category refresh buttons
+
+  // Wire per-feed refresh buttons
   el.querySelectorAll('.actu-cat-refresh').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
       var feedId = btn.dataset.feedId;
-      var feed = ACTU_FEEDS.find(function(f){ return f.id === feedId; });
-      if (!feed) return;
-      btn.disabled = true; btn.textContent = '…';
-      // Clear cache for this feed only and re-render
-      _actuCache = {};
-      renderActu(true);
+      delete _actuFeedCache[feedId]; // clear only this feed's cache
+      renderFeedCard(feedId, true);
     });
   });
-  if (updateEl) updateEl.textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
-  _actuFetching = false;
 }
 
-// Bouton refresh
+// ── Render all feeds (lazy, one by one) ───────────────────────
+async function renderActu(forceRefresh) {
+  var el = document.getElementById('actu-content');
+  if (!el) return;
+  if (forceRefresh) _actuFeedCache = {};
+
+  // Always rebuild the grid structure
+  renderActuGrid();
+
+  // Load each feed independently (non-blocking)
+  ACTU_FEEDS.forEach(function(feed) {
+    renderFeedCard(feed.id, forceRefresh);
+  });
+
+  var updateEl = document.getElementById('actu-last-update');
+  if (updateEl) updateEl.textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+}
+
+// Bouton refresh général — recharge tous les feeds
 var btnActu = document.getElementById('btn-refresh-actu');
-if (btnActu) btnActu.addEventListener('click', function(){ _actuCache = {}; renderActu(true); });
+if (btnActu) btnActu.addEventListener('click', function(){ _actuFeedCache = {}; renderActu(true); });
 
 // showPage hook for actu
 
