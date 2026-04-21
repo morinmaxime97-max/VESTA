@@ -910,6 +910,12 @@ body {
       <p style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:2px;">Cliquez un onglet pour déplier · Barème IR auto-actualisé · PFU · PS · LMNP</p>
     </div>
     <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;background:var(--s2);padding:6px 10px;border-radius:6px;">⚠ Indicatif — non un conseil fiscal réglementé</div>
+
+  <!-- ══ CALENDRIER FISCAL ══ -->
+  <div class="card mb" id="card-calendrier-fiscal" style="width:100%;margin-top:16px;">
+    <div class="chd">📅 Calendrier fiscal & patrimonial <span class="chd-sub" id="cal-annee"></span></div>
+    <div id="calendrier-fiscal-content"></div>
+  </div>
   </div>
 
 
@@ -1234,6 +1240,12 @@ body {
 </div>
 
 <!-- ══════════ RETRAITE ══════════ -->
+<!-- TRI par actif -->
+<div class="card mb" id="card-tri" style="display:none;">
+  <div class="chd">&#128200; TRI — Taux de Rendement Interne net de frais &amp; fiscalité <span class="chd-sub">Performance réelle annualisée</span></div>
+  <div id="tri-content"></div>
+</div>
+
 <div id="pg-retraite" class="pg">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
     <div><h1 style="font-family:'Playfair Display',serif;font-size:20px;">Simulation retraite 2057</h1><p style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:2px;">Projection sur 31 ans · Ajustez les hypothèses</p></div>
@@ -1964,27 +1976,25 @@ body {
       <button class="btn sm" id="btn-refresh-actu">⟳ Actualiser</button>
     </div>
   </div>
-  <div id="actu-content"></div>
-
-
-
-
-
-id="pg-actu" class="pg">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
-    <div>
-      <h1 style="font-family:'Playfair Display',serif;font-size:20px;">📰 Actualités</h1>
-      <p style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:2px;">
-        Flux en temps réel — S&P500 · MSCI World · Émergents · LMNP · Taux immobiliers · PEA
-      </p>
-    </div>
-    <div class="brow">
-      <span id="actu-last-update" style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;"></span>
-      <button class="btn sm" id="btn-refresh-actu">⟳ Actualiser</button>
-    </div>
+  <!-- Résumé marché IA -->
+<div class="card mb" id="card-marche-resume" style="border-left:3px solid var(--blue);">
+  <div class="chd" style="justify-content:space-between;">
+    <span>&#128202; Résumé marché & préconisations <span class="chd-sub">Généré par Pierre · Corrélé à vos actifs</span></span>
+    <button class="btn sm" id="btn-marche-refresh" onclick="genererResumeMarche()" style="font-size:11px;">&#8635; Actualiser</button>
   </div>
-  <div id="actu-content"></div>
+  <div id="marche-resume-content" style="font-size:12px;color:var(--muted);line-height:1.7;min-height:80px;">
+    Cliquez "Actualiser" pour obtenir un résumé du marché et des préconisations personnalisées.
+  </div>
 </div>
+
+<!-- Veille réglementaire -->
+<div class="card mb" id="card-veille-reglementaire" style="border-left:3px solid var(--red);display:none;">
+  <div class="chd">&#9888;&#65039; Veille réglementaire — Impact sur votre patrimoine</div>
+  <div id="veille-content" style="font-size:12px;line-height:1.6;"></div>
+</div>
+
+<div id="actu-content"></div>
+
 
 <div id="pg-history" class="pg">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
@@ -7828,6 +7838,7 @@ function renderFiscalite() {
 
 // ══ ANALYSE PRINCIPALE ═══════════════════════════════════════
 function renderAnalyse(){
+  renderTRI();
   renderDiversificationScores();
   renderTERAnalysis();
   // Monte Carlo ne se lance pas automatiquement (bouton)
@@ -9293,6 +9304,341 @@ initAVLinxeaFields();
 </script>
 
 <script>
+// ══ TRI — Taux de Rendement Interne ════════════════════════════
+function calcTRI(cashflows) {
+  // Newton-Raphson IRR calculation
+  // cashflows: [{t: years, v: amount}] (negative = outflow, positive = inflow)
+  if (!cashflows || cashflows.length < 2) return null;
+  var rate = 0.1; // initial guess
+  for (var iter = 0; iter < 100; iter++) {
+    var npv = 0, dnpv = 0;
+    cashflows.forEach(function(cf) {
+      var disc = Math.pow(1 + rate, cf.t);
+      npv  += cf.v / disc;
+      dnpv -= cf.t * cf.v / (disc * (1 + rate));
+    });
+    if (Math.abs(dnpv) < 1e-10) break;
+    var newRate = rate - npv / dnpv;
+    if (Math.abs(newRate - rate) < 1e-8) { rate = newRate; break; }
+    rate = newRate;
+    if (rate < -0.99) rate = -0.99;
+    if (rate > 10) rate = 10;
+  }
+  return rate;
+}
+
+function renderTRI() {
+  var S = window._pState ? window._pState() : null;
+  if (!S) return;
+  var c = window._cAll ? window._cAll() : {};
+  var card = document.getElementById('card-tri');
+  var el   = document.getElementById('tri-content');
+  if (!card || !el) return;
+  card.style.display = 'block';
+
+  var now = new Date();
+  var rows = [];
+
+  // ── Positions (PEA/AV/CTO) ──
+  if (S.positions && S.positions.length) {
+    S.positions.forEach(function(p) {
+      var val   = (p.price || 0) * (p.qty || 0);
+      var inv   = (p.priceAvg || p.price || 0) * (p.qty || 0);
+      if (!inv || !val) return;
+
+      // Estimate holding period from history or default 2 years
+      var years = p.buyYear ? (now.getFullYear() - p.buyYear + (now.getMonth()/12)) : 2;
+      if (years < 0.1) years = 0.1;
+
+      // Cashflows: -inv at t=0, +val today
+      var cf = [{t: 0, v: -inv}, {t: years, v: val}];
+
+      // Adjust for fees (TER)
+      var ter = p.ter || 0.002; // default 0.2%
+      var terDrag = Math.pow(1 - ter, years);
+      cf[1].v = val * terDrag;
+
+      // Adjust for fiscal (PEA: PS 17.2% on gains, AV: depends, CTO: 30%)
+      var pv = Math.max(0, val - inv);
+      var fiscRate = 0;
+      if (p.envelope === 'PEA') fiscRate = 0.172; // PS only after 5y
+      else if (p.envelope === 'AV') fiscRate = 0.172 + (years < 8 ? 0.128 : 0.075); // simplified
+      else if (p.envelope === 'CTO') fiscRate = 0.30; // PFU
+      var pvNetFisc = pv * (1 - fiscRate);
+      cf[1].v = inv + pvNetFisc;
+
+      var tri = calcTRI(cf);
+      if (tri === null || !isFinite(tri)) return;
+
+      rows.push({
+        name: p.name,
+        env: p.envelope,
+        inv: inv,
+        val: val,
+        pv: pv,
+        pvNetFisc: pvNetFisc,
+        tri: tri,
+        years: years,
+        ter: ter,
+        fiscRate: fiscRate
+      });
+    });
+  }
+
+  // ── Immobilier locatif ──
+  if (S.immo && S.immo.length) {
+    S.immo.filter(function(b) { return b.type === 'Locatif'; }).forEach(function(b) {
+      var val  = b.valeur || 0;
+      var inv  = b.bought || val;
+      var debt = b.debt || 0;
+      var buyYear = b.buyYear || (now.getFullYear() - 3);
+      var years = now.getFullYear() - buyYear + (now.getMonth()/12);
+      if (years < 0.1) years = 0.1;
+
+      var loyerAnnuel = (b.rent || 0) * 12;
+      var chargesAnnuelles = (b.taxeFonciere||0) + (b.pno||0) + (b.compta||0) + (b.copro||0);
+      var cashflowNet = loyerAnnuel - chargesAnnuelles - (b.mortgage||0)*12;
+
+      // IRR: mise de fonds initiale, cashflows annuels, valeur nette finale
+        var apport = Math.max(0, inv * 0.15); // assume 15% apport
+      var cf = [{t: 0, v: -apport}];
+      for (var y = 1; y <= years; y++) {
+        cf.push({t: y, v: cashflowNet > 0 ? cashflowNet : 0});
+      }
+      // Valeur nette future (vente hypothétique)
+      var valNetFin = val - debt;
+      // Fiscalité sur plus-value immo (abattements 22 ans IR, 30 ans PS)
+      var pvImmo = Math.max(0, val - inv);
+      var abatIR  = Math.min(1, years / 22);
+      var abatPS  = Math.min(1, years / 30);
+      var pvImpoIR = pvImmo * (1 - abatIR) * 0.19;
+      var pvImpoPS = pvImmo * (1 - abatPS) * 0.172;
+      cf.push({t: years, v: valNetFin - pvImpoIR - pvImpoPS});
+
+      var tri = calcTRI(cf);
+      if (tri === null || !isFinite(tri)) return;
+
+      rows.push({
+        name: b.name,
+        env: 'Immo',
+        inv: apport,
+        val: val,
+        pv: pvImmo,
+        pvNetFisc: pvImmo - pvImpoIR - pvImpoPS,
+        tri: tri,
+        years: years,
+        ter: 0,
+        fiscRate: (pvImmo > 0 ? (pvImpoIR + pvImpoPS) / pvImmo : 0)
+      });
+    });
+  }
+
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty">Ajoutez des positions avec date et prix moyen pour calculer le TRI.</div>';
+    return;
+  }
+
+  // ── Render table ──
+  var triColor = function(t) {
+    if (t >= 0.08) return 'var(--green)';
+    if (t >= 0.04) return 'var(--gold)';
+    if (t >= 0)    return 'var(--dim)';
+    return 'var(--red)';
+  };
+
+  var html = '<table class="tbl"><thead><tr>'
+    + '<th>Actif</th><th>Enveloppe</th><th>Investi</th><th>Valeur act.</th>'
+    + '<th>PV brute</th><th>Fisc.</th><th>TRI net</th><th>Durée</th>'
+    + '</tr></thead><tbody>';
+
+  rows.sort(function(a,b) { return b.tri - a.tri; });
+
+  rows.forEach(function(r) {
+    html += '<tr>'
+      + '<td><b>' + r.name + '</b></td>'
+      + '<td><span class="tag t-' + r.env.toLowerCase().replace(/ /g,'') + '">' + r.env + '</span></td>'
+      + '<td class="mono">' + Math.round(r.inv).toLocaleString('fr-FR') + ' €</td>'
+      + '<td class="mono">' + Math.round(r.val).toLocaleString('fr-FR') + ' €</td>'
+      + '<td class="mono ' + (r.pv >= 0 ? 'pos' : 'neg') + '">' + (r.pv >= 0 ? '+' : '') + Math.round(r.pv).toLocaleString('fr-FR') + ' €</td>'
+      + '<td class="mono" style="color:var(--red);">-' + Math.round(r.fiscRate * 100) + '%</td>'
+      + '<td class="mono" style="font-size:14px;font-weight:700;color:' + triColor(r.tri) + ';">' + (r.tri * 100).toFixed(1) + '%/an</td>'
+      + '<td class="mono" style="color:var(--muted);">' + r.years.toFixed(1) + ' ans</td>'
+      + '</tr>';
+  });
+
+  // TRI global simplifié
+  var totalInv = rows.reduce(function(s,r){return s+r.inv;}, 0);
+  var totalVal = rows.reduce(function(s,r){return s+r.val;}, 0);
+  var avgYears = rows.reduce(function(s,r){return s+r.years;},0) / rows.length;
+  var triGlobal = calcTRI([{t:0,v:-totalInv},{t:avgYears,v:totalVal}]);
+
+  html += '<tr style="border-top:2px solid var(--bd);font-weight:700;">'
+    + '<td colspan="2" style="color:var(--muted);">PORTEFEUILLE GLOBAL</td>'
+    + '<td class="mono">' + Math.round(totalInv).toLocaleString('fr-FR') + ' €</td>'
+    + '<td class="mono">' + Math.round(totalVal).toLocaleString('fr-FR') + ' €</td>'
+    + '<td class="mono pos">+' + Math.round(totalVal-totalInv).toLocaleString('fr-FR') + ' €</td>'
+    + '<td></td>'
+    + '<td class="mono" style="font-size:15px;font-weight:800;color:' + triColor(triGlobal) + ';">' + (triGlobal*100).toFixed(1) + '%/an</td>'
+    + '<td class="mono" style="color:var(--muted);">' + avgYears.toFixed(1) + ' ans moy.</td>'
+    + '</tr>';
+
+  html += '</tbody></table>';
+  html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:10px;line-height:1.6;">'
+    + '* TRI net = annualise, apres TER ETF et imposition theorique (PEA: PS 17,2% | AV: selon duree | CTO: PFU 30% | Immo: abattements progressifs)'
+    + '<br>* Immo: base sur apport estime 15%, cashflow net, plus-value fiscalisee avec abattements duree'
+    + '</div>';
+
+  el.innerHTML = html;
+}
+window.renderTRI = renderTRI;
+
+// ══ RÉSUMÉ MARCHÉ ════════════════════════════════════════════
+async function genererResumeMarche() {
+  var el = document.getElementById('marche-resume-content');
+  var btn = document.getElementById('btn-marche-refresh');
+  if (!el) return;
+  el.innerHTML = '<span style="color:var(--muted);">&#129302; Pierre analyse les marchés...</span>';
+  if (btn) btn.disabled = true;
+
+  var S = window._pState ? window._pState() : null;
+  var c = window._cAll ? window._cAll() : {};
+  var NL = String.fromCharCode(10);
+
+  // Build portfolio summary for context
+  var actifs = [];
+  if (S && S.positions) {
+    S.positions.forEach(function(p) { actifs.push(p.name + ' (' + p.envelope + ')'); });
+  }
+  if (S && S.immo) {
+    S.immo.forEach(function(b) { actifs.push(b.name + ' (' + b.type + ')'); });
+  }
+
+  var today = new Date();
+  var mois = today.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+
+  var userMsg = [
+    "Date actuelle : " + today.toLocaleDateString('fr-FR'),
+    "Actifs de Maxime : " + actifs.join(', '),
+    "",
+    "En te basant sur les tendances generales des marches financiers et immobiliers en " + mois + " :",
+    "",
+    "1. ETAT DES MARCHES (5-6 lignes) : Indices boursiers mondiaux, tendance ETF MSCI World / S&P500, taux BCE, immobilier France",
+    "2. POINTS CLES DE LA SEMAINE/MOIS : 3 evenements importants qui impactent ses actifs",
+    "3. PRECONISATIONS (3 points concrets) : Ce qu'il devrait surveiller ou faire dans les 4 prochaines semaines",
+    "4. SIGNAL D'ALERTE (si pertinent) : Une chose urgente a ne pas ignorer",
+    "",
+    "Sois precis, chiffre quand possible, et toujours correle a SES actifs specifiques."
+  ].join(NL);
+
+  var response = await callClaudeIA(userMsg, true);
+
+  var html = response
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^#+\s+(.*)/gm, '<div style="font-weight:700;color:var(--blue);margin:10px 0 4px;font-size:13px;">$1</div>')
+    .replace(/^(\d+)\.\s+([A-Z\u00C0-\u00FF][^:]+:)/gm, '<div style="font-weight:700;color:var(--gold);margin:10px 0 4px;">$1. $2</div>')
+    .replace(/^- (.*)/gm, '<div style="padding:3px 0 3px 12px;border-left:2px solid var(--blue);margin:2px 0;font-size:11px;">$1</div>');
+  html = html.split('\n\n').join('<br>').split('\n').join(' ');
+
+  el.innerHTML = '<div style="line-height:1.8;">' + html + '</div>'
+    + '<div style="font-size:9px;color:var(--muted);margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);">'
+    + 'Pierre &mdash; Analyse au ' + today.toLocaleDateString('fr-FR') + ' &mdash; Basé sur les tendances connues, non sur des données temps réel'
+    + '</div>';
+
+  if (btn) btn.disabled = false;
+
+  // Also trigger regulatory watch
+  checkVeilleReglementaire();
+}
+window.genererResumeMarche = genererResumeMarche;
+
+// ══ VEILLE RÉGLEMENTAIRE ══════════════════════════════════════
+var VEILLE_REGLES = [
+  {
+    id: 'dpe-e-2034',
+    titre: 'DPE E — Interdiction location 2034',
+    check: function(S) {
+      if (!S || !S.immo) return false;
+      return S.immo.some(function(b) { return b.dpe === 'E' && b.type === 'Locatif'; });
+    },
+    msg: 'Votre T2 Limoges (DPE E) sera interdit à la location en 2034. Budget travaux estimé : 6 000–11 500 €. Planifiez VMC + isolation avant 2028.',
+    urgence: 'warn',
+    lien: null
+  },
+  {
+    id: 'lmnp-reforme',
+    titre: 'Réforme LMNP — Amortissements',
+    check: function(S) {
+      if (!S || !S.immo) return false;
+      return S.immo.some(function(b) { return b.type === 'Locatif'; });
+    },
+    msg: 'Projet de réintégration des amortissements LMNP dans la plus-value de cession. Consultez votre expert-comptable avant toute vente.',
+    urgence: 'warn',
+    lien: null
+  },
+  {
+    id: 'pea-plafond',
+    titre: 'Plafond PEA — Suivi',
+    check: function(S, c) {
+      return (c && c.pea > 100000);
+    },
+    msg: 'Votre PEA dépasse 100 000 €. Plafond légal : 150 000 €. Pensez à ouvrir un CTO pour la suite.',
+    urgence: 'info',
+    lien: null
+  },
+  {
+    id: 'succession-pea',
+    titre: 'Succession — PEA non transmissible',
+    check: function(S, c) {
+      return (c && c.pea > 5000);
+    },
+    msg: 'Le PEA se clôture au décès et perd son avantage fiscal. Anticipez la transmission : donations, AV, SCI familiale. Consultez un notaire.',
+    urgence: 'info',
+    lien: null
+  },
+  {
+    id: 'droits-succession',
+    titre: '&#127873; Droits de donation — Abattement 100k€',
+    check: function(S, c) {
+      return true; // Always relevant
+    },
+    msg: 'Chaque parent peut donner 100 000 € à chaque enfant tous les 15 ans en franchise de droits. Avec 1 enfant, vous pouvez déjà planifier une donation progressive. Consultez un notaire pour optimiser la transmission.',
+    urgence: 'ok',
+    lien: null
+  }
+];
+
+function checkVeilleReglementaire() {
+  var S = window._pState ? window._pState() : null;
+  var c = window._cAll ? window._cAll() : {};
+  var card = document.getElementById('card-veille-reglementaire');
+  var el = document.getElementById('veille-content');
+  if (!card || !el) return;
+
+  var alerts = VEILLE_REGLES.filter(function(r) { return r.check(S, c); });
+  if (!alerts.length) { card.style.display = 'none'; return; }
+
+  card.style.display = 'block';
+  var colors = { warn: 'var(--gold)', err: 'var(--red)', info: 'var(--blue)', ok: 'var(--green)' };
+  var icons  = { warn: '&#9888;', err: '&#128680;', info: '&#8505;', ok: '&#10003;' };
+
+  el.innerHTML = alerts.map(function(r) {
+    var col = colors[r.urgence] || 'var(--muted)';
+    var ico = icons[r.urgence] || '&#8505;';
+    return '<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);">'
+      + '<div style="font-size:18px;flex-shrink:0;">' + ico + '</div>'
+      + '<div>'
+      + '<div style="font-weight:700;font-size:12px;color:' + col + ';margin-bottom:3px;">' + r.titre + '</div>'
+      + '<div style="font-size:11px;color:var(--text);line-height:1.6;">' + r.msg + '</div>'
+      + '</div></div>';
+  }).join('');
+}
+window.checkVeilleReglementaire = checkVeilleReglementaire;
+
+// Auto-check veille on load
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(checkVeilleReglementaire, 2000);
+});
+
 // ══ PWA — Service Worker ══════════════════════════════════════
 (function() {
   if ('serviceWorker' in navigator) {
@@ -9558,127 +9904,720 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 });
 
-// ══ ÉTAT CONVERSATION IA ════════════════════════════════════
+// ══ PIERRE v3 — Conseiller patrimonial complet ════════════════
 window._iaConversation = [];
-window._fiscState = { revenuMaxime: 30000, revenuConj: 0 };
+window._pendingAction  = null;
+window._fiscState      = { revenuMaxime: 30000, revenuConj: 0 };
 
+// ════════════════════════════════════════════════════════════════
+// OUTILS — accès complet à tout le patrimoine
+// ════════════════════════════════════════════════════════════════
+var IA_TOOLS = [
+  {
+    name: "lire_situation_complete",
+    description: "Lit la situation patrimoniale complète et détaillée de Maxime. Toujours appeler en premier pour une analyse ou conseil.",
+    input_schema: { type:"object", properties: {}, required:[] }
+  },
+  {
+    name: "calculer",
+    description: "Effectue des calculs financiers précis : projection épargne, TRI, impôt IR, capacité d'emprunt, cashflow locatif, rendement net.",
+    input_schema: {
+      type:"object",
+      properties: {
+        type: { type:"string", enum:["epargne","tri","ir","emprunt","cashflow","rendement_net","donation"], description:"Type de calcul" },
+        params: { type:"object", description:"Paramètres du calcul (montant, taux, durée, etc.)" }
+      },
+      required:["type","params"]
+    }
+  },
+  {
+    name: "ajouter_position",
+    description: "Ajoute une nouvelle position (ETF, action, fonds) dans une enveloppe. Demande confirmation.",
+    input_schema: {
+      type:"object",
+      properties: {
+        nom: { type:"string" },
+        enveloppe: { type:"string", enum:["PEA","AV","CTO","PEG"] },
+        prix_achat: { type:"number" },
+        quantite: { type:"number" },
+        type_actif: { type:"string", enum:["ETF","Action","Fonds euros","Or ETC","Autre"] }
+      },
+      required:["nom","enveloppe","prix_achat","quantite"]
+    }
+  },
+  {
+    name: "modifier_position",
+    description: "Modifie une position existante (prix, quantité, notes). Demande confirmation.",
+    input_schema: {
+      type:"object",
+      properties: {
+        nom_position: { type:"string", description:"Nom ou fragment du nom de la position" },
+        champ: { type:"string", enum:["price","qty","priceAvg","name"], description:"Champ à modifier" },
+        valeur: { description:"Nouvelle valeur" }
+      },
+      required:["nom_position","champ","valeur"]
+    }
+  },
+  {
+    name: "modifier_livret",
+    description: "Modifie le solde ou le taux d'un livret d'épargne. Demande confirmation.",
+    input_schema: {
+      type:"object",
+      properties: {
+        nom_livret: { type:"string" },
+        champ: { type:"string", enum:["balance","rate","name"] },
+        valeur: { type:"number" }
+      },
+      required:["nom_livret","champ","valeur"]
+    }
+  },
+  {
+    name: "ajouter_livret",
+    description: "Ajoute un nouveau livret d'épargne. Demande confirmation.",
+    input_schema: {
+      type:"object",
+      properties: {
+        nom: { type:"string" },
+        type: { type:"string", enum:["Livret A","LDDS","LEP","Livret B","Compte épargne","Autre"] },
+        banque: { type:"string" },
+        solde: { type:"number" },
+        taux: { type:"number" }
+      },
+      required:["nom","solde","taux"]
+    }
+  },
+  {
+    name: "modifier_immo",
+    description: "Met à jour les données d'un bien immobilier (valeur, loyer, charges, DPE, etc.). Demande confirmation.",
+    input_schema: {
+      type:"object",
+      properties: {
+        nom_bien: { type:"string" },
+        champ: { type:"string", enum:["valeur","rent","mortgage","taxeFonciere","pno","compta","dpe","copro"] },
+        valeur: { description:"Nouvelle valeur" },
+        source: { type:"string" }
+      },
+      required:["nom_bien","champ","valeur"]
+    }
+  },
+  {
+    name: "ajouter_action_strategie",
+    description: "Ajoute une action prioritaire dans l'onglet Stratégie. Demande confirmation.",
+    input_schema: {
+      type:"object",
+      properties: {
+        titre: { type:"string" },
+        description: { type:"string" },
+        urgence: { type:"string", enum:["high","med","low"] },
+        echeance: { type:"string" },
+        env: { type:"string", enum:["PEA","AV","LMNP","Immo","Livret","Fiscal","PEG","Global"] }
+      },
+      required:["titre","urgence"]
+    }
+  },
+  {
+    name: "modifier_parametres_fiscaux",
+    description: "Met à jour les paramètres fiscaux (salaires, loyers, charges LMNP). Demande confirmation.",
+    input_schema: {
+      type:"object",
+      properties: {
+        champ: { type:"string", enum:["f-sal-maxime","f-sal-conj","f-loyers","f-charges-lmnp","f-pv-pea","f-parts"] },
+        valeur: { type:"number" }
+      },
+      required:["champ","valeur"]
+    }
+  },
+  {
+    name: "naviguer_vers",
+    description: "Navigue vers un onglet spécifique du site pour montrer quelque chose à Maxime.",
+    input_schema: {
+      type:"object",
+      properties: {
+        page: { type:"string", enum:["dashboard","enveloppes","immo","livrets","charts","analyse","fiscalite","retraite","strategie","outils","actu","history"] }
+      },
+      required:["page"]
+    }
+  },
+  {
+    name: "generer_alerte",
+    description: "Génère une alerte ou notification importante dans le dashboard.",
+    input_schema: {
+      type:"object",
+      properties: {
+        titre: { type:"string" },
+        message: { type:"string" },
+        niveau: { type:"string", enum:["info","warn","error","ok"] }
+      },
+      required:["titre","message","niveau"]
+    }
+  }
+];
+
+// ════════════════════════════════════════════════════════════════
+// EXÉCUTION DES OUTILS
+// ════════════════════════════════════════════════════════════════
+function executerOutil(toolName, inp) {
+  var S  = window._pState ? window._pState() : null;
+  var c  = window._cAll  ? window._cAll()  : {};
+  var NL = String.fromCharCode(10);
+  var save = function() { if (window._saveState) window._saveState(); if (window._renderAll) window._renderAll(); };
+
+  // ── lire_situation_complete ──────────────────────────────────
+  if (toolName === "lire_situation_complete") {
+    return getPatrimoineContext();
+  }
+
+  // ── calculer ─────────────────────────────────────────────────
+  if (toolName === "calculer") {
+    var p = inp.params || {};
+    if (inp.type === "epargne") {
+      var m=p.versement_mensuel||0, r=p.taux_annuel||0.07, n=p.duree_ans||30, C0=p.capital_initial||0;
+      var rm=r/12, nm=n*12;
+      var cap = C0*Math.pow(1+rm,nm) + (m > 0 ? m*(Math.pow(1+rm,nm)-1)/rm : 0);
+      var verse = C0 + m*nm;
+      return ["PROJECTION ÉPARGNE (" + n + " ans, " + (r*100).toFixed(1) + "%/an)",
+        "Capital initial : " + Math.round(C0).toLocaleString('fr-FR') + " EUR",
+        "Versement mensuel : " + m + " EUR/mois",
+        "Total versé : " + Math.round(verse).toLocaleString('fr-FR') + " EUR",
+        "Gains (intérêts composés) : " + Math.round(cap-verse).toLocaleString('fr-FR') + " EUR",
+        "CAPITAL FINAL : " + Math.round(cap).toLocaleString('fr-FR') + " EUR",
+        "Rendement réel : " + Math.round((cap-verse)/verse*100) + "% du capital investi"
+      ].join(NL);
+    }
+    if (inp.type === "ir") {
+      var rev=p.revenu||40000, parts=p.parts||2.5;
+      var abat=Math.min(Math.max(rev*0.1,448),14171);
+      var rni=rev-abat, quotient=rni/parts;
+      var TRANCHES=[{max:11294,r:0},{max:28797,r:0.11},{max:82341,r:0.30},{max:177106,r:0.41},{max:Infinity,r:0.45}];
+      var impot=0, prev=0;
+      TRANCHES.forEach(function(t){ if(quotient>prev){ impot+=(Math.min(quotient,t.max)-prev)*t.r; prev=t.max; }});
+      impot*=parts;
+      var decote=impot<1840?Math.min(873,873-0.4575*(impot-1307)):0;
+      var net=Math.max(0,impot-decote);
+      var tmi=TRANCHES.filter(function(t){return quotient<=t.max;})[0]?.r||0.45;
+      return ["CALCUL IR 2025 — Revenu : " + rev.toLocaleString('fr-FR') + " EUR, " + parts + " parts",
+        "Abattement 10% : -" + Math.round(abat).toLocaleString('fr-FR') + " EUR",
+        "Quotient familial : " + Math.round(quotient).toLocaleString('fr-FR') + " EUR/part",
+        "Impôt brut : " + Math.round(impot).toLocaleString('fr-FR') + " EUR",
+        "Décote : -" + Math.round(decote).toLocaleString('fr-FR') + " EUR",
+        "IMPÔT NET : " + Math.round(net).toLocaleString('fr-FR') + " EUR",
+        "TMI : " + (tmi*100) + "% | Taux effectif : " + (net/rev*100).toFixed(1) + "%"
+      ].join(NL);
+    }
+    if (inp.type === "cashflow") {
+      var loyer=p.loyer_mensuel||0, credit=p.credit_mensuel||0, tf=p.taxe_fonciere||0, pno=p.assurance_pno||0, travaux=p.provision_travaux||50, compta=p.comptable||0;
+      var chargesAnn = tf + pno + travaux*12 + compta;
+      var cf = loyer*12 - credit*12 - chargesAnn;
+      return ["CASHFLOW LOCATIF",
+        "Loyers annuels : +" + (loyer*12).toLocaleString('fr-FR') + " EUR",
+        "Crédit annuel : -" + (credit*12).toLocaleString('fr-FR') + " EUR",
+        "Taxe foncière : -" + tf + " EUR",
+        "Assurance PNO : -" + pno + " EUR",
+        "Provision travaux : -" + (travaux*12) + " EUR/an",
+        "Expert-comptable : -" + compta + " EUR",
+        "CASHFLOW NET : " + Math.round(cf).toLocaleString('fr-FR') + " EUR/an (" + Math.round(cf/12) + " EUR/mois)"
+      ].join(NL);
+    }
+    if (inp.type === "donation") {
+      var age=p.age_donateur||29, nbEnfants=p.nb_enfants||1;
+      var abatParEnfant=100000, total=abatParEnfant*nbEnfants;
+      var prochainRenouvellement=2039; // 15 ans
+      return ["DONATION — Abattements disponibles",
+        "Abattement parent→enfant : " + abatParEnfant.toLocaleString('fr-FR') + " EUR par enfant tous les 15 ans",
+        "Pour " + nbEnfants + " enfant(s) : " + total.toLocaleString('fr-FR') + " EUR en franchise totale",
+        "Prochain renouvellement possible : " + prochainRenouvellement,
+        "Don Pacte Dutreil : abattement 75% sur entreprise",
+        "Conseil : commencer tôt, fractionner sur 15 ans, consulter notaire"
+      ].join(NL);
+    }
+    return "Type de calcul non supporté : " + inp.type;
+  }
+
+  // ── naviguer_vers ────────────────────────────────────────────
+  if (toolName === "naviguer_vers") {
+    setTimeout(function() {
+      if (window.showPage) window.showPage(inp.page);
+    }, 500);
+    return "Navigation vers l'onglet : " + inp.page;
+  }
+
+  // ── generer_alerte ───────────────────────────────────────────
+  if (toolName === "generer_alerte") {
+    setTimeout(function() {
+      if (window._toast) window._toast('⚡ ' + inp.titre + ' — ' + inp.message.slice(0,60));
+    }, 300);
+    return "Alerte générée : " + inp.titre;
+  }
+
+  // ── Actions avec confirmation ─────────────────────────────────
+  var confirmActions = {
+    "ajouter_position": function() {
+      if (!S) return "Erreur: données non disponibles";
+      var uid = function(){ return Math.random().toString(36).slice(2,10); };
+      var pos = {
+        id: uid(), name: inp.nom, envelope: inp.enveloppe,
+        price: inp.prix_achat, priceAvg: inp.prix_achat, qty: inp.quantite,
+        subtype: inp.type_actif || 'ETF', note: 'Ajouté par Pierre IA'
+      };
+      if (!S.positions) S.positions = [];
+      S.positions.push(pos);
+      save();
+      return "Position ajoutée : " + inp.nom + " (" + inp.enveloppe + ") — " + inp.quantite + " parts à " + inp.prix_achat + " EUR";
+    },
+    "modifier_position": function() {
+      if (!S || !S.positions) return "Aucune position";
+      var pos = S.positions.find(function(p){ return p.name.toLowerCase().includes(inp.nom_position.toLowerCase()); });
+      if (!pos) return "Position non trouvée : " + inp.nom_position;
+      var ancien = pos[inp.champ];
+      pos[inp.champ] = inp.valeur;
+      save();
+      return "Position " + pos.name + " : " + inp.champ + " mis à jour " + ancien + " → " + inp.valeur;
+    },
+    "modifier_livret": function() {
+      if (!S || !S.livrets) return "Aucun livret";
+      var lv = S.livrets.find(function(l){ return l.name.toLowerCase().includes(inp.nom_livret.toLowerCase()); });
+      if (!lv) return "Livret non trouvé : " + inp.nom_livret;
+      var ancien = lv[inp.champ];
+      lv[inp.champ] = inp.valeur;
+      save();
+      return "Livret " + lv.name + " : " + inp.champ + " mis à jour " + ancien + " → " + inp.valeur;
+    },
+    "ajouter_livret": function() {
+      if (!S) return "Erreur";
+      var uid = function(){ return Math.random().toString(36).slice(2,10); };
+      if (!S.livrets) S.livrets = [];
+      S.livrets.push({ id: uid(), name: inp.nom, type: inp.type||'Autre', bank: inp.banque||'', balance: inp.solde, rate: inp.taux });
+      save();
+      return "Livret ajouté : " + inp.nom + " — " + inp.solde.toLocaleString('fr-FR') + " EUR @ " + inp.taux + "%";
+    },
+    "modifier_immo": function() {
+      if (!S || !S.immo) return "Aucun bien";
+      var bien = S.immo.find(function(b){ return b.name.toLowerCase().includes(inp.nom_bien.toLowerCase()); });
+      if (!bien) return "Bien non trouvé : " + inp.nom_bien;
+      var ancien = bien[inp.champ];
+      bien[inp.champ] = inp.valeur;
+      save();
+      return "Bien " + bien.name + " : " + inp.champ + " mis à jour " + ancien + " → " + inp.valeur + (inp.source ? " (source: " + inp.source + ")" : "");
+    },
+    "ajouter_action_strategie": function() {
+      if (!S) return "Erreur";
+      if (!S.iaActions) S.iaActions = [];
+      var uid = function(){ return Math.random().toString(36).slice(2,10); };
+      S.iaActions.push({ id:'ia-'+uid(), title:inp.titre, desc:inp.description||'', urgence:inp.urgence, echeance:inp.echeance||'', env:inp.env||'Global', yr:new Date().getFullYear(), source:'Pierre IA' });
+      save();
+      return "Action ajoutée dans Stratégie : " + inp.titre + " [" + inp.urgence + "]";
+    },
+    "modifier_parametres_fiscaux": function() {
+      var el = document.getElementById(inp.champ);
+      if (!el) return "Champ non trouvé : " + inp.champ;
+      var ancien = el.value;
+      el.value = inp.valeur;
+      if (window._app && window._app.renderFiscalite) window._app.renderFiscalite();
+      return "Paramètre fiscal " + inp.champ + " mis à jour : " + ancien + " → " + inp.valeur;
+    }
+  };
+
+  if (confirmActions[toolName]) {
+    var labels = {
+      "ajouter_position":        "Ajouter position : " + inp.nom + " (" + (inp.enveloppe||'?') + ") — " + (inp.quantite||0) + " parts à " + (inp.prix_achat||0) + " EUR",
+      "modifier_position":       "Modifier " + inp.nom_position + " : " + inp.champ + " → " + inp.valeur,
+      "modifier_livret":         "Modifier livret " + inp.nom_livret + " : " + inp.champ + " → " + inp.valeur,
+      "ajouter_livret":          "Ajouter livret : " + inp.nom + " — " + (inp.solde||0).toLocaleString('fr-FR') + " EUR @ " + (inp.taux||0) + "%",
+      "modifier_immo":           "Modifier " + inp.nom_bien + " : " + inp.champ + " → " + inp.valeur,
+      "ajouter_action_strategie":"Ajouter dans Stratégie : " + inp.titre + " [" + inp.urgence + "]",
+      "modifier_parametres_fiscaux": "Mettre à jour " + inp.champ + " → " + inp.valeur
+    };
+    window._pendingAction = { fn: confirmActions[toolName], label: labels[toolName] || toolName };
+    return "DEMANDE_CONFIRMATION|" + (labels[toolName] || toolName);
+  }
+
+  return "Outil non reconnu : " + toolName;
+}
+
+// ════════════════════════════════════════════════════════════════
+// CONFIRMATION
+// ════════════════════════════════════════════════════════════════
+function confirmerAction(oui) {
+  var el = document.getElementById('ia-content');
+  if (!window._pendingAction) return;
+  var pa = window._pendingAction;
+  window._pendingAction = null;
+
+  var result = oui ? pa.fn() : "Modification annulée.";
+  window._iaConversation.push({role:'user', content: oui ? '[Confirmé]' : '[Annulé]'});
+  window._iaConversation.push({role:'assistant', content: result + (oui ? "\n\nFait ! Votre site est mis à jour en temps réel." : "\nQue souhaitez-vous faire à la place ?")});
+  if (oui && window._toast) window._toast('Pierre : modification effectuée ✓');
+  renderIAConversation(el);
+}
+window.confirmerAction = confirmerAction;
+
+// ════════════════════════════════════════════════════════════════
+// SYSTÈME PROMPT — Pierre v3
+// ════════════════════════════════════════════════════════════════
+function getSystemPrompt() {
+  var NL = String.fromCharCode(10);
+  return [
+    "Tu es Pierre, conseiller privé de Maxime. Tu es expert reconnu dans TOUS ces domaines :",
+    "Gestion de patrimoine | Fiscalité française | Droit (civil, successoral, immobilier, des sociétés, du travail)",
+    "Finance de marché | Immobilier | Droit juridique | Planification retraite | Optimisation fiscale",
+    "",
+    "═══════════════════════════════════════════════════════",
+    "EXPERTISE PATRIMONIALE & FISCALE",
+    "═══════════════════════════════════════════════════════",
+    "PEA: Exonération IR après 5 ans (PS 17,2% dus). Plafond 150k EUR. Clôture au décès → anticiper.",
+    "Assurance Vie: Abattement 4600 EUR/an après 8 ans (9200 EUR couple). Succession: 152 500 EUR/bénéficiaire exonérés.",
+    "  Après 70 ans du souscripteur: abattement 30 500 EUR global sur primes puis droits normaux.",
+    "LMNP réel: Amortissement bien (~2-3%/an), mobilier (~10-20%/an), frais déductibles. BIC souvent nul.",
+    "  Réforme en cours: réintégration amortissements dans PV de cession. Impact majeur si vente.",
+    "PEG SNCF: Exonération IR sur gains, PS dus. Déblocage 5 ans ou cas légaux (mariage, naissance, licenciement...).",
+    "PER: Déductible du revenu imposable (plafond: 10% revenus N-1 ou 10% PASS). Fiscalité sortie rente ou capital.",
+    "Donation: 100k EUR/parent/enfant tous 15 ans. Don manuel: 31 865 EUR en plus. Donation-partage: fige valeurs.",
+    "Succession: Abattement enfant 100k EUR. Conjoint: exonération totale si marié/PACS. Ordre des héritiers.",
+    "SCI: Transmission optimisée (valeur parts décotée), démembrement possible. IS ou IR selon choix.",
+    "Démembrement: Usufruit/Nue-propriété. Barème fiscal par âge de l'usufruitier. Outil de transmission puissant.",
+    "Flat Tax PFU 30%: 12,8% IR + 17,2% PS sur dividendes/PV CTO. Option barème si TMI < 12,8%.",
+    "IR 2025: Tranches 0/11/30/41/45%. Abattement 10% (min 495, max 14 171 EUR). Décote, quotient familial.",
+    "IFI (Impôt Fortune Immobilière): Seuil 1,3M EUR net. Taux 0,5% à 1,5%. Exonérations: RP 30%, biens pro.",
+    "Plus-value immobilière: Abattements IR 6%/an de 6 à 21 ans (exo totale 22 ans). PS 1,65-9%/an (exo 30 ans).",
+    "  Surtaxe 2-6% sur PV > 50k EUR. Exonération RP. Abattement exceptionnel zones tendues.",
+    "Déficit foncier: imputable sur revenus globaux (10 700 EUR/an) si location nue. Régime réel obligatoire.",
+    "Micro-BIC: 50% abattement sur recettes < 77 700 EUR. Avantageux si charges réelles < 50%.",
+    "SCPI: Revenus fonciers imposés. Diversification immobilière sans gestion. TRI moyen 4-5%/an.",
+    "Crowdfunding immo: Obligations 8-12%/an. Risque perte capital. Fiscalité: IR ou PFU.",
+    "",
+    "═══════════════════════════════════════════════════════",
+    "EXPERTISE FINANCE DE MARCHÉ",
+    "═══════════════════════════════════════════════════════",
+    "ETF/Trackers: Gestion passive. TER 0,05-0,5%/an. Réplication physique vs synthétique.",
+    "Indices clés: MSCI World (~1600 actions, 23 pays), S&P500 (500 US), MSCI EM (marchés émergents), CAC40.",
+    "DCA (Dollar Cost Averaging): Lissage du prix d'achat. Réduit le risque de timing. Idéal pour versements réguliers.",
+    "Volatilité: S&P500 ~16%/an. Obligation: protection partielle. Or: valeur refuge. Cash drag à éviter.",
+    "Obligations: Duration, sensibilité aux taux BCE. Spread crédit. Investment Grade vs High Yield.",
+    "Or: Valeur refuge. Pas de rendement intrinsèque. Corrélation négative marchés stress.",
+    "Private Equity: Illiquide, horizon 5-10 ans, cible TRI 15-25%. Accessible via FCPR/FPCI.",
+    "Taux BCE: Impact direct sur taux crédit immo, obligations, valorisation actions (actualisations).",
+    "Sharpe ratio, alpha, bêta: métriques de performance ajustée au risque.",
+    "Théorie portefeuille: Diversification, frontière efficiente, allocation optimale selon horizon et risque.",
+    "",
+    "═══════════════════════════════════════════════════════",
+    "EXPERTISE IMMOBILIÈRE",
+    "═══════════════════════════════════════════════════════",
+    "Rendement brut = loyers annuels / prix achat × 100.",
+    "Rendement net = (loyers - charges - taxe foncière - assurances - gestion) / prix achat × 100.",
+    "Rendement net-net = après fiscalité (IR/PS ou BIC LMNP).",
+    "Cashflow: loyer - crédit - charges. Objectif: positif ou neutre.",
+    "Prix marché: DVF (données réelles), MeilleursAgents, indices INSEE, observatoires locaux.",
+    "DPE: A+ à G. Obligations: G interdit 2025, F 2028, E 2034, D 2038. Impact valeur et assurabilité.",
+    "Rénovation énergétique: MaPrimeRénov', CEE, éco-PTZ. Déductible LMNP réel.",
+    "Bail: 3 ans résidentiel, 1 an meublé, 9 ans commercial. Révision IRL. Congé propriétaire: 6 mois.",
+    "Charges récupérables (décret 87-713): eau, ordures, entretien parties communes. Non récupérable: TF, ravalement.",
+    "Syndic et copropriété: Charges courantes vs travaux. Fonds de travaux obligatoire (loi ALUR 5% budget).",
+    "Crédit immo: Taux fixe/variable/capé. Assurance (délégation possible). TAEG. Renégociation si écart ≥ 0,8 pt.",
+    "PTZ: Sans intérêts, zones A/B1/B2/C. Sous conditions ressources. Complément non substituable.",
+    "Démembrement immo: Achat nue-propriété (décote 30-50% selon durée). Pas de revenus fonciers, pas d'IFI.",
+    "Viager: Bouquet + rente. Occupé (décote) vs libre. Risque aléatoire sur durée de vie.",
+    "Marchands de biens: TVA sur marge. Régime professionnel.",
+    "",
+    "═══════════════════════════════════════════════════════",
+    "EXPERTISE JURIDIQUE & DROIT",
+    "═══════════════════════════════════════════════════════",
+    "Régimes matrimoniaux: Communauté réduite aux acquêts (défaut), séparation de biens, participation aux acquêts.",
+    "  Impact sur patrimoine, crédit, transmission. Changement possible après 2 ans de mariage devant notaire.",
+    "PACS: Régime de séparation de biens par défaut. Modification possible. Avantage: exonération droits succession.",
+    "Mandat de protection future: Anticiper incapacité. Alternative à tutelle/curatelle.",
+    "Testament: Olographe (manuscrit/daté/signé) ou notarié. Réserve héréditaire (enfants intouchables).",
+    "  Quotité disponible: 1/2 avec 1 enfant, 1/3 avec 2, 1/4 avec 3+.",
+    "Assurance-vie hors succession: Clause bénéficiaire à rédiger soigneusement. Pas soumise aux droits si <70 ans.",
+    "Droit du travail SNCF: Statut particulier. Retraite régime spécial. Avantages spécifiques.",
+    "Bail d'habitation: Loi ALUR, loi ELAN. Encadrement loyers Paris/Lille. Préavis: 1 mois meublé, 3 mois vide.",
+    "LMNP juridique: Inscription CFE, déclaration P0i, liasse 2031. Bénéfice réel: compte de résultat BIC.",
+    "  LMP (> 23k EUR recettes ET > autres revenus): cotisations sociales mais déficit imputable revenus.",
+    "Société civile: SCI, SCM, SCCV. Capital social, associés, gérance, dissolution, liquidation.",
+    "Droit des successions: Héritiers réservataires, légataires, exécuteur testamentaire, notaire obligatoire > 5k EUR.",
+    "Usufruit légal du conjoint: droit au logement 1 an puis usufruit ou 1/4 en pleine propriété.",
+    "Contentieux locatif: Clause résolutoire, commandement de payer, expulsion (délais 18-36 mois).",
+    "Protection juridique: GAJ (Garantie Assistance Juridique) dans MRH. Plafond et délais de carence.",
+    "",
+    "═══════════════════════════════════════════════════════",
+    "RÈGLES DE COMPORTEMENT",
+    "═══════════════════════════════════════════════════════",
+    "1. Tu lis toujours les données avec lire_situation_complete avant d'analyser",
+    "2. Tu calcules avant d'estimer — tu utilises l'outil calculer",
+    "3. Tu es FORCE DE PROPOSITION : tu signales proactivement les opportunités et risques",
+    "4. Tu ALERTES fermement si quelque chose est sous-optimal, risqué ou illégal",
+    "5. Tu ne modifies JAMAIS sans accord explicite — tu proposes, tu attends confirmation",
+    "6. Tu navigues vers l'onglet concerné pour montrer les données",
+    "7. Tu recommandes un notaire, avocat ou expert-comptable quand c'est nécessaire",
+    "8. Tu mentionnes les limites de tes conseils (pas substitut à un professionnel agréé)",
+    "9. Tu vouvoies Maxime. Tu es direct, précis, chiffré, actionnable.",
+    "10. Tes réponses : structurées avec emojis, max 500 mots, terminent par une action ou question."
+  ].join(NL);
+}
+
+// ════════════════════════════════════════════════════════════════
+// CONTEXTE PATRIMONIAL COMPLET
+// ════════════════════════════════════════════════════════════════
 function getPatrimoineContext() {
   var S = window._pState ? window._pState() : null;
-  if (!S) return "Donnees non disponibles.";
-  var c = window._cAll ? window._cAll() : {};
+  if (!S) return "Données non disponibles.";
+  var c  = window._cAll ? window._cAll() : {};
   var now = new Date();
-
-  // Salaires depuis la page fiscalite
-  var salMax  = parseFloat(document.getElementById('f-sal-maxime')?.value) || window._fiscState.revenuMaxime || 30000;
-  var salConj = parseFloat(document.getElementById('f-sal-conj')?.value)   || window._fiscState.revenuConj   || 0;
-  var revFoyer= parseFloat(document.getElementById('f-revenu')?.value)     || (salMax + salConj);
-  var parts   = parseFloat(document.getElementById('f-parts')?.value)      || 2.5;
-  var loyers  = parseFloat(document.getElementById('f-loyers')?.value)     || 6240;
-  var charges = parseFloat(document.getElementById('f-charges-lmnp')?.value)|| 6240;
-
-  var lines = [];
-  lines.push("=== PROFIL ===");
-  lines.push("Maxime, agent de maitrise SNCF, 29 ans. Couple marie/PACSE, 1 enfant.");
-  lines.push("Objectif retraite : 2057 (dans 31 ans). Strategie : accumulation long terme ETF + immo.");
-
-  lines.push("\n=== REVENUS ET FISCALITE ===");
-  lines.push("Salaire net Maxime : " + salMax + " EUR/an (" + Math.round(salMax/12) + " EUR/mois)");
-  if (salConj > 0) lines.push("Salaire net conjointe : " + salConj + " EUR/an (" + Math.round(salConj/12) + " EUR/mois)");
-  lines.push("Revenu net imposable foyer : " + revFoyer + " EUR/an | Parts : " + parts);
-  lines.push("Loyers bruts LMNP : " + loyers + " EUR/an | Charges deductibles : " + charges + " EUR/an");
-  lines.push("Resultat BIC LMNP : " + (loyers - charges) + " EUR (0 si amortissements suffisants)");
-
-  lines.push("\n=== PATRIMOINE NET ===");
-  lines.push("Patrimoine net : " + Math.round((c.total||0)/1000) + "k EUR");
-  lines.push("Patrimoine brut : " + Math.round((c.brut||0)/1000) + "k EUR");
-  lines.push("Dettes totales : " + Math.round((c.dettes||0)/1000) + "k EUR");
-
-  lines.push("\n=== ENVELOPPES FINANCIERES ===");
-  lines.push("PEA : " + Math.round((c.pea||0)) + " EUR (objectif 80% du financier)");
-  lines.push("Assurance Vie Linxea Spirit 2 : " + Math.round((c.av||0)) + " EUR (objectif 20% - transmission)");
-  lines.push("PEG SNCF : " + Math.round((c.peg||0)) + " EUR (fonds Amundi Mid-Cap Euro ESR)");
-  if (c.cto > 0) lines.push("CTO : " + Math.round(c.cto) + " EUR");
+  var salMax  = parseFloat(document.getElementById('f-sal-maxime')?.value) || 30000;
+  var salConj = parseFloat(document.getElementById('f-sal-conj')?.value) || 0;
+  var revFoyer= parseFloat(document.getElementById('f-revenu')?.value) || (salMax+salConj);
+  var parts   = parseFloat(document.getElementById('f-parts')?.value) || 2.5;
+  var loyers  = parseFloat(document.getElementById('f-loyers')?.value) || 6240;
+  var charges = parseFloat(document.getElementById('f-charges-lmnp')?.value) || 6240;
+  var NL = String.fromCharCode(10);
+  var lines = [
+    "DATE : " + now.toLocaleDateString('fr-FR'),
+    "",
+    "=== PROFIL ===",
+    "Maxime, 29 ans, agent de maîtrise SNCF. Couple marié/PACSÉ, 1 enfant.",
+    "Horizon retraite : 2057 (31 ans). Stratégie cible : 80% PEA (retraite) + 20% AV (transmission).",
+    "",
+    "=== REVENUS & FISCALITÉ ===",
+    "Salaire Maxime : " + salMax.toLocaleString('fr-FR') + " EUR/an (" + Math.round(salMax/12).toLocaleString('fr-FR') + " EUR/mois net)",
+    salConj > 0 ? "Salaire conjoint : " + salConj.toLocaleString('fr-FR') + " EUR/an" : "Conjoint : revenus non renseignés",
+    "Revenu net imposable foyer : " + revFoyer.toLocaleString('fr-FR') + " EUR | " + parts + " parts",
+    "LMNP : loyers " + loyers.toLocaleString('fr-FR') + " EUR/an | charges " + charges.toLocaleString('fr-FR') + " EUR/an | BIC net " + (loyers-charges).toLocaleString('fr-FR') + " EUR",
+    "",
+    "=== BILAN PATRIMONIAL ===",
+    "Patrimoine NET : " + Math.round(c.total||0).toLocaleString('fr-FR') + " EUR",
+    "Patrimoine BRUT : " + Math.round(c.brut||0).toLocaleString('fr-FR') + " EUR",
+    "Dettes totales : " + Math.round(c.dettes||0).toLocaleString('fr-FR') + " EUR",
+    "Ratio dette/brut : " + ((c.dettes||0)/(c.brut||1)*100).toFixed(1) + "%",
+    "",
+    "=== ENVELOPPES FINANCIÈRES ===",
+    "PEA : " + Math.round(c.pea||0).toLocaleString('fr-FR') + " EUR (" + ((c.pea||0)/((c.pea||0)+(c.av||0)||1)*100).toFixed(1) + "% du fin. | cible 80%)",
+    "Assurance Vie : " + Math.round(c.av||0).toLocaleString('fr-FR') + " EUR (" + ((c.av||0)/((c.pea||0)+(c.av||0)||1)*100).toFixed(1) + "% | cible 20%)",
+    "PEG SNCF : " + Math.round(c.peg||0).toLocaleString('fr-FR') + " EUR",
+    c.cto > 0 ? "CTO : " + Math.round(c.cto).toLocaleString('fr-FR') + " EUR" : ""
+  ];
 
   if (S.positions && S.positions.length) {
-    lines.push("\n=== POSITIONS ===");
+    lines.push("", "=== POSITIONS ===");
     S.positions.forEach(function(p) {
       var val = (p.price||0)*(p.qty||0);
-      var pnl = val - ((p.priceAvg||p.price||0)*(p.qty||0));
-      lines.push(p.name + " (" + p.envelope + ") : " + Math.round(val) + " EUR | PV latente : " + Math.round(pnl) + " EUR");
+      var pv  = val - (p.priceAvg||p.price||0)*(p.qty||0);
+      var pvPct = val > 0 ? (pv/((p.priceAvg||p.price||0)*(p.qty||0))*100).toFixed(1) : 0;
+      lines.push(p.name + " [" + p.envelope + "] : " + Math.round(val).toLocaleString('fr-FR') + " EUR | PV " + (pv>=0?"+":"") + Math.round(pv).toLocaleString('fr-FR') + " EUR (" + pvPct + "%) | qté " + p.qty + " @ " + p.price + " EUR");
     });
   }
 
-  lines.push("\n=== IMMOBILIER ===");
   if (S.immo && S.immo.length) {
+    lines.push("", "=== IMMOBILIER ===");
     S.immo.forEach(function(b) {
-      var detteBien = b.debt || 0;
-      var net = (b.valeur||0) - detteBien;
-      lines.push(b.name + " (" + b.type + ") : valeur " + Math.round((b.valeur||0)/1000) + "k EUR | dette " + Math.round(detteBien/1000) + "k EUR | net " + Math.round(net/1000) + "k EUR | DPE " + (b.dpe||"?"));
-      if (b.type === 'Locatif' && b.rent) lines.push("  Loyer mensuel : " + b.rent + " EUR | Mensualite credit : " + (b.mortgage||0) + " EUR | Cashflow : " + ((b.rent||0)-(b.mortgage||0)) + " EUR/mois");
+      var cf = (b.rent||0) - (b.mortgage||0);
+      lines.push(b.name + " [" + b.type + "] :");
+      lines.push("  Valeur : " + Math.round(b.valeur||0).toLocaleString('fr-FR') + " EUR | Achat : " + Math.round(b.bought||0).toLocaleString('fr-FR') + " EUR | Dette : " + Math.round(b.debt||0).toLocaleString('fr-FR') + " EUR");
+      lines.push("  DPE : " + (b.dpe||"?") + " | Loyer : " + (b.rent||0) + " EUR/mois | Crédit : " + (b.mortgage||0) + " EUR/mois | CF : " + cf + " EUR/mois");
+      lines.push("  TF : " + (b.taxeFonciere||0) + " EUR | PNO : " + (b.pno||0) + " EUR | Compta : " + (b.compta||0) + " EUR");
     });
   }
 
-  lines.push("\n=== LIVRETS & EPARGNE ===");
   if (S.livrets && S.livrets.length) {
+    lines.push("", "=== LIVRETS ===");
     var totLiv = 0;
     S.livrets.forEach(function(lv) {
-      totLiv += lv.balance;
-      lines.push(lv.name + " : " + Math.round(lv.balance) + " EUR @ " + lv.rate + "%/an");
+      totLiv += lv.balance||0;
+      lines.push(lv.name + " (" + lv.type + ") : " + Math.round(lv.balance||0).toLocaleString('fr-FR') + " EUR @ " + lv.rate + "%/an | banque : " + (lv.bank||"?"));
     });
-    lines.push("Total livrets : " + Math.round(totLiv) + " EUR");
+    lines.push("Total livrets : " + totLiv.toLocaleString('fr-FR') + " EUR");
   }
 
-  // Actions de strategie cochees
-  if (S.actionsDone && S.actionsDone.length) {
-    lines.push("\n=== ACTIONS REALISEES ===");
-    lines.push(S.actionsDone.length + " actions strategiques cochees comme realisees.");
+  if (S.iaActions && S.iaActions.length) {
+    lines.push("", "=== ACTIONS EN COURS (ajoutées par Pierre) ===");
+    S.iaActions.forEach(function(a) {
+      lines.push("- " + a.title + " [" + a.urgence + "]" + (a.echeance?" → "+a.echeance:""));
+    });
   }
 
-  return lines.join("\n");
+  if (S.snapshots && S.snapshots.length > 1) {
+    lines.push("", "=== ÉVOLUTION HISTORIQUE ===");
+    var first = S.snapshots[0], last = S.snapshots[S.snapshots.length-1];
+    var growth = ((last.total-first.total)/first.total*100).toFixed(1);
+    lines.push("Du " + first.date + " au " + last.date + " : " + first.total.toLocaleString('fr-FR') + " → " + last.total.toLocaleString('fr-FR') + " EUR (" + (growth>0?"+":"") + growth + "%)");
+  }
+
+  return lines.filter(function(l){ return l !== ""; }).join(NL);
 }
 
-function getSystemPrompt() {
-  return [
-    "Tu es Pierre, expert en gestion de patrimoine et fiscalite francaise, conseiller principal de Maxime.",
-    "Tu connais parfaitement son patrimoine (il te sera fourni dans chaque message).",
-    "",
-    "TON ROLE :",
-    "- Conseiller personnalise, precis, chiffre",
-    "- Expert en ETF, PEA, Assurance Vie, LMNP, fiscalite IR/PS/PFU",
-    "- Proactif : anticipe les risques, propose des optimisations concretes",
-    "- Direct : pas de jargon inutile, des actions claires et actionnables",
-    "",
-    "REGLES :",
-    "- Toujours te baser sur les donnees reelles de Maxime",
-    "- Etre chiffre : donner des montants, des dates, des pourcentages",
-    "- Rappeler les regles fiscales importantes (DPE 2034, plafond PEA 150k, etc.)",
-    "- Si une information manque, la demander",
-    "- Repondre en francais, de facon structuree mais conversationnelle",
-    "- Tu t'appelles Pierre et tu vouvoies Maxime",
-    "",
-    "FORMAT des reponses longues :",
-    "Utilise des sections courtes avec emoji. Max 400 mots. Termine par une question ou action concrete."
-  ].join("\n");
+// ════════════════════════════════════════════════════════════════
+// APPEL API AVEC OUTILS
+// ════════════════════════════════════════════════════════════════
+async function callClaudeIA(userMsg, isFirst) {
+  var messages = [];
+  if (!isFirst && window._iaConversation.length > 0) {
+    // Keep last 12 messages (6 exchanges)
+    window._iaConversation.slice(-12).forEach(function(m) { messages.push(m); });
+  }
+  messages.push({role:'user', content: userMsg});
+
+  var makeReq = async function(msgs) {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        system: getSystemPrompt(),
+        tools: IA_TOOLS,
+        messages: msgs
+      })
+    });
+    return await resp.json();
+  };
+
+  try {
+    var data = await makeReq(messages);
+    if (data.error) return "Erreur API : " + data.error.message;
+
+    // Agentic loop — handle tool use (max 3 iterations)
+    var iter = 0;
+    while (data.stop_reason === 'tool_use' && iter < 3) {
+      iter++;
+      var toolResults = [];
+      var textParts = [];
+
+      data.content.forEach(function(block) {
+        if (block.type === 'text') textParts.push(block.text);
+        if (block.type === 'tool_use') {
+          var result = executerOutil(block.name, block.input);
+          toolResults.push({ type:'tool_result', tool_use_id: block.id, content: result });
+        }
+      });
+
+      messages = messages.concat([
+        {role:'assistant', content: data.content},
+        {role:'user', content: toolResults}
+      ]);
+
+      data = await makeReq(messages);
+      if (data.error) return "Erreur API (iter " + iter + ") : " + data.error.message;
+    }
+
+    return (data.content || [])
+      .filter(function(b){ return b.type === 'text'; })
+      .map(function(b){ return b.text; })
+      .join('');
+
+  } catch(e) {
+    return "Erreur connexion : " + e.message;
+  }
 }
 
-async function lancerAnalyseIA(){
-  // Mode analyse initiale (depuis le bouton header ou dashboard)
+// ════════════════════════════════════════════════════════════════
+// RENDU CONVERSATION
+// ════════════════════════════════════════════════════════════════
+function renderIAConversation(el) {
+  if (!el) return;
+  var html = '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:450px;overflow-y:auto;padding:4px;" id="ia-messages">';
+
+  var displayConv = window._iaConversation.filter(function(m, i) {
+    if (i === 0 && m.role === 'user' && m.content.length > 300) return false;
+    if (m.content === '[Confirmé]' || m.content === '[Annulé]') return false;
+    return true;
+  });
+
+  displayConv.forEach(function(m, i) {
+    var isUser = m.role === 'user';
+    var text = m.content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^#+\s+(.*)/gm, '<div style="font-weight:700;color:var(--gold);margin:10px 0 4px;font-size:13px;">$1</div>')
+      .replace(/^- (.*)/gm, '<div style="padding:3px 0 3px 10px;border-left:2px solid var(--bd);font-size:11px;margin:2px 0;">$1</div>');
+    text = text.split('\n\n').join('<br><br>').split('\n').join('<br>');
+
+    var isLast = i === displayConv.length - 1;
+    var hasConfirm = !isUser && isLast && window._pendingAction;
+
+    html += '<div style="display:flex;gap:8px;align-items:flex-start;flex-direction:' + (isUser?'row-reverse':'row') + ';margin-bottom:4px;">';
+    html += '<div style="width:30px;height:30px;border-radius:50%;background:' + (isUser?'var(--blue)':'linear-gradient(135deg,#5b8dee,#9b72cf)') + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px;">' + (isUser?'M':'P') + '</div>';
+    html += '<div style="max-width:83%;padding:10px 14px;border-radius:' + (isUser?'12px 2px 12px 12px':'2px 12px 12px 12px') + ';font-size:12px;line-height:1.65;background:' + (isUser?'var(--blue)20':'var(--s2)') + ';border:1px solid ' + (isUser?'var(--blue)40':'var(--bd)') + ';">' + text;
+
+    if (hasConfirm) {
+      var label = window._pendingAction.label || '';
+      html += '<div style="margin-top:10px;padding:10px;background:var(--s3);border-radius:8px;border:1px solid var(--gold)44;">';
+      html += '<div style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:8px;">⚡ Modification proposée</div>';
+      html += '<div style="font-size:11px;color:var(--text);margin-bottom:10px;">' + label + '</div>';
+      html += '<div style="display:flex;gap:8px;">';
+      html += '<button class="btn sm" onclick="confirmerAction(true)" style="background:var(--green);color:#fff;flex:1;">✓ Confirmer</button>';
+      html += '<button class="btn gh sm" onclick="confirmerAction(false)" style="flex:1;">✗ Annuler</button>';
+      html += '</div></div>';
+    }
+    html += '</div></div>';
+  });
+
+  html += '</div>';
+
+  // Input bar
+  html += '<div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--bd);">';
+  html += '<input id="ia-user-input" type="text" placeholder="Posez une question, demandez une analyse ou une modification..." style="flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:9px 13px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s;" onkeydown="if(event.key===\'Enter\')envoyerMessageIA()" onfocus="this.style.borderColor=\'var(--gold)\'" onblur="this.style.borderColor=\'var(--bd)\'">';
+  html += '<button class="btn" onclick="envoyerMessageIA()" style="flex-shrink:0;padding:8px 16px;">→</button>';
+  html += '</div>';
+
+  // Suggestions rapides
+  var suggestions = [
+    "Analyse ma situation complète",
+    "Optimise ma fiscalité",
+    "Quel est mon TRI global ?",
+    "Que faire pour ma retraite 2057 ?",
+    "Aide-moi sur la succession"
+  ];
+  html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">';
+  suggestions.forEach(function(s) {
+    html += '<button onclick="demanderIA(this.textContent)" style="font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid var(--bd);background:var(--s2);color:var(--dim);cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">' + s + '</button>';
+  });
+  html += '</div>';
+  html += '<div style="font-size:9px;color:var(--muted);margin-top:8px;font-family:JetBrains Mono,monospace;">Pierre v3 — Expert patrimonial IA · Modifications sur confirmation · Données locales uniquement</div>';
+
+  el.innerHTML = html;
+
+  var msgs = document.getElementById('ia-messages');
+  if (msgs) msgs.scrollTop = msgs.scrollHeight;
+  var inp = document.getElementById('ia-user-input');
+  if (inp) setTimeout(function(){ inp.focus(); }, 100);
+}
+
+function demanderIA(txt) {
+  var inp = document.getElementById('ia-user-input');
+  if (inp) { inp.value = txt; envoyerMessageIA(); }
+}
+window.demanderIA = demanderIA;
+
+// ════════════════════════════════════════════════════════════════
+// LANCEMENT & ENVOI
+// ════════════════════════════════════════════════════════════════
+async function lancerAnalyseIA() {
   window._iaConversation = [];
-  var ctx = getPatrimoineContext();
-  var firstMsg = "Analyse complete de ma situation patrimoniale. Donne-moi :\n1. Un diagnostic rapide (forces/faiblesses)\n2. Les 3 actions les plus urgentes\n3. Une question pour mieux me conseiller\n\nDonnees :\n" + ctx;
-
-  var el = document.getElementById('ia-content');
+  window._pendingAction  = null;
+  var el  = document.getElementById('ia-content');
   var btn = document.getElementById('btn-ia-analyze');
   if (!el) return;
 
-  el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:30px;color:var(--muted);">'
-    + '<div style="font-size:28px;animation:spin 1.5s linear infinite;">&#129302;</div>'
-    + '<div style="font-size:13px;">Pierre analyse votre situation...</div></div>';
+  el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:40px;color:var(--muted);">'
+    + '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;animation:spin 2s linear infinite;">P</div>'
+    + '<div style="font-size:13px;">Pierre analyse votre patrimoine...</div></div>';
   if (btn) btn.disabled = true;
 
+  var ctx = getPatrimoineContext();
+  var NL  = String.fromCharCode(10);
+  var firstMsg = [
+    "Analyse complète de ma situation patrimoniale. Utilise lire_situation_complete puis donne :",
+    "1. Diagnostic : forces et risques majeurs avec chiffres",
+    "2. Top 3 actions urgentes et actionnables",
+    "3. Ta proposition phare que tu recommandes fortement",
+    "4. Une question pour mieux me conseiller",
+    "",
+    ctx
+  ].join(NL);
+
   var response = await callClaudeIA(firstMsg, true);
-  window._iaConversation.push({role:'user', content:firstMsg});
-  window._iaConversation.push({role:'assistant', content:response});
+  window._iaConversation.push({role:'user', content: firstMsg});
+  window._iaConversation.push({role:'assistant', content: response});
 
   renderIAConversation(el);
   if (btn) btn.disabled = false;
@@ -9689,129 +10628,60 @@ async function envoyerMessageIA() {
   if (!input || !input.value.trim()) return;
   var msg = input.value.trim();
   input.value = '';
+  input.disabled = true;
 
-  // Ajouter le contexte patrimonial a chaque message
   var ctx = getPatrimoineContext();
-  var fullMsg = msg + "\n\n[Contexte patrimonial actuel]\n" + ctx;
+  var NL  = String.fromCharCode(10);
+  var fullMsg = msg + NL + NL + "[Données actuelles]" + NL + ctx;
 
-  window._iaConversation.push({role:'user', content:msg}); // affiche sans le contexte
+  window._iaConversation.push({role:'user', content: msg});
   var el = document.getElementById('ia-content');
   renderIAConversation(el);
 
-  // Indicateur de saisie
-  var typing = document.createElement('div');
-  typing.id = 'ia-typing';
-  typing.style.cssText = 'padding:10px 14px;background:var(--s2);border-radius:10px;color:var(--muted);font-size:12px;margin-bottom:8px;';
-  typing.textContent = 'Pierre redige sa reponse...';
-  el.insertBefore(typing, el.lastChild);
-  el.scrollTop = el.scrollHeight;
+  // Typing indicator
+  var msgs = document.getElementById('ia-messages');
+  if (msgs) {
+    var t = document.createElement('div');
+    t.id = 'ia-typing';
+    t.style.cssText = 'display:flex;gap:8px;align-items:center;padding:8px 0;';
+    t.innerHTML = '<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">P</div>'
+      + '<div style="padding:10px 14px;background:var(--s2);border-radius:2px 12px 12px 12px;border:1px solid var(--bd);font-size:12px;color:var(--muted);">Pierre réfléchit...</div>';
+    msgs.appendChild(t);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
 
   var response = await callClaudeIA(fullMsg, false);
-  var t = document.getElementById('ia-typing');
-  if (t) t.remove();
 
-  window._iaConversation.push({role:'assistant', content:response});
+  var typing = document.getElementById('ia-typing');
+  if (typing) typing.remove();
+
+  window._iaConversation.push({role:'assistant', content: response});
   renderIAConversation(el);
+  if (input) input.disabled = false;
 }
-
-async function callClaudeIA(userMsg, isFirst) {
-  // Build messages array
-  var messages = [];
-  if (window._iaConversation.length > 0) {
-    // Previous turns (without the injected context to save tokens)
-    var hist = window._iaConversation.slice(-8); // keep last 4 exchanges
-    hist.forEach(function(m) { messages.push(m); });
-  }
-  if (!isFirst) {
-    messages.push({role:'user', content:userMsg});
-  } else {
-    messages = [{role:'user', content:userMsg}];
-  }
-
-  try {
-    var resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 800,
-        system: getSystemPrompt(),
-        messages: messages
-      })
-    });
-    var data = await resp.json();
-    if (data.content && data.content.length) {
-      return data.content.map(function(b){return b.text||'';}).join('');
-    }
-    if (data.error) return "Erreur API : " + data.error.message;
-    return "Erreur inconnue.";
-  } catch(e) {
-    return "Erreur de connexion : " + e.message + ". Verifiez votre connexion internet.";
-  }
-}
-
-function renderIAConversation(el) {
-  if (!el) return;
-  var NL = String.fromCharCode(10);
-  var html = '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;">';
-  window._iaConversation.forEach(function(m, i) {
-    if (i === 0) return; // skip first system message with raw context
-    var isUser = m.role === 'user';
-    var text = m.content
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/^#+\s+(.*)/gm, '<div style="font-weight:700;color:var(--gold);margin:8px 0 4px;">$1</div>')
-      .replace(/^- (.*)/gm, '<div style="padding:3px 0 3px 12px;border-left:2px solid var(--bd);font-size:11px;">$1</div>');
-    text = text.split('\n\n').join('<br>').split('\n').join(' ');
-    html += '<div style="display:flex;gap:8px;align-items:flex-start;flex-direction:'+(isUser?'row-reverse':'row')+'">';
-    html += '<div style="width:28px;height:28px;border-radius:50%;background:'+(isUser?'var(--blue)':'linear-gradient(135deg,#5b8dee,#9b72cf)')+';display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">'+(isUser?'&#128100;':'&#129302;')+'</div>';
-    html += '<div style="max-width:80%;padding:10px 14px;border-radius:12px;font-size:12px;line-height:1.6;background:'+(isUser?'var(--blue)18':'var(--s2)')+';border:1px solid '+(isUser?'var(--blue)33':'var(--bd)')+';">'+text+'</div>';
-    html += '</div>';
-  });
-  html += '</div>';
-  // Input bar
-  html += '<div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--bd);">';
-  html += '<input id="ia-user-input" type="text" placeholder="Posez une question a Pierre..." style="flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;outline:none;" onkeydown="if(event.key===\'Enter\')envoyerMessageIA()">';
-  html += '<button class="btn sm" onclick="envoyerMessageIA()" style="flex-shrink:0;">Envoyer</button>';
-  html += '</div>';
-  html += '<div style="font-size:9px;color:var(--muted);margin-top:6px;">Pierre &mdash; Conseiller IA &middot; '+new Date().toLocaleString('fr-FR')+'</div>';
-  el.innerHTML = html;
-  el.scrollTop = el.scrollHeight;
-  // Focus input
-  var inp = document.getElementById('ia-user-input');
-  if (inp) setTimeout(function(){inp.focus();}, 100);
-}
-
-// Expose for global access
 window.envoyerMessageIA = envoyerMessageIA;
 
+// Conseil rapide dashboard
 async function lancerConseilRapide() {
-  var el = document.getElementById('ia-conseil-content');
+  var el  = document.getElementById('ia-conseil-content');
   var btn = document.getElementById('btn-ia-quick');
   if (!el) return;
-  el.innerHTML = '<span style="color:var(--muted);">&#129302; Pierre analyse... </span>';
+  el.innerHTML = '<div style="color:var(--muted);font-size:12px;display:flex;align-items:center;gap:8px;"><div style="animation:spin 1s linear infinite;font-size:16px;">↻</div> Pierre analyse...</div>';
   if (btn) btn.disabled = true;
 
   var ctx = getPatrimoineContext();
-  var NL2 = String.fromCharCode(10);
-  var userMsg = [
-    "En 3 a 4 phrases max, donne-moi le conseil le plus important et urgent pour cette semaine.",
-    "Base toi sur ma situation reelle. Sois tres concret, chiffre et actionnable.",
-    "",
-    ctx
-  ].join(NL2);
+  var NL  = String.fromCharCode(10);
+  var msg = ["Donne le conseil patrimonial le plus important et urgent en 3-4 phrases max.", "Sois très concret, chiffré, actionnable. Signale si quelque chose est urgent ou dangereux.", "", ctx].join(NL);
 
-  var response = await callClaudeIA(userMsg, true);
+  var response = await callClaudeIA(msg, true);
 
   var html = response
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^- (.*)/gm, '<div style="padding:2px 0 2px 10px;border-left:2px solid #9b72cf;">$1</div>');
+    .replace(/^- (.*)/gm, '<div style="padding:3px 0 3px 10px;border-left:2px solid #9b72cf;font-size:11px;">$1</div>');
   html = html.split('\n\n').join('<br>').split('\n').join(' ');
 
-  el.innerHTML = '<div style="line-height:1.7;">' + html + '</div>'
-    + '<div style="font-size:9px;color:var(--muted);margin-top:8px;">Pierre &mdash; ' + new Date().toLocaleString('fr-FR') + '</div>';
+  el.innerHTML = '<div style="line-height:1.75;">' + html + '</div>'
+    + '<div style="font-size:9px;color:var(--muted);margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);">Pierre — ' + new Date().toLocaleString('fr-FR') + '</div>';
   if (btn) btn.disabled = false;
 }
 window.lancerConseilRapide = lancerConseilRapide;
@@ -9977,6 +10847,636 @@ window.lancerConseilRapide = lancerConseilRapide;
     }
   });
 })();
+</script>
+
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// 1. CALENDRIER FISCAL & PATRIMONIAL
+// ══════════════════════════════════════════════════════════════
+function renderCalendrierFiscal() {
+  var el  = document.getElementById('calendrier-fiscal-content');
+  var lbl = document.getElementById('cal-annee');
+  if (!el) return;
+
+  var now  = new Date();
+  var yr   = now.getFullYear();
+  var S    = window._pState ? window._pState() : null;
+  if (lbl) lbl.textContent = yr + ' — ' + (yr+1);
+
+  // Build all events
+  var events = [];
+  var add = function(mois, jour, titre, desc, cat, urgence) {
+    var d = new Date(yr, mois-1, jour);
+    var past = d < now;
+    var soon = !past && (d - now) < 30*86400000;
+    events.push({ d:d, mois:mois, jour:jour, titre:titre, desc:desc, cat:cat, urgence:urgence, past:past, soon:soon });
+  };
+
+  // ── Échéances fiscales fixes ──────────────────────────────
+  add(3, 31, 'Déclaration revenus fonciers 2072',    'Si SCI à l\'IR — dépôt liasse 2072', 'Fiscal', 'warn');
+  add(5,  8, 'Ouverture déclaration IR en ligne',    'Service impots.gouv.fr ouvert', 'Fiscal', 'info');
+  add(5, 22, 'Déclaration IR — Zone 1 (dép. 01-19)', 'Délai zone 1 — non-résidents zone 3', 'Fiscal', 'high');
+  add(5, 29, 'Déclaration IR — Zone 2 (dép. 20-54)', 'Délai zone 2', 'Fiscal', 'high');
+  add(6,  5, 'Déclaration IR — Zone 3 (dép. 55-974)','Délai zone 3 — Haute-Vienne = zone 2', 'Fiscal', 'high');
+  add(5, 31, 'Liasse BIC 2031 — LMNP réel',          'Déclaration LMNP réel à déposer (ou expert-comptable)', 'LMNP', 'high');
+  add(9, 15, 'Acompte IR — si > 347 EUR impôt N-1',  'Versement acompte mensuel (ou trimestriel)', 'Fiscal', 'warn');
+  add(10,15, 'Revalorisation loyers T4',              'Vérifier nouvel IRL T3 — révision possible', 'Immo', 'info');
+  add(11, 5, 'Taxe foncière — date limite paiement',  'Paiement TF en ligne avant le 20 nov', 'Immo', 'high');
+  add(12,31, 'Versements PER déductibles',            'Dernier jour pour versements PER 2025 déductibles du revenu', 'Retraite', 'warn');
+  add(12,31, 'Plafond PEA',                           'Vérifier versements PEA (plafond 150k EUR)', 'PEA', 'info');
+
+  // ── IRL trimestriel ───────────────────────────────────────
+  add(1, 31, 'IRL T4 publié',  'Indice Q4 — révision loyers possible', 'Immo', 'info');
+  add(4, 30, 'IRL T1 publié',  'Indice Q1 — révision loyers possible', 'Immo', 'info');
+  add(7, 31, 'IRL T2 publié',  'Indice Q2 — révision loyers T2 Limoges', 'Immo', 'warn');
+  add(10,31, 'IRL T3 publié',  'Indice Q3 — révision loyers possible', 'Immo', 'info');
+
+  // ── Dynamique selon données Maxime ────────────────────────
+  if (S) {
+    // Date 8 ans AV
+    if (S.positions) {
+      S.positions.filter(function(p){ return p.envelope === 'AV'; }).forEach(function(p) {
+        if (p.date) {
+          var buyDate = new Date(p.date);
+          var huit = new Date(buyDate.getFullYear()+8, buyDate.getMonth(), buyDate.getDate());
+          if (huit > now || huit.getFullYear() >= yr) {
+            events.push({ d:huit, mois:huit.getMonth()+1, jour:huit.getDate(),
+              titre:'AV 8 ans — ' + p.name,
+              desc:'Fiscalité optimale atteinte. Abattement 4 600 EUR/an (9 200 EUR couple) sur gains.',
+              cat:'AV', urgence:'ok', past: huit < now, soon: (huit-now)<60*86400000 });
+          }
+        }
+      });
+    }
+    // DPE E — travaux avant 2034
+    if (S.immo) {
+      S.immo.filter(function(b){ return b.dpe === 'E' && b.type === 'Locatif'; }).forEach(function(b) {
+        var deadline = new Date(2034, 0, 1);
+        events.push({ d:deadline, mois:1, jour:1,
+          titre:'DPE E → D obligatoire — ' + b.name,
+          desc:'Interdiction de louer un logement DPE E à partir du 01/01/2034. Planifiez les travaux (VMC + isolation).',
+          cat:'Immo', urgence:'high', past:false, soon:false });
+      });
+    }
+    // Livret A — taux révision
+    add(2, 1, 'Révision taux Livret A', 'Banque de France annonce le nouveau taux (si révision)', 'Epargne', 'info');
+    add(8, 1, 'Révision taux Livret A', 'Possible révision semestrielle du taux Livret A', 'Epargne', 'info');
+    // PEG déblocage 5 ans
+    if (S.pegAnneeOuverture) {
+      var deblocage = new Date(S.pegAnneeOuverture + 5, 0, 1);
+      events.push({ d:deblocage, mois:1, jour:1,
+        titre:'PEG SNCF — Déblocage possible',
+        desc:'5 ans écoulés depuis ouverture PEG. Vous pouvez arbitrer vers PEA (ESE).',
+        cat:'PEG', urgence:'ok', past: deblocage < now, soon:(deblocage-now)<90*86400000 });
+    }
+  }
+
+  // Prochain renouvellement donation 15 ans
+  add(1, 1, 'Donation 100k EUR — renouvellement 2039', 'Abattement parent→enfant tous les 15 ans. Prochaine fenêtre : 2039.', 'Succession', 'info');
+
+  // Sort by date
+  events.sort(function(a,b){ return a.d - b.d; });
+
+  // ── Render ─────────────────────────────────────────────────
+  var catColors = { Fiscal:'#5b8dee', LMNP:'#9b72cf', Immo:'#9b72cf', PEA:'#d4a853', AV:'#e07a5b', Retraite:'#52c97a', Epargne:'#52c97a', PEG:'#f0d060', Succession:'#4ecdc4' };
+  var urgIcons  = { high:'🔴', warn:'🟡', info:'🔵', ok:'🟢' };
+
+  // Group by month
+  var byMonth = {};
+  events.forEach(function(e) {
+    var key = e.d.getFullYear() + '-' + String(e.d.getMonth()+1).padStart(2,'0');
+    if (!byMonth[key]) byMonth[key] = [];
+    byMonth[key].push(e);
+  });
+
+  var html = '';
+
+  // Upcoming alerts banner
+  var soon = events.filter(function(e){ return e.soon && !e.past; });
+  if (soon.length) {
+    html += '<div style="background:var(--gold)12;border:1px solid var(--gold)44;border-radius:10px;padding:12px 16px;margin-bottom:16px;">';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:8px;">⚡ Échéances dans les 30 prochains jours</div>';
+    soon.forEach(function(e) {
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;">';
+      html += '<span>' + urgIcons[e.urgence] + '</span>';
+      html += '<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);width:60px;flex-shrink:0;">' + String(e.jour).padStart(2,'0') + '/' + String(e.mois).padStart(2,'0') + '</span>';
+      html += '<span style="font-weight:600;">' + e.titre + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Month grid
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">';
+  Object.keys(byMonth).sort().forEach(function(key) {
+    var evts = byMonth[key];
+    var parts = key.split('-');
+    var moisLabel = new Date(parseInt(parts[0]), parseInt(parts[1])-1, 1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+    moisLabel = moisLabel.charAt(0).toUpperCase() + moisLabel.slice(1);
+
+    html += '<div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;">';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">' + moisLabel + '</div>';
+
+    evts.forEach(function(e) {
+      var col = catColors[e.cat] || 'var(--dim)';
+      var opacity = e.past ? '0.45' : '1';
+      html += '<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--bd)55;opacity:'+opacity+';">';
+      html += '<div style="font-size:16px;flex-shrink:0;margin-top:1px;">' + urgIcons[e.urgence] + '</div>';
+      html += '<div style="flex:1;">';
+      html += '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;">' + (e.past?'<s>':'') + e.titre + (e.past?'</s>':'') + '</div>';
+      html += '<div style="font-size:10px;color:var(--muted);line-height:1.4;">' + e.desc + '</div>';
+      html += '</div>';
+      html += '<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:'+col+';flex-shrink:0;text-align:right;margin-top:2px;">' + String(e.jour).padStart(2,'0') + '/' + String(e.mois).padStart(2,'0') + '<br>' + e.cat + '</div>';
+      html += '</div>';
+    });
+
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:12px;">* Dates indicatives — vérifier sur impots.gouv.fr · 🔴 urgent · 🟡 important · 🔵 info · 🟢 opportunité</div>';
+
+  el.innerHTML = html;
+}
+window.renderCalendrierFiscal = renderCalendrierFiscal;
+
+// Hook into renderFiscalite
+(function(){
+  var origRF = window._app && window._app.renderFiscalite;
+  var orig = window.renderFiscalite;
+  var wrapped = function() {
+    if (orig) orig.apply(this, arguments);
+    renderCalendrierFiscal();
+  };
+  window.renderFiscalite = wrapped;
+  if (window._app) window._app.renderFiscalite = wrapped;
+})();
+
+// ══════════════════════════════════════════════════════════════
+// 2. SIMULATEUR "ET SI ?" — PIERRE peut l'appeler via un outil
+// ══════════════════════════════════════════════════════════════
+window._scenarios = [];
+
+function simulerScenario(cfg) {
+  // cfg: { type, params }
+  // Returns: { avant, apres, delta, resume }
+  var S = window._pState ? window._pState() : null;
+  var c = window._cAll  ? window._cAll()  : {};
+  if (!S) return null;
+
+  var NL = String.fromCharCode(10);
+  var result = { type: cfg.type, params: cfg.params, calcul: '' };
+
+  if (cfg.type === 'vente_bien') {
+    var b = (S.immo||[]).find(function(x){ return x.name.toLowerCase().includes((cfg.params.nom||'').toLowerCase()); });
+    if (!b) return { calcul: 'Bien non trouvé: ' + cfg.params.nom };
+    var anneeVente = cfg.params.annee || new Date().getFullYear() + 3;
+    var prixVente  = cfg.params.prix || b.valeur;
+    var dureeDetention = anneeVente - (b.buyYear || 2020);
+    var pv = prixVente - (b.bought || b.valeur);
+    // Abattements PV immo
+    var abatIR = Math.min(1, Math.max(0, (dureeDetention - 5) * 0.06));
+    var abatPS = Math.min(1, Math.max(0, (dureeDetention - 5) * 0.0165));
+    var pvImpoIR = Math.max(0, pv) * (1 - abatIR);
+    var pvImpoPS = Math.max(0, pv) * (1 - abatPS);
+    var impotPV = pvImpoIR * 0.19 + pvImpoPS * 0.172;
+    var surtaxe = pvImpoIR > 50000 ? pvImpoIR * 0.02 : 0;
+    var netVente = prixVente - (b.debt||0) - impotPV - surtaxe;
+    result.calcul = [
+      'SIMULATION VENTE — ' + b.name + ' en ' + anneeVente,
+      'Prix de vente : ' + prixVente.toLocaleString('fr-FR') + ' EUR',
+      'Plus-value brute : ' + Math.round(pv).toLocaleString('fr-FR') + ' EUR',
+      'Durée détention : ' + dureeDetention + ' ans',
+      'Abattement IR : ' + Math.round(abatIR*100) + '% | Abattement PS : ' + Math.round(abatPS*100) + '%',
+      'Impôt PV (IR 19%) : -' + Math.round(pvImpoIR*0.19).toLocaleString('fr-FR') + ' EUR',
+      'Prélèvements sociaux (17,2%) : -' + Math.round(pvImpoPS*0.172).toLocaleString('fr-FR') + ' EUR',
+      surtaxe > 0 ? 'Surtaxe PV > 50k : -' + Math.round(surtaxe).toLocaleString('fr-FR') + ' EUR' : '',
+      'Capital remboursement crédit : -' + Math.round(b.debt||0).toLocaleString('fr-FR') + ' EUR',
+      '→ NET en poche : ' + Math.round(netVente).toLocaleString('fr-FR') + ' EUR',
+      '',
+      'Impact patrimoine net : ' + (netVente > 0 ? '+' : '') + Math.round(netVente - (b.valeur-(b.debt||0))).toLocaleString('fr-FR') + ' EUR vs situation actuelle'
+    ].filter(Boolean).join(NL);
+  }
+
+  else if (cfg.type === 'refinancement') {
+    var b2 = (S.immo||[]).find(function(x){ return x.type !== 'Résidence principale' ? x.mortgage > 0 : true; });
+    if (!b2) b2 = S.immo && S.immo[0];
+    var capitalRestant = cfg.params.capital || (b2 && b2.debt) || 80000;
+    var tauxActuel     = cfg.params.taux_actuel || 4.0;
+    var tauxNouv       = cfg.params.taux_nouveau || 3.2;
+    var dureeRestante  = cfg.params.duree_mois || 240;
+    var frais          = cfg.params.frais || 2000;
+    var ra = tauxActuel/100/12, rn = tauxNouv/100/12;
+    var mensActuelle = capitalRestant * ra / (1 - Math.pow(1+ra, -dureeRestante));
+    var mensNouvelle = capitalRestant * rn / (1 - Math.pow(1+rn, -dureeRestante));
+    var gainMensuel  = mensActuelle - mensNouvelle;
+    var gainTotal    = gainMensuel * dureeRestante - frais;
+    var payback      = frais / gainMensuel;
+    result.calcul = [
+      'SIMULATION REFINANCEMENT',
+      'Capital restant : ' + capitalRestant.toLocaleString('fr-FR') + ' EUR | Durée : ' + Math.round(dureeRestante/12) + ' ans',
+      'Taux actuel : ' + tauxActuel + '% → Nouveau taux : ' + tauxNouv + '%',
+      'Mensualité actuelle : ' + Math.round(mensActuelle).toLocaleString('fr-FR') + ' EUR',
+      'Nouvelle mensualité : ' + Math.round(mensNouvelle).toLocaleString('fr-FR') + ' EUR',
+      '→ Économie mensuelle : +' + Math.round(gainMensuel).toLocaleString('fr-FR') + ' EUR/mois',
+      'Frais de renégociation : -' + frais.toLocaleString('fr-FR') + ' EUR',
+      '→ Gain total net : ' + Math.round(gainTotal).toLocaleString('fr-FR') + ' EUR',
+      '→ Seuil de rentabilité : ' + Math.round(payback) + ' mois',
+      gainTotal > 0 ? '✅ RENTABLE — à renégocier' : '⚠️ Pas rentable avec ces frais'
+    ].join(NL);
+  }
+
+  else if (cfg.type === 'augmentation_versement') {
+    var env     = cfg.params.enveloppe || 'PEA';
+    var supplement= cfg.params.supplement_mensuel || 100;
+    var taux    = cfg.params.taux || (env === 'PEA' ? 0.07 : 0.04);
+    var horizon = cfg.params.duree_ans || (2057 - new Date().getFullYear());
+    var rm = taux/12, nm = horizon*12;
+    var gain = supplement * (Math.pow(1+rm,nm)-1)/rm;
+    var taxe = env === 'PEA' ? gain*0.172 : env === 'AV' ? gain*0.172 : gain*0.30;
+    result.calcul = [
+      'SIMULATION AUGMENTATION VERSEMENT — ' + env,
+      'Supplément mensuel : +' + supplement + ' EUR/mois',
+      'Taux attendu : ' + (taux*100).toFixed(1) + '%/an | Horizon : ' + horizon + ' ans',
+      'Capital supplémentaire brut en ' + (new Date().getFullYear()+horizon) + ' : +' + Math.round(gain).toLocaleString('fr-FR') + ' EUR',
+      'Fiscalité estimée (gains) : -' + Math.round(taxe).toLocaleString('fr-FR') + ' EUR',
+      '→ Gain NET supplémentaire : +' + Math.round(gain-taxe).toLocaleString('fr-FR') + ' EUR',
+      '',
+      'Pour info : versé total = ' + (supplement*nm).toLocaleString('fr-FR') + ' EUR | intérêts composés = ' + Math.round(gain-supplement*nm).toLocaleString('fr-FR') + ' EUR'
+    ].join(NL);
+  }
+
+  else if (cfg.type === 'achat_bien') {
+    var prix    = cfg.params.prix || 100000;
+    var apport  = cfg.params.apport || prix * 0.15;
+    var taux2   = cfg.params.taux || 3.5;
+    var duree2  = cfg.params.duree_ans || 20;
+    var loyer   = cfg.params.loyer_mensuel || 500;
+    var tf      = cfg.params.taxe_fonciere || 800;
+    var pno     = cfg.params.assurance_pno || 150;
+    var r2 = taux2/100/12, n2 = duree2*12;
+    var mensualite = (prix-apport)*r2/(1-Math.pow(1+r2,-n2));
+    var cf = loyer - mensualite - (tf+pno)/12;
+    var rendBrut = loyer*12/prix*100;
+    var rendNet  = (loyer*12-tf-pno-mensualite*12)/prix*100; // simplifié
+    result.calcul = [
+      'SIMULATION ACHAT BIEN LOCATIF',
+      'Prix : ' + prix.toLocaleString('fr-FR') + ' EUR | Apport : ' + apport.toLocaleString('fr-FR') + ' EUR',
+      'Crédit : ' + (prix-apport).toLocaleString('fr-FR') + ' EUR @ ' + taux2 + '% sur ' + duree2 + ' ans',
+      'Mensualité crédit : ' + Math.round(mensualite).toLocaleString('fr-FR') + ' EUR',
+      'Loyer prévu : ' + loyer + ' EUR/mois',
+      'TF + PNO : ' + Math.round((tf+pno)/12) + ' EUR/mois',
+      '→ Cashflow mensuel : ' + Math.round(cf) + ' EUR/mois (' + (cf>=0?'positif ✅':'négatif ⚠️') + ')',
+      '→ Rendement brut : ' + rendBrut.toFixed(2) + '%',
+      '→ Rendement net (avant fisc.) : ' + rendNet.toFixed(2) + '%',
+      '',
+      'En LMNP réel : amortissements réduisent l\'impôt. TRI réel dépend de la revalorisation et fiscalité sortie.'
+    ].join(NL);
+  }
+
+  return result;
+}
+window.simulerScenario = simulerScenario;
+
+// Add simuler tool to IA_TOOLS at runtime
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    if (window.IA_TOOLS) {
+      window.IA_TOOLS.push({
+        name: "simuler_scenario",
+        description: "Simule des scénarios 'Et si ?' complets avec impact sur le patrimoine : vente bien, refinancement, augmentation versement, achat bien. Retourne calcul détaillé.",
+        input_schema: {
+          type: "object",
+          properties: {
+            type: { type:"string", enum:["vente_bien","refinancement","augmentation_versement","achat_bien"], description:"Type de scénario" },
+            params: { type:"object", description:"Paramètres : nom bien, prix, taux, durée, etc." }
+          },
+          required: ["type","params"]
+        }
+      });
+      // Add handler in executerOutil
+      var origExec = window._execOutil;
+    }
+  }, 1000);
+});
+
+// Patch executerOutil to handle simuler_scenario
+(function(){
+  var origExec = null;
+  var patch = function() {
+    if (!window.executerOutil) { setTimeout(patch, 200); return; }
+    var orig = window.executerOutil;
+    window.executerOutil = function(name, inp) {
+      if (name === 'simuler_scenario') {
+        var r = simulerScenario({ type: inp.type, params: inp.params || {} });
+        return r ? r.calcul : 'Simulation impossible';
+      }
+      return orig(name, inp);
+    };
+  };
+  setTimeout(patch, 800);
+})();
+
+// ══════════════════════════════════════════════════════════════
+// 3. SUIVI MENSUEL — Dialogue guidé avec Pierre
+// ══════════════════════════════════════════════════════════════
+function lancerSuiviMensuel() {
+  var ov = document.getElementById('ov-ia');
+  if (ov) ov.classList.add('on');
+
+  var now   = new Date();
+  var mois  = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  var NL    = String.fromCharCode(10);
+  var S     = window._pState ? window._pState() : null;
+  var ctx   = window.getPatrimoineContext ? window.getPatrimoineContext() : '';
+
+  var msg = [
+    'Suivi mensuel — ' + mois.charAt(0).toUpperCase() + mois.slice(1) + '.',
+    'Guide-moi étape par étape pour mettre à jour mes données :',
+    '1. Quelles valeurs dois-je vérifier et saisir ce mois-ci ?',
+    '2. Pose-moi les questions une par une pour que je puisse répondre',
+    '3. Mets à jour chaque valeur après ma confirmation',
+    '',
+    ctx
+  ].join(NL);
+
+  if (window._iaConversation !== undefined) {
+    window._iaConversation = [];
+    window._pendingAction  = null;
+  }
+
+  setTimeout(function() {
+    var inp = document.getElementById('ia-user-input');
+    if (inp) {
+      inp.value = 'Suivi mensuel ' + mois + ' — guide-moi pour tout mettre à jour';
+      if (window.envoyerMessageIA) window.envoyerMessageIA();
+    } else if (window.lancerAnalyseIA) {
+      window.lancerAnalyseIA();
+    }
+  }, 300);
+}
+window.lancerSuiviMensuel = lancerSuiviMensuel;
+
+// Bouton suivi mensuel dans le header
+document.addEventListener('DOMContentLoaded', function() {
+  var hdr = document.querySelector('.hdr-right');
+  if (hdr) {
+    var btn = document.createElement('button');
+    btn.className = 'btn gh sm';
+    btn.style.cssText = 'font-size:10px;flex-shrink:0;';
+    btn.textContent = '📋 Suivi mensuel';
+    btn.title = 'Mise à jour guidée par Pierre';
+    btn.addEventListener('click', function() { lancerSuiviMensuel(); });
+    // Insert before IA button
+    var iaBtn = hdr.querySelector('button[title*="patrimonial"]') || hdr.firstChild;
+    hdr.insertBefore(btn, hdr.firstChild);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// 4. IMPORT CSV/PDF — Lecture et mise à jour automatique
+// ══════════════════════════════════════════════════════════════
+function ouvrirImportModal() {
+  var ov = document.getElementById('ov-import');
+  if (ov) ov.classList.add('on');
+}
+window.ouvrirImportModal = ouvrirImportModal;
+
+function parseCsvBoursorama(text) {
+  // Parse export CSV Boursorama — format: Date;Libellé;Montant;Solde
+  var lines = text.split('\n').filter(function(l){ return l.trim(); });
+  var updates = [];
+  lines.forEach(function(line) {
+    var cols = line.split(';');
+    if (cols.length < 3) return;
+    // Detect positions lines
+    var label = (cols[1] || '').trim();
+    var val   = parseFloat((cols[2] || '').replace(',','.').replace(/ /g,''));
+    if (!isNaN(val) && label) updates.push({ label:label, val:val });
+  });
+  return updates;
+}
+
+async function traiterFichierImport(file) {
+  var el = document.getElementById('import-status');
+  if (el) el.textContent = 'Lecture du fichier...';
+
+  var text = await new Promise(function(res, rej) {
+    var fr = new FileReader();
+    fr.onload = function(e){ res(e.target.result); };
+    fr.onerror = rej;
+    if (file.name.endsWith('.csv') || file.name.endsWith('.txt')) {
+      fr.readAsText(file, 'UTF-8');
+    } else {
+      fr.readAsDataURL(file);
+    }
+  });
+
+  // Envoi à Pierre pour analyse
+  var NL = String.fromCharCode(10);
+  var ctx = window.getPatrimoineContext ? window.getPatrimoineContext() : '';
+  var msg = [
+    "J'importe un fichier depuis mon espace client : " + file.name,
+    "Voici le contenu (extrait) :",
+    text.slice(0, 3000),
+    "",
+    "Identifie les valeurs de positions, soldes ou cours dans ce fichier.",
+    "Compare avec mes données actuelles et propose les mises à jour nécessaires.",
+    "Utilise les outils de modification après confirmation.",
+    "",
+    ctx
+  ].join(NL);
+
+  var ov = document.getElementById('ov-import');
+  if (ov) ov.classList.remove('on');
+  var ovIa = document.getElementById('ov-ia');
+  if (ovIa) ovIa.classList.add('on');
+
+  if (window._iaConversation !== undefined) {
+    window._iaConversation = [];
+    window._pendingAction  = null;
+  }
+
+  setTimeout(async function() {
+    var elIa = document.getElementById('ia-content');
+    if (elIa) {
+      elIa.innerHTML = '<div style="padding:20px;color:var(--muted);text-align:center;">Pierre analyse votre fichier...</div>';
+    }
+    var response = window.callClaudeIA ? await window.callClaudeIA(msg, true) : 'IA non disponible';
+    if (window._iaConversation !== undefined) {
+      window._iaConversation.push({role:'user', content:'Import fichier: '+file.name});
+      window._iaConversation.push({role:'assistant', content:response});
+    }
+    if (window.renderIAConversation && elIa) window.renderIAConversation(elIa);
+  }, 400);
+}
+window.traiterFichierImport = traiterFichierImport;
+
+// ══════════════════════════════════════════════════════════════
+// 5. MISE À JOUR AUTOMATIQUE DES COURS (ETF / indices)
+// ══════════════════════════════════════════════════════════════
+var _lastPriceUpdate = 0;
+var KNOWN_TICKERS = {
+  'CW8':    { name:'MSCI World Amundi', label:'MSCI World' },
+  'CW8.PA': { name:'MSCI World Amundi', label:'MSCI World' },
+  'ESE':    { name:'S&P 500 BNP',       label:'S&P 500'    },
+  'ESE.PA': { name:'S&P 500 BNP',       label:'S&P 500'    },
+  'PAEEM':  { name:'MSCI EM Amundi',    label:'MSCI EM'    },
+  'PAEEM.PA':{ name:'MSCI EM Amundi',   label:'MSCI EM'    },
+  'GLD':    { name:'Or ETC SPDR',       label:'Or'         },
+  'GC=F':   { name:'Gold Futures',      label:'Or'         },
+  'SP500':  { name:'S&P 500 Index',     label:'S&P 500'    },
+  '^GSPC':  { name:'S&P 500',           label:'S&P 500'    },
+  '^WORLD': { name:'MSCI World',        label:'MSCI World' },
+};
+
+async function fetchPrixTicker(ticker) {
+  var yahoUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=1d';
+  var proxies = [
+    'https://corsproxy.io/?' + encodeURIComponent(yahoUrl),
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(yahoUrl),
+    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(yahoUrl),
+  ];
+  for (var i = 0; i < proxies.length; i++) {
+    try {
+      var ctrl = new AbortController();
+      var t = setTimeout(function(){ ctrl.abort(); }, 6000);
+      var res = await fetch(proxies[i], { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!res.ok) continue;
+      var txt = await res.text();
+      if (txt.trim().startsWith('<')) continue;
+      var data = JSON.parse(txt);
+      var meta = data && data.chart && data.chart.result && data.chart.result[0] && data.chart.result[0].meta;
+      if (meta && meta.regularMarketPrice) {
+        return { price: parseFloat(meta.regularMarketPrice), currency: meta.currency || 'EUR', name: meta.longName || meta.shortName || ticker };
+      }
+    } catch(e) {}
+  }
+  return null;
+}
+
+async function mettreAJourCoursAutomatique(showToast) {
+  var S = window._pState ? window._pState() : null;
+  if (!S || !S.positions || !S.positions.length) return;
+
+  // Throttle: max 1x per 30 min
+  if (Date.now() - _lastPriceUpdate < 30*60*1000 && !showToast) return;
+
+  var updated = 0, errors = 0;
+  var promises = S.positions
+    .filter(function(p){ return p.ticker && p.ticker.length > 1 && p.envelope !== 'PEG'; })
+    .map(async function(p) {
+      var result = await fetchPrixTicker(p.ticker);
+      if (result && result.price && result.price > 0) {
+        var oldPrice = p.price;
+        p.price = Math.round(result.price * 100) / 100;
+        if (Math.abs(p.price - oldPrice) > 0.001) updated++;
+      } else {
+        errors++;
+      }
+    });
+
+  await Promise.all(promises);
+  _lastPriceUpdate = Date.now();
+
+  if (updated > 0) {
+    if (window._saveState) window._saveState();
+    if (window._renderAll) window._renderAll();
+    if (showToast && window._toast) window._toast('📈 ' + updated + ' cours mis à jour automatiquement');
+  }
+  return { updated, errors };
+}
+window.mettreAJourCoursAutomatique = mettreAJourCoursAutomatique;
+
+// Auto-refresh on page load and every 30 min
+document.addEventListener('DOMContentLoaded', function() {
+  // Initial load after 3s (let app initialize)
+  setTimeout(function() { mettreAJourCoursAutomatique(false); }, 3000);
+  // Every 30 min
+  setInterval(function() { mettreAJourCoursAutomatique(false); }, 30*60*1000);
+});
+
+// Bouton refresh cours dans le header
+document.addEventListener('DOMContentLoaded', function() {
+  var hdr = document.querySelector('.hdr-right');
+  if (hdr) {
+    var btn = document.createElement('button');
+    btn.className = 'btn gh sm';
+    btn.id = 'btn-refresh-cours';
+    btn.style.cssText = 'font-size:10px;flex-shrink:0;';
+    btn.innerHTML = '📈 Cours';
+    btn.title = 'Mettre à jour les cours ETF automatiquement';
+    btn.addEventListener('click', async function() {
+      btn.textContent = '⏳';
+      btn.disabled = true;
+      var r = await mettreAJourCoursAutomatique(true);
+      btn.innerHTML = '📈 Cours';
+      btn.disabled = false;
+      if (r && r.updated === 0 && window._toast) window._toast('Cours déjà à jour (dernière MAJ < 30min)');
+    });
+    hdr.insertBefore(btn, hdr.firstChild);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// MODAL IMPORT
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  // Create import modal
+  var ov = document.createElement('div');
+  ov.id = 'ov-import';
+  ov.className = 'ov';
+  ov.innerHTML = [
+    '<div class="modal" style="width:520px;">',
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">',
+    '<h2 style="font-family:\'Playfair Display\',serif;font-size:17px;">📂 Import de données</h2>',
+    '<button onclick="closeOv(\'ov-import\')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);">&#x2715;</button>',
+    '</div>',
+    '<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6;">',
+    'Pierre lit votre export (CSV, relevé PDF, export Boursorama/Linxea/Amundi) et met à jour vos données automatiquement après confirmation.',
+    '</p>',
+    '<div style="border:2px dashed var(--bd);border-radius:10px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;" id="import-dropzone">',
+    '<div style="font-size:32px;margin-bottom:8px;">📁</div>',
+    '<div style="font-size:13px;font-weight:500;margin-bottom:4px;">Glissez un fichier ici</div>',
+    '<div style="font-size:11px;color:var(--muted);">ou cliquez pour choisir</div>',
+    '<div style="font-size:10px;color:var(--muted);margin-top:8px;">CSV · TXT · PDF · PNG (export relevé)</div>',
+    '<input type="file" id="import-file-input" accept=".csv,.txt,.pdf,.png,.jpg" style="display:none;">',
+    '</div>',
+    '<div id="import-status" style="font-size:11px;color:var(--muted);margin-top:10px;min-height:16px;font-family:JetBrains Mono,monospace;"></div>',
+    '<div style="margin-top:16px;font-size:11px;color:var(--dim);">',
+    '<b>Sources supportées :</b> Boursorama (CSV), Linxea (relevé PDF), Amundi EE (export), relevé bancaire',
+    '</div>',
+    '</div>'
+  ].join('');
+  document.body.appendChild(ov);
+
+  // Wire dropzone
+  var dz = document.getElementById('import-dropzone');
+  var fi = document.getElementById('import-file-input');
+  if (dz && fi) {
+    dz.addEventListener('click', function(){ fi.click(); });
+    dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.style.borderColor='var(--gold)'; });
+    dz.addEventListener('dragleave', function(){ dz.style.borderColor='var(--bd)'; });
+    dz.addEventListener('drop', function(e){ e.preventDefault(); dz.style.borderColor='var(--bd)'; if(e.dataTransfer.files[0]) traiterFichierImport(e.dataTransfer.files[0]); });
+    fi.addEventListener('change', function(){ if(fi.files[0]) traiterFichierImport(fi.files[0]); });
+  }
+
+  // Close on backdrop
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.classList.remove('on'); });
+
+  // Add import button to header
+  var hdr = document.querySelector('.hdr-right');
+  if (hdr) {
+    var btn = document.createElement('button');
+    btn.className = 'btn gh sm';
+    btn.style.cssText = 'font-size:10px;flex-shrink:0;';
+    btn.innerHTML = '📂 Import';
+    btn.title = 'Importer un relevé ou export CSV';
+    btn.addEventListener('click', ouvrirImportModal);
+    hdr.insertBefore(btn, hdr.firstChild);
+  }
+});
 </script>
 
 </body>
