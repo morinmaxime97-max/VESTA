@@ -655,6 +655,20 @@ body {
     <div class="card"><div class="chd">Performance par enveloppe</div><div id="perf-bars"></div></div>
   </div>
   <div class="card mb"><div class="chd">Positions <button class="btn sm" id="btn-add-pos">+ Ajouter</button></div><div id="top-pos"></div></div>
+
+  <!-- Pierre — Conseil IA du jour -->
+  <div class="card mb" id="card-ia-conseil" style="border-left:3px solid #9b72cf;">
+    <div class="chd" style="justify-content:space-between;">
+      <span>&#129302; Pierre — Conseil patrimonial</span>
+      <div style="display:flex;gap:6px;">
+        <button class="btn sm" id="btn-ia-quick" style="background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;font-size:11px;" onclick="lancerConseilRapide()">Actualiser</button>
+        <button class="btn gh sm" style="font-size:11px;" onclick="document.getElementById('ov-ia').classList.add('on');lancerAnalyseIA()">Chat complet</button>
+      </div>
+    </div>
+    <div id="ia-conseil-content" style="font-size:12px;color:var(--muted);line-height:1.6;min-height:60px;">
+      Cliquez "Actualiser" pour obtenir un conseil personnalise de Pierre.
+    </div>
+  </div>
 </div>
 
 <!-- ══════════ ENVELOPPES ══════════ -->
@@ -912,11 +926,27 @@ body {
       <div style="font-size:11px;font-weight:600;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Paramètres du foyer</div>
       <div class="card mb">
     <div class="chd">Paramètres de votre foyer fiscal</div>
-    <div class="fisc-input-grid">
-      <div class="fisc-ri">
-        <label>Revenu net imposable foyer (€/an)</label>
-        <input type="number" id="f-revenu" value="42000" step="1000">
+    <!-- Salaires séparés → calcul auto revenu foyer -->
+    <div style="background:var(--s2);border:1px solid var(--gold)33;border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+      <div style="font-size:10px;font-weight:700;color:var(--gold);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Salaires — calcul automatique du revenu net imposable</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:10px;">
+        <div class="fisc-ri">
+          <label>Salaire net Maxime (€/an)</label>
+          <input type="number" id="f-sal-maxime" value="30000" step="500" oninput="calcRevenuFoyer()">
+          <div style="font-size:9px;color:var(--muted);margin-top:3px;">Net imposable = net fiscal annuel</div>
+        </div>
+        <div class="fisc-ri">
+          <label>Salaire net conjoint(e) (€/an)</label>
+          <input type="number" id="f-sal-conj" value="0" step="500" oninput="calcRevenuFoyer()">
+        </div>
+        <div class="fisc-ri" style="background:var(--s1);border:1px solid var(--gold)55;">
+          <label style="color:var(--gold);">Revenu net foyer (calculé)</label>
+          <input type="number" id="f-revenu" value="42000" step="1000" oninput="renderFiscalite()" style="color:var(--gold);font-weight:700;">
+          <div style="font-size:9px;color:var(--muted);margin-top:3px;">Modifiable manuellement</div>
+        </div>
       </div>
+    </div>
+    <div class="fisc-input-grid">
       <div class="fisc-ri">
         <label>Parts fiscales (quotient familial)</label>
         <select id="f-parts">
@@ -5667,7 +5697,7 @@ if(addLmnpBtn) addLmnpBtn.addEventListener('click',function(){ addLMNPLine(); })
 var fiscBtn=document.getElementById('btn-fisc-calc');
 if(fiscBtn) fiscBtn.addEventListener('click',function(){renderFiscalite();});
 // Auto-recalc on input change
-['f-revenu','f-parts','f-loyers','f-charges-lmnp','f-pv-pea','f-pv-cto'].forEach(function(id){
+['f-revenu','f-parts','f-loyers','f-charges-lmnp','f-pv-pea','f-pv-cto','f-sal-maxime','f-sal-conj'].forEach(function(id){
   var el=document.getElementById(id);
   if(el) el.addEventListener('input',function(){ renderFiscalite(); });
   if(el && el.tagName==='SELECT') el.addEventListener('change',function(){ renderFiscalite(); });
@@ -7003,17 +7033,29 @@ function renderPeaAvObjectif(c){
       {label:'AV',pct:avPct,target:T_AV,color:'#e07a5b'},
     ];
     prog.innerHTML=items.map(function(item){
-      var barW=Math.min(100,item.pct/item.target*100);
-      var barColor=Math.abs(item.pct-item.target)<=3?'var(--green)':item.color;
-      return '<div style="margin-bottom:10px;">'
-        +'<div style="display:flex;justify-content:space-between;font-size:10px;font-family:JetBrains Mono,monospace;margin-bottom:4px;">'
-        +'<span>'+item.label+'</span>'
-        +'<span style="color:var(--muted);">'+fmtN(item.pct,1)+'% / cible '+item.target+'%</span>'
-        +'</div>'
-        +'<div style="position:relative;height:10px;background:var(--s3);border-radius:5px;overflow:hidden;">'
-        +'<div style="position:absolute;top:0;left:0;height:100%;width:'+barW+'%;background:'+barColor+';border-radius:5px;transition:width .6s;"></div>'
-        +'<div style="position:absolute;top:0;left:calc('+item.target+'% - 1px);width:2px;height:100%;background:var(--text);opacity:0.4;"></div>'
-        +'</div></div>';
+      // barW = % reel (0-100), marqueur = position de la cible sur la barre
+      var barW = Math.min(100, item.pct);
+      var barColor = Math.abs(item.pct - item.target) <= 3 ? 'var(--green)' : item.pct < item.target ? item.color : 'var(--blue)';
+      var gap = item.pct - item.target;
+      var gapStr = (gap >= 0 ? '+' : '') + fmtN(gap, 1) + '%';
+      var gapColor = Math.abs(gap) <= 3 ? 'var(--green)' : gap < 0 ? 'var(--red)' : 'var(--blue)';
+      return '<div style="margin-bottom:12px;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;font-family:JetBrains Mono,monospace;margin-bottom:5px;">'
+        + '<span style="font-weight:600;">'+item.label+'</span>'
+        + '<span style="display:flex;gap:8px;align-items:center;">'
+        + '<span style="color:'+item.color+';">'+fmtN(item.pct,1)+'%</span>'
+        + '<span style="color:var(--muted);">/ cible '+item.target+'%</span>'
+        + '<span style="color:'+gapColor+';font-size:9px;">('+gapStr+')</span>'
+        + '</span></div>'
+        // Barre : 0-100% = espace total, barre coloree = % reel, trait = cible
+        + '<div style="position:relative;height:12px;background:var(--s3);border-radius:6px;">'
+        // Barre coloree = % actuel
+        + '<div style="position:absolute;top:0;left:0;height:100%;width:'+barW+'%;background:'+barColor+';border-radius:6px;transition:width .6s;"></div>'
+        // Trait vertical = cible (sans overflow:hidden sur le parent pour que le trait soit visible)
+        + '<div style="position:absolute;top:-2px;bottom:-2px;left:calc('+item.target+'% - 1px);width:2px;background:var(--text);border-radius:1px;opacity:0.5;"></div>'
+        // Label cible sous la barre
+        + '<div style="position:absolute;top:14px;left:calc('+item.target+'% - 8px);font-size:8px;color:var(--muted);font-family:JetBrains Mono,monospace;">'+item.target+'%</div>'
+        + '</div></div>';
     }).join('');
   }
 }
@@ -7513,6 +7555,20 @@ function genPDF(){
 // IR_BAREMES + IR_TRANCHES moved to global scope // vérifier toutes les heures
 
 // Calcul IR brut sur revenu net imposable (après abattement 10%)
+
+function calcRevenuFoyer() {
+  var salMax = parseFloat(document.getElementById('f-sal-maxime')?.value) || 0;
+  var salConj = parseFloat(document.getElementById('f-sal-conj')?.value) || 0;
+  var total = salMax + salConj;
+  var el = document.getElementById('f-revenu');
+  if (el) { el.value = total; }
+  renderFiscalite();
+  // Sync with IA state
+  if (window._fiscState) window._fiscState.revenuMaxime = salMax;
+  if (window._fiscState) window._fiscState.revenuConj = salConj;
+}
+// Expose globally
+window.calcRevenuFoyer = calcRevenuFoyer;
 
 function renderFiscalite() {
   // ── Lire les inputs ──
@@ -9502,65 +9558,263 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 });
 
-async function lancerAnalyseIA(){
-  var el=document.getElementById('ia-content');
-  var btn=document.getElementById('btn-ia-analyze');
-  if(!el)return;
-  var S=window._pState?window._pState():null;
-  if(!S){el.innerHTML='<div style="color:var(--red);padding:20px;text-align:center;">Donnees non disponibles</div>';return;}
-  var c=window._cAll?window._cAll():{};
-  var now=new Date();
-  var resume=[];
-  resume.push('Profil : Maxime, 29 ans, cadre SNCF, couple, 1 enfant.');
-  resume.push('Patrimoine net : '+Math.round((c.total||0)/1000)+'k EUR | Brut : '+Math.round((c.brut||0)/1000)+'k EUR | Dettes : '+Math.round((c.dettes||0)/1000)+'k EUR');
-  resume.push('PEA : '+Math.round((c.pea||0)/1000)+'k EUR | AV : '+Math.round((c.av||0)/1000)+'k EUR | PEG : '+Math.round((c.peg||0)/1000)+'k EUR');
-  resume.push('Immobilier brut : '+Math.round((c.immoV||0)/1000)+'k EUR | Net : '+Math.round((c.immoNet||0)/1000)+'k EUR');
-  resume.push('Livrets : '+Math.round((c.livT||0)/1000)+'k EUR');
-  if(S.positions&&S.positions.length){
-    resume.push('Positions : '+S.positions.slice(0,6).map(function(p){return p.name+' ('+p.envelope+', '+Math.round((p.price||0)*(p.qty||0))+'EUR)';}).join(', '));
-  }
-  if(S.immo&&S.immo.length){S.immo.forEach(function(b){resume.push('Immo : '+b.name+' ('+b.type+', '+Math.round((b.valeur||0)/1000)+'k EUR, DPE '+(b.dpe||'?')+')');});}
-  var NL=String.fromCharCode(10);
-  var prompt=[
-    "Tu es un conseiller en gestion de patrimoine expert. Situation de mon client en "+now.getFullYear()+":",
-    "",
-    resume.join(NL),
-    "",
-    "Analyse en 4 parties :",
-    "1. Points forts du patrimoine",
-    "2. Points de vigilance ou risques",
-    "3. 3 actions prioritaires pour les 6 prochains mois",
-    "4. Projection a 10 ans",
-    "",
-    "Sois precis et chiffre. Profil : jeune cadre SNCF, LMNP, objectif retraite 2057."
-  ].join(NL);
-  el.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:30px;color:var(--muted);">'
-    +'<div style="font-size:28px;animation:spin 1.5s linear infinite;">&#129302;</div>'
-    +'<div style="font-size:13px;">Analyse en cours...</div></div>';
-  if(btn)btn.disabled=true;
-  try{
-    var resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+// ══ ÉTAT CONVERSATION IA ════════════════════════════════════
+window._iaConversation = [];
+window._fiscState = { revenuMaxime: 30000, revenuConj: 0 };
+
+function getPatrimoineContext() {
+  var S = window._pState ? window._pState() : null;
+  if (!S) return "Donnees non disponibles.";
+  var c = window._cAll ? window._cAll() : {};
+  var now = new Date();
+
+  // Salaires depuis la page fiscalite
+  var salMax  = parseFloat(document.getElementById('f-sal-maxime')?.value) || window._fiscState.revenuMaxime || 30000;
+  var salConj = parseFloat(document.getElementById('f-sal-conj')?.value)   || window._fiscState.revenuConj   || 0;
+  var revFoyer= parseFloat(document.getElementById('f-revenu')?.value)     || (salMax + salConj);
+  var parts   = parseFloat(document.getElementById('f-parts')?.value)      || 2.5;
+  var loyers  = parseFloat(document.getElementById('f-loyers')?.value)     || 6240;
+  var charges = parseFloat(document.getElementById('f-charges-lmnp')?.value)|| 6240;
+
+  var lines = [];
+  lines.push("=== PROFIL ===");
+  lines.push("Maxime, agent de maitrise SNCF, 29 ans. Couple marie/PACSE, 1 enfant.");
+  lines.push("Objectif retraite : 2057 (dans 31 ans). Strategie : accumulation long terme ETF + immo.");
+
+  lines.push("\n=== REVENUS ET FISCALITE ===");
+  lines.push("Salaire net Maxime : " + salMax + " EUR/an (" + Math.round(salMax/12) + " EUR/mois)");
+  if (salConj > 0) lines.push("Salaire net conjointe : " + salConj + " EUR/an (" + Math.round(salConj/12) + " EUR/mois)");
+  lines.push("Revenu net imposable foyer : " + revFoyer + " EUR/an | Parts : " + parts);
+  lines.push("Loyers bruts LMNP : " + loyers + " EUR/an | Charges deductibles : " + charges + " EUR/an");
+  lines.push("Resultat BIC LMNP : " + (loyers - charges) + " EUR (0 si amortissements suffisants)");
+
+  lines.push("\n=== PATRIMOINE NET ===");
+  lines.push("Patrimoine net : " + Math.round((c.total||0)/1000) + "k EUR");
+  lines.push("Patrimoine brut : " + Math.round((c.brut||0)/1000) + "k EUR");
+  lines.push("Dettes totales : " + Math.round((c.dettes||0)/1000) + "k EUR");
+
+  lines.push("\n=== ENVELOPPES FINANCIERES ===");
+  lines.push("PEA : " + Math.round((c.pea||0)) + " EUR (objectif 80% du financier)");
+  lines.push("Assurance Vie Linxea Spirit 2 : " + Math.round((c.av||0)) + " EUR (objectif 20% - transmission)");
+  lines.push("PEG SNCF : " + Math.round((c.peg||0)) + " EUR (fonds Amundi Mid-Cap Euro ESR)");
+  if (c.cto > 0) lines.push("CTO : " + Math.round(c.cto) + " EUR");
+
+  if (S.positions && S.positions.length) {
+    lines.push("\n=== POSITIONS ===");
+    S.positions.forEach(function(p) {
+      var val = (p.price||0)*(p.qty||0);
+      var pnl = val - ((p.priceAvg||p.price||0)*(p.qty||0));
+      lines.push(p.name + " (" + p.envelope + ") : " + Math.round(val) + " EUR | PV latente : " + Math.round(pnl) + " EUR");
     });
-    var data=await resp.json();
-    var text='';
-    if(data.content&&data.content.length){text=data.content.map(function(b){return b.text||'';}).join('');}
-    else if(data.error){text='Erreur API : '+data.error.message;}
-    var html=text
-      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-      .replace(/^#+\s+(.*)/gm,'<h4 style="color:var(--gold);margin:14px 0 6px;">$1</h4>')
-      .replace(/^- (.*)/gm,'<div style="padding:4px 0 4px 12px;border-left:2px solid var(--bd);margin:3px 0;font-size:12px;">$1</div>');
-    html=html.split('\n\n').join('<br>').split('\n').join(' ');
-    el.innerHTML='<div style="font-size:12px;line-height:1.7;">'+html+'</div>'
-      +'<div style="font-size:10px;color:var(--muted);margin-top:14px;padding-top:10px;border-top:1px solid var(--bd);">'
-      +'Analyse par Claude &middot; '+new Date().toLocaleString('fr-FR')+'</div>';
-  }catch(e){
-    el.innerHTML='<div style="color:var(--red);padding:20px;text-align:center;">Erreur connexion API : '+e.message+'</div>';
   }
-  if(btn)btn.disabled=false;
+
+  lines.push("\n=== IMMOBILIER ===");
+  if (S.immo && S.immo.length) {
+    S.immo.forEach(function(b) {
+      var detteBien = b.debt || 0;
+      var net = (b.valeur||0) - detteBien;
+      lines.push(b.name + " (" + b.type + ") : valeur " + Math.round((b.valeur||0)/1000) + "k EUR | dette " + Math.round(detteBien/1000) + "k EUR | net " + Math.round(net/1000) + "k EUR | DPE " + (b.dpe||"?"));
+      if (b.type === 'Locatif' && b.rent) lines.push("  Loyer mensuel : " + b.rent + " EUR | Mensualite credit : " + (b.mortgage||0) + " EUR | Cashflow : " + ((b.rent||0)-(b.mortgage||0)) + " EUR/mois");
+    });
+  }
+
+  lines.push("\n=== LIVRETS & EPARGNE ===");
+  if (S.livrets && S.livrets.length) {
+    var totLiv = 0;
+    S.livrets.forEach(function(lv) {
+      totLiv += lv.balance;
+      lines.push(lv.name + " : " + Math.round(lv.balance) + " EUR @ " + lv.rate + "%/an");
+    });
+    lines.push("Total livrets : " + Math.round(totLiv) + " EUR");
+  }
+
+  // Actions de strategie cochees
+  if (S.actionsDone && S.actionsDone.length) {
+    lines.push("\n=== ACTIONS REALISEES ===");
+    lines.push(S.actionsDone.length + " actions strategiques cochees comme realisees.");
+  }
+
+  return lines.join("\n");
 }
+
+function getSystemPrompt() {
+  return [
+    "Tu es Pierre, expert en gestion de patrimoine et fiscalite francaise, conseiller principal de Maxime.",
+    "Tu connais parfaitement son patrimoine (il te sera fourni dans chaque message).",
+    "",
+    "TON ROLE :",
+    "- Conseiller personnalise, precis, chiffre",
+    "- Expert en ETF, PEA, Assurance Vie, LMNP, fiscalite IR/PS/PFU",
+    "- Proactif : anticipe les risques, propose des optimisations concretes",
+    "- Direct : pas de jargon inutile, des actions claires et actionnables",
+    "",
+    "REGLES :",
+    "- Toujours te baser sur les donnees reelles de Maxime",
+    "- Etre chiffre : donner des montants, des dates, des pourcentages",
+    "- Rappeler les regles fiscales importantes (DPE 2034, plafond PEA 150k, etc.)",
+    "- Si une information manque, la demander",
+    "- Repondre en francais, de facon structuree mais conversationnelle",
+    "- Tu t'appelles Pierre et tu vouvoies Maxime",
+    "",
+    "FORMAT des reponses longues :",
+    "Utilise des sections courtes avec emoji. Max 400 mots. Termine par une question ou action concrete."
+  ].join("\n");
+}
+
+async function lancerAnalyseIA(){
+  // Mode analyse initiale (depuis le bouton header ou dashboard)
+  window._iaConversation = [];
+  var ctx = getPatrimoineContext();
+  var firstMsg = "Analyse complete de ma situation patrimoniale. Donne-moi :\n1. Un diagnostic rapide (forces/faiblesses)\n2. Les 3 actions les plus urgentes\n3. Une question pour mieux me conseiller\n\nDonnees :\n" + ctx;
+
+  var el = document.getElementById('ia-content');
+  var btn = document.getElementById('btn-ia-analyze');
+  if (!el) return;
+
+  el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:30px;color:var(--muted);">'
+    + '<div style="font-size:28px;animation:spin 1.5s linear infinite;">&#129302;</div>'
+    + '<div style="font-size:13px;">Pierre analyse votre situation...</div></div>';
+  if (btn) btn.disabled = true;
+
+  var response = await callClaudeIA(firstMsg, true);
+  window._iaConversation.push({role:'user', content:firstMsg});
+  window._iaConversation.push({role:'assistant', content:response});
+
+  renderIAConversation(el);
+  if (btn) btn.disabled = false;
+}
+
+async function envoyerMessageIA() {
+  var input = document.getElementById('ia-user-input');
+  if (!input || !input.value.trim()) return;
+  var msg = input.value.trim();
+  input.value = '';
+
+  // Ajouter le contexte patrimonial a chaque message
+  var ctx = getPatrimoineContext();
+  var fullMsg = msg + "\n\n[Contexte patrimonial actuel]\n" + ctx;
+
+  window._iaConversation.push({role:'user', content:msg}); // affiche sans le contexte
+  var el = document.getElementById('ia-content');
+  renderIAConversation(el);
+
+  // Indicateur de saisie
+  var typing = document.createElement('div');
+  typing.id = 'ia-typing';
+  typing.style.cssText = 'padding:10px 14px;background:var(--s2);border-radius:10px;color:var(--muted);font-size:12px;margin-bottom:8px;';
+  typing.textContent = 'Pierre redige sa reponse...';
+  el.insertBefore(typing, el.lastChild);
+  el.scrollTop = el.scrollHeight;
+
+  var response = await callClaudeIA(fullMsg, false);
+  var t = document.getElementById('ia-typing');
+  if (t) t.remove();
+
+  window._iaConversation.push({role:'assistant', content:response});
+  renderIAConversation(el);
+}
+
+async function callClaudeIA(userMsg, isFirst) {
+  // Build messages array
+  var messages = [];
+  if (window._iaConversation.length > 0) {
+    // Previous turns (without the injected context to save tokens)
+    var hist = window._iaConversation.slice(-8); // keep last 4 exchanges
+    hist.forEach(function(m) { messages.push(m); });
+  }
+  if (!isFirst) {
+    messages.push({role:'user', content:userMsg});
+  } else {
+    messages = [{role:'user', content:userMsg}];
+  }
+
+  try {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        system: getSystemPrompt(),
+        messages: messages
+      })
+    });
+    var data = await resp.json();
+    if (data.content && data.content.length) {
+      return data.content.map(function(b){return b.text||'';}).join('');
+    }
+    if (data.error) return "Erreur API : " + data.error.message;
+    return "Erreur inconnue.";
+  } catch(e) {
+    return "Erreur de connexion : " + e.message + ". Verifiez votre connexion internet.";
+  }
+}
+
+function renderIAConversation(el) {
+  if (!el) return;
+  var NL = String.fromCharCode(10);
+  var html = '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;">';
+  window._iaConversation.forEach(function(m, i) {
+    if (i === 0) return; // skip first system message with raw context
+    var isUser = m.role === 'user';
+    var text = m.content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^#+\s+(.*)/gm, '<div style="font-weight:700;color:var(--gold);margin:8px 0 4px;">$1</div>')
+      .replace(/^- (.*)/gm, '<div style="padding:3px 0 3px 12px;border-left:2px solid var(--bd);font-size:11px;">$1</div>');
+    text = text.split('\n\n').join('<br>').split('\n').join(' ');
+    html += '<div style="display:flex;gap:8px;align-items:flex-start;flex-direction:'+(isUser?'row-reverse':'row')+'">';
+    html += '<div style="width:28px;height:28px;border-radius:50%;background:'+(isUser?'var(--blue)':'linear-gradient(135deg,#5b8dee,#9b72cf)')+';display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">'+(isUser?'&#128100;':'&#129302;')+'</div>';
+    html += '<div style="max-width:80%;padding:10px 14px;border-radius:12px;font-size:12px;line-height:1.6;background:'+(isUser?'var(--blue)18':'var(--s2)')+';border:1px solid '+(isUser?'var(--blue)33':'var(--bd)')+';">'+text+'</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  // Input bar
+  html += '<div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--bd);">';
+  html += '<input id="ia-user-input" type="text" placeholder="Posez une question a Pierre..." style="flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;outline:none;" onkeydown="if(event.key===\'Enter\')envoyerMessageIA()">';
+  html += '<button class="btn sm" onclick="envoyerMessageIA()" style="flex-shrink:0;">Envoyer</button>';
+  html += '</div>';
+  html += '<div style="font-size:9px;color:var(--muted);margin-top:6px;">Pierre &mdash; Conseiller IA &middot; '+new Date().toLocaleString('fr-FR')+'</div>';
+  el.innerHTML = html;
+  el.scrollTop = el.scrollHeight;
+  // Focus input
+  var inp = document.getElementById('ia-user-input');
+  if (inp) setTimeout(function(){inp.focus();}, 100);
+}
+
+// Expose for global access
+window.envoyerMessageIA = envoyerMessageIA;
+
+async function lancerConseilRapide() {
+  var el = document.getElementById('ia-conseil-content');
+  var btn = document.getElementById('btn-ia-quick');
+  if (!el) return;
+  el.innerHTML = '<span style="color:var(--muted);">&#129302; Pierre analyse... </span>';
+  if (btn) btn.disabled = true;
+
+  var ctx = getPatrimoineContext();
+  var NL2 = String.fromCharCode(10);
+  var userMsg = [
+    "En 3 a 4 phrases max, donne-moi le conseil le plus important et urgent pour cette semaine.",
+    "Base toi sur ma situation reelle. Sois tres concret, chiffre et actionnable.",
+    "",
+    ctx
+  ].join(NL2);
+
+  var response = await callClaudeIA(userMsg, true);
+
+  var html = response
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^- (.*)/gm, '<div style="padding:2px 0 2px 10px;border-left:2px solid #9b72cf;">$1</div>');
+  html = html.split('\n\n').join('<br>').split('\n').join(' ');
+
+  el.innerHTML = '<div style="line-height:1.7;">' + html + '</div>'
+    + '<div style="font-size:9px;color:var(--muted);margin-top:8px;">Pierre &mdash; ' + new Date().toLocaleString('fr-FR') + '</div>';
+  if (btn) btn.disabled = false;
+}
+window.lancerConseilRapide = lancerConseilRapide;
 </script>
 
 
