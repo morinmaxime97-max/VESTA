@@ -337,15 +337,9 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Bottom navigation bar + menus — mobile only, hidden on desktop */
+/* Bottom navigation bar — mobile only */
 #pwa-bottom-nav {
-  display: none !important;
-}
-#pwa-more-menu {
-  display: none !important;
-}
-#pwa-more-overlay {
-  display: none !important;
+  display: none;
 }
 
 @media (max-width: 768px) {
@@ -360,7 +354,7 @@ body {
 
   /* Bottom nav bar */
   #pwa-bottom-nav {
-    display: flex !important;
+    display: flex;
     position: fixed;
     bottom: 0;
     left: 0;
@@ -399,7 +393,7 @@ body {
 
   /* More menu overlay */
   #pwa-more-menu {
-    display: none !important;
+    display: none;
     position: fixed;
     bottom: calc(58px + env(safe-area-inset-bottom));
     left: 0; right: 0;
@@ -413,7 +407,7 @@ body {
     transition: transform .3s cubic-bezier(.4,0,.2,1);
   }
   #pwa-more-menu.open {
-    display: block !important;
+    display: block;
     transform: translateY(0);
   }
   .pwa-more-handle {
@@ -448,13 +442,13 @@ body {
   .pwa-more-item.on { color: var(--gold); background: var(--s2); }
 
   #pwa-more-overlay {
-    display: none !important;
+    display: none;
     position: fixed;
     inset: 0;
     z-index: 98;
     background: #00000060;
   }
-  #pwa-more-overlay.open { display: block !important; }
+  #pwa-more-overlay.open { display: block; }
 
   /* Main content offset for bottom nav */
   main {
@@ -538,7 +532,37 @@ body {
 #pwa-install-banner .pib-text b { color: var(--gold); display: block; margin-bottom: 2px; }
 
 
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+#pwa-bottom-nav{display:none!important;}
+#pwa-more-menu{display:none!important;}
+#pwa-more-overlay{display:none!important;}
+@media(max-width:768px){
+  nav{display:none!important;}
+  header{padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));}
+  #pwa-bottom-nav{display:flex!important;position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--s1);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:0;}
+  #pwa-bottom-nav::-webkit-scrollbar{display:none;}
+  .pwa-nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:60px;padding:8px 6px 6px;background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:9px;color:var(--muted);transition:color .15s;flex-shrink:0;}
+  .pwa-nav-btn .pwa-icon{font-size:20px;line-height:1;}
+  .pwa-nav-btn.on{color:var(--gold);}
+  #pwa-more-menu{display:none!important;position:fixed;bottom:calc(58px + env(safe-area-inset-bottom));left:0;right:0;background:var(--s1);border-top:1px solid var(--bd);border-radius:20px 20px 0 0;z-index:99;padding:16px 0 8px;box-shadow:0 -8px 30px #00000040;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);}
+  #pwa-more-menu.open{display:block!important;transform:translateY(0);}
+  .pwa-more-handle{width:36px;height:4px;background:var(--bd);border-radius:2px;margin:0 auto 14px;}
+  .pwa-more-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:0 8px;}
+  .pwa-more-item{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 6px;background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:10px;color:var(--dim);border-radius:10px;transition:all .15s;}
+  .pwa-more-item.on{color:var(--gold);background:var(--s2);}
+  .pwa-more-item .mi-icon{font-size:24px;}
+  #pwa-more-overlay{display:none!important;position:fixed;inset:0;z-index:98;background:#00000060;}
+  #pwa-more-overlay.open{display:block!important;}
+  main{padding-bottom:calc(80px + env(safe-area-inset-bottom))!important;padding-left:14px!important;padding-right:14px!important;}
+  .btn{min-height:36px;}
+  .fg input,.fg select{min-height:42px;font-size:16px!important;}
+  .g2,.g3{grid-template-columns:1fr!important;}
+  .modal{width:100vw!important;max-width:100vw!important;border-radius:20px 20px 0 0!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;margin:0!important;}
+  .ov{align-items:flex-end!important;}
+  #toast{bottom:auto!important;top:calc(70px + env(safe-area-inset-top))!important;right:16px!important;left:16px!important;}
+}
+#pg-strategie .g2{align-items:start;}
+#pg-strategie .card{height:auto;}
 </style>
 </head>
 <body>
@@ -573,14 +597,18 @@ body {
   <button class="nb" data-page="history">🕐 Historique</button>
 </nav>
 
-<!-- PWA Bottom Navigation (mobile only) -->
-<div id="pwa-more-overlay" onclick="closePwaMore()" style="display:none"></div>
-<div id="pwa-more-menu" style="display:none">
+<!-- PWA Bottom Navigation -->
+<div id="pwa-more-overlay" onclick="closePwaMore()"></div>
+<div id="pwa-more-menu">
   <div class="pwa-more-handle"></div>
-  <div class="pwa-more-grid" id="pwa-more-grid"></div>
+  <div class="pwa-more-grid" id="pwa-more-grid">
+    <!-- populated by JS -->
+  </div>
 </div>
-<div id="pwa-bottom-nav" style="display:none"><!-- populated by JS --></div>
-<div id="pwa-ptr" style="display:none"></div>
+<nav id="pwa-bottom-nav">
+  <!-- populated by JS -->
+</nav>
+<div id="pwa-ptr"></div>
 
 <main>
 
@@ -612,7 +640,7 @@ body {
     </div>
   </div>
   <div class="krow k3">
-    <div class="kpi bl"><div class="klbl">PEA Boursobank</div><div class="kval" id="k-pea">—</div><div class="ksub" id="k-pea-s"></div></div>
+    <div class="kpi bl"><div class="klbl">PEA</div><div class="kval" id="k-pea">—</div><div class="ksub" id="k-pea-s"></div></div>
     <div class="kpi ro"><div class="klbl">Assurance Vie</div><div class="kval" id="k-av">—</div><div class="ksub" id="k-av-s"></div></div>
     <div class="kpi yel"><div class="klbl">PEG SNCF</div><div class="kval" id="k-peg">—</div><div class="ksub" id="k-peg-s"></div></div>
   </div>
@@ -644,7 +672,7 @@ body {
   <!-- PEA -->
   <div class="card mb">
     <div class="chd">
-      <span>🏦 PEA Boursobank <span class="tag t-pea">PEA</span></span>
+      <span>🏦 PEA <span class="tag t-pea">PEA</span></span>
       <div class="brow"><div id="pea-kpi" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);"></div></div>
     </div>
     <div id="pea-tbl"></div>
@@ -653,7 +681,7 @@ body {
   <!-- AV -->
   <div class="card mb">
     <div class="chd">
-      <span>📄 Assurance Vie Linxea Spirit 2 <span class="tag t-av">AV</span></span>
+      <span>📄 Assurance Vie <span class="tag t-av">AV</span></span>
       <div class="brow">
         <div id="av-kpi" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--av);"></div>
         <a href="https://www.linxea.com/espace-client/" target="_blank" class="btn gh sm" style="text-decoration:none;font-size:11px;">🔗 Espace Linxea</a>
@@ -1117,6 +1145,30 @@ body {
     <div class="flex-row">
       <div class="pie-w" style="width:240px;height:240px;"><canvas id="c-mpie" width="240" height="240"></canvas><div class="pc"><b id="mp-v">—</b><small id="mp-n">Total</small><em id="mp-p"></em></div></div>
       <div class="leg" id="leg-mpie" style="max-height:240px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- Objectif PEA vs AV 80/20 -->
+  <div class="card mb" id="card-pea-av-objectif">
+    <div class="chd">
+      <span>Objectif Retraite vs Transmission <span class="chd-sub">Cible : 80% PEA &middot; 20% AV</span></span>
+      <span id="pea-av-badge" style="font-family:JetBrains Mono,monospace;font-size:11px;"></span>
+    </div>
+    <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;">
+      <div style="position:relative;flex-shrink:0;">
+        <canvas id="c-pea-av" width="200" height="200"></canvas>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;width:110px;">
+          <b id="pea-av-val" style="display:block;font-family:'Playfair Display',serif;font-size:15px;">--</b>
+          <small id="pea-av-lbl" style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;">PEA + AV</small>
+        </div>
+      </div>
+      <div style="flex:1;min-width:200px;">
+        <div id="pea-av-detail"></div>
+        <div style="margin-top:16px;padding:14px;background:var(--s2);border-radius:10px;">
+          <div style="font-size:10px;font-family:JetBrains Mono,monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Progression 80/20</div>
+          <div id="pea-av-progress"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1885,6 +1937,25 @@ body {
   <div id="actu-content"></div>
 
 
+
+
+
+id="pg-actu" class="pg">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+    <div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:20px;">📰 Actualités</h1>
+      <p style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:2px;">
+        Flux en temps réel — S&P500 · MSCI World · Émergents · LMNP · Taux immobiliers · PEA
+      </p>
+    </div>
+    <div class="brow">
+      <span id="actu-last-update" style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;"></span>
+      <button class="btn sm" id="btn-refresh-actu">⟳ Actualiser</button>
+    </div>
+  </div>
+  <div id="actu-content"></div>
+</div>
+
 <div id="pg-history" class="pg">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
     <h1 style="font-family:'Playfair Display',serif;font-size:20px;">Historique des opérations</h1>
@@ -2419,7 +2490,7 @@ function renderPEGRoulement() {
   kpis.forEach(function(k){
     html += '<div style="background:var(--s2);border-radius:8px;padding:10px 12px;border:1px solid var(--bd);">';
     html += '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">'+k.lbl.replace("\n","<br>")+'</div>';
-    html += '<div style="font-size:15px;font-family:Playfair Display,serif;color:'+k.col+';">'+k.val+'</div>';
+    html += '<div style="font-size:15px;font-family:\'Playfair Display\',serif;color:'+k.col+';">'+k.val+'</div>';
     html += '</div>';
   });
   html += '</div>';
@@ -2565,12 +2636,20 @@ function fetchValeurMarcheEstimee(idx) {
     var valEstimee = Math.round(median * surface / 1000) * 1000;
     if (inputEl) { inputEl.value = valEstimee; previewValeurMarche(idx); }
     if (statusEl) {
-      statusEl.innerHTML = '✅ <b>' + source + '</b> · '
-        + prix_m2_list.length + ' ventes analysées · '
-        + '<b>' + Math.round(median) + ' €/m²</b> médian (P10-P90 filtrés) × '
-        + surface + ' m² = <b>~' + fmtK(valEstimee) + '</b>'
-        + ' &nbsp;<span style="color:var(--muted)">→ cliquer ✓ Sauver pour valider</span>';
-      statusEl.style.color = 'var(--green)';
+      var maUrl='https://www.meilleursagents.com/prix-immobilier/'+(cp.startsWith('87')?'limoges-87000':'france')+'/';
+      var selogerPath=cp.startsWith('87')?'vente/haute-vienne/limoges/':'vente/';
+      var fBas=fmtK(Math.round(median*0.9*surface/1000)*1000);
+      var fHaut=fmtK(Math.round(median*1.1*surface/1000)*1000);
+      var dvfH='<div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:6px;">~'+fmtK(valEstimee)+'</div>';
+      dvfH+='<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">'+prix_m2_list.length+' ventes &middot; '+Math.round(median)+' EUR/m2 median x '+surface+' m2</div>';
+      dvfH+='<div style="font-size:10px;color:var(--dim);margin-bottom:8px;">Fourchette +-10% : '+fBas+' - '+fHaut+'</div>';
+      dvfH+='<div style="font-size:10px;display:flex;gap:10px;flex-wrap:wrap;">';
+      dvfH+='<a href="'+maUrl+'" target="_blank" style="color:var(--blue);">MeilleursAgents</a>';
+      dvfH+='<a href="https://app.dvf.etalab.gouv.fr/" target="_blank" style="color:var(--blue);">DVF interactif</a>';
+      dvfH+='<a href="https://www.seloger.com/prix-de-l-immo/'+selogerPath+'.htm" target="_blank" style="color:var(--blue);">SeLoger</a>';
+      dvfH+='</div>';
+      statusEl.innerHTML=dvfH;
+      statusEl.style.color='var(--green)';
     }
     if (btn) { btn.disabled = false; btn.textContent = '🔍 DVF'; }
     return true;
@@ -4437,18 +4516,18 @@ function renderImmoValeurs(b, idx) {
   if (isRP) {
     html += '<div class="ms" style="border-left:3px solid var(--blue);padding:10px 12px;background:var(--s2);border-radius:8px;">';
     html += '<div class="ms-yr" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">🏠 Prix achat maison seule</div>';
-    html += '<div style="font-size:16px;font-family:Playfair Display,serif;color:var(--blue);">'+ fmtK(v.prixMaisonSeule || 150000)+'</div>';
+    html += '<div style="font-size:16px;font-family:\'Playfair Display\',serif;color:var(--blue);">'+ fmtK(v.prixMaisonSeule || 150000)+'</div>';
     html += '<div style="font-size:10px;color:var(--dim);margin-top:3px;">Net acheteur · hors travaux financement</div>';
     html += '</div>';
     html += '<div class="ms" style="border-left:3px solid var(--blue);padding:10px 12px;background:var(--s2);border-radius:8px;opacity:0.75;">';
     html += '<div class="ms-yr" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">💰 Total emprunts (FL9120+FL9107)</div>';
-    html += '<div style="font-size:14px;font-family:Playfair Display,serif;color:var(--text);">'+ fmtK(v.prixAchat)+'</div>';
+    html += '<div style="font-size:14px;font-family:\'Playfair Display\',serif;color:var(--text);">'+ fmtK(v.prixAchat)+'</div>';
     html += '<div style="font-size:10px;color:var(--dim);margin-top:3px;">QP Maxime 50% · incl. travaux énergétiques</div>';
     html += '</div>';
   } else {
     html += '<div class="ms" style="border-left:3px solid var(--blue);padding:10px 12px;background:var(--s2);border-radius:8px;">';
     html += '<div class="ms-yr" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">💰 Prix achat T2</div>';
-    html += '<div style="font-size:16px;font-family:Playfair Display,serif;color:var(--blue);">62 000 €</div>';
+    html += '<div style="font-size:16px;font-family:\'Playfair Display\',serif;color:var(--blue);">62 000 €</div>';
     html += '<div style="font-size:10px;color:var(--dim);margin-top:3px;">Prêt total 82 870€ (achat+notaire+travaux)</div>';
     html += '</div>';
   }
@@ -4456,14 +4535,14 @@ function renderImmoValeurs(b, idx) {
   // 2. Coût du crédit
   html += '<div class="ms" style="border-left:3px solid var(--red);padding:10px 12px;background:var(--s2);border-radius:8px;">';
   html += '<div class="ms-yr" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">📊 Coût crédit total</div>';
-  html += '<div style="font-size:16px;font-family:Playfair Display,serif;color:var(--red);">'+ fmtK(v.coutCredit)+'</div>';
+  html += '<div style="font-size:16px;font-family:\'Playfair Display\',serif;color:var(--red);">'+ fmtK(v.coutCredit)+'</div>';
   html += '<div style="font-size:10px;color:var(--dim);margin-top:3px;">Intérêts + assurance emprunteur</div>';
   html += '</div>';
 
   // 3. Coût total projet (couple net, avec ligne QP Maxime)
   html += '<div class="ms" style="border-left:3px solid var(--gold);padding:10px 12px;background:var(--s2);border-radius:8px;">';
   html += '<div class="ms-yr" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">🏗 Coût projet total net</div>';
-  html += '<div style="font-size:16px;font-family:Playfair Display,serif;color:var(--gold);">'+ fmtK(v.coutTotalProjet)+'</div>';
+  html += '<div style="font-size:16px;font-family:\'Playfair Display\',serif;color:var(--gold);">'+ fmtK(v.coutTotalProjet)+'</div>';
   if (isRP) {
     html += '<div style="font-size:10px;color:var(--dim);margin-top:3px;line-height:1.6;">'
           + 'Maison + frais + crédit − prime état<br>'
@@ -4479,21 +4558,21 @@ function renderImmoValeurs(b, idx) {
   html += '<div class="ms-yr" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">📈 Valeur marché estimée</div>';
   html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">';
   html += '<input type="number" id="vm-input-'+idx+'" value="'+(b.valeur||0)+'" step="1000" ';
-  html += 'style="width:90px;background:var(--s3);border:1px solid var(--green);border-radius:5px;padding:3px 6px;color:var(--green);font-family:JetBrains Mono,monospace;font-size:13px;" ';
+  html += 'style="width:90px;background:var(--s3);border:1px solid var(--green);border-radius:5px;padding:3px 6px;color:var(--green);font-family:\'JetBrains Mono\',monospace;font-size:13px;" ';
   html += 'oninput="previewValeurMarche('+idx+')">';
   html += '<button class="btn sm" onclick="saveValeurMarche('+idx+')" style="background:var(--green);color:#080b10;padding:3px 8px;font-size:11px;">✓ Sauver</button>';
   html += '<button class="btn gh sm" id="dvf-btn-'+idx+'" onclick="fetchValeurMarcheEstimee('+idx+')" style="font-size:11px;" title="Estimation automatique depuis les ventes DVF (données Etalab/État)">🔍 DVF</button>';
   html += '</div>';
-  html += '<div id="vm-preview-'+idx+'" style="font-size:10px;color:var(--green);margin-top:2px;font-family:JetBrains Mono,monospace;">'
+  html += '<div id="vm-preview-'+idx+'" style="font-size:10px;color:var(--green);margin-top:2px;font-family:\'JetBrains Mono\',monospace;">'
         + (pvBrut>=0?'▲':'▼') + fmtK(Math.abs(pvBrut)) + ' ('+fmtN(pvPct,1)+'%) · net QP '+fmtK(netQP)+'</div>';
-  html += '<div id="dvf-status-'+idx+'" style="font-size:9px;color:var(--muted);margin-top:3px;font-family:JetBrains Mono,monospace;">💡 DVF = ventes réelles des 3 dernières années · données État</div>';
+  html += '<div id="dvf-status-'+idx+'" style="font-size:9px;color:var(--muted);margin-top:3px;font-family:\'JetBrains Mono\',monospace;">💡 DVF = ventes réelles des 3 dernières années · données État</div>';
   html += '</div>';
 
 html += '</div>'; // /grid 4 valeurs
 
   // ── Détail paramètres (accordéon inline) ───────────────────────────────
   html += '<div style="background:var(--s2);border-radius:8px;padding:0;border:1px solid var(--bd);margin-bottom:12px;overflow:hidden;">';
-  html += '<button onclick="toggleValeursDetail(\'vd-'+idx+'\')" style="width:100%;text-align:left;background:transparent;border:none;padding:9px 14px;cursor:pointer;font-size:11px;color:var(--muted);font-family:JetBrains Mono,monospace;display:flex;justify-content:space-between;">';
+  html += '<button onclick="toggleValeursDetail(\'vd-'+idx+'\')" style="width:100%;text-align:left;background:transparent;border:none;padding:9px 14px;cursor:pointer;font-size:11px;color:var(--muted);font-family:\'JetBrains Mono\',monospace;display:flex;justify-content:space-between;">';
   html += '<span>⚙ Détail & édition manuelle des paramètres</span><span id="vd-'+idx+'-icon">▸</span>';
   html += '</button>';
   html += '<div id="vd-'+idx+'" style="display:none;padding:12px 14px;border-top:1px solid var(--bd);">';
@@ -4511,14 +4590,14 @@ html += '</div>'; // /grid 4 valeurs
   html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:10px;">';
   params.forEach(function(p) {
     html += '<div>';
-    html += '<label style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:3px;">'+p.lbl+'</label>';
+    html += '<label style="font-size:10px;color:var(--muted);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:3px;">'+p.lbl+'</label>';
     html += '<input type="number" id="'+p.id+'" value="'+p.val+'" step="100" oninput="recalcValeursDetail('+idx+')" ';
-    html += 'style="width:100%;background:var(--s3);border:1px solid var(--bd);border-radius:5px;padding:5px 7px;color:var(--text);font-family:JetBrains Mono,monospace;font-size:12px;">';
+    html += 'style="width:100%;background:var(--s3);border:1px solid var(--bd);border-radius:5px;padding:5px 7px;color:var(--text);font-family:\'JetBrains Mono\',monospace;font-size:12px;">';
     html += '<div style="font-size:9px;color:var(--dim);margin-top:2px;">'+p.hint+'</div>';
     html += '</div>';
   });
   html += '</div>';
-  html += '<div id="vd-'+idx+'-result" style="font-size:11px;font-family:JetBrains Mono,monospace;color:var(--dim);"></div>';
+  html += '<div id="vd-'+idx+'-result" style="font-size:11px;font-family:\'JetBrains Mono\',monospace;color:var(--dim);"></div>';
   html += '</div></div>'; // /detail
 
   return html;
@@ -4720,29 +4799,29 @@ function calcVente() {
   ].forEach(function(k,i) {
     var hl = (i===6);
     html += '<div style="background:var(--s2);border-radius:8px;padding:10px 12px;'+(hl?'border:1px solid var(--gold);':'')+'">';
-    html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">'+k[0]+'</div>';
-    html += '<div style="font-size:'+(hl?'17':'14')+'px;font-family:Playfair Display,serif;color:'+k[2]+';">'+k[1]+'</div>';
+    html += '<div style="font-size:10px;color:var(--muted);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">'+k[0]+'</div>';
+    html += '<div style="font-size:'+(hl?'17':'14')+'px;font-family:\'Playfair Display\',serif;color:'+k[2]+';">'+k[1]+'</div>';
     html += '<div style="font-size:10px;color:var(--dim);margin-top:2px;">'+k[3]+'</div>';
     html += '</div>';
   });
   html += '</div>';
 
   // Info notaire acheteur
-  html += '<div style="font-size:11px;color:var(--dim);margin-bottom:12px;padding:8px 12px;background:var(--s2);border-radius:6px;font-family:JetBrains Mono,monospace;">';
+  html += '<div style="font-size:11px;color:var(--dim);margin-bottom:12px;padding:8px 12px;background:var(--s2);border-radius:6px;font-family:\'JetBrains Mono\',monospace;">';
   html += '📝 Frais notaire acheteur ('+notairePct+'%) : <b>'+fmtK(Math.round(fraisNotaireAcq))+'</b> — à sa charge, ';
   html += 'impact sur le prix de marché effectif : acheteur supporte '+fmtK(Math.round(prix+fraisNotaireAcq))+' au total';
   html += '</div>';
 
   // Plus-value
   html += '<div style="background:var(--s2);border-radius:8px;padding:12px 14px;border:1px solid var(--bd);margin-bottom:12px;">';
-  html += '<div style="font-size:10px;font-weight:600;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Plus-value immobilière</div>';
+  html += '<div style="font-size:10px;font-weight:600;color:var(--muted);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Plus-value immobilière</div>';
   html += '<div style="font-size:12px;margin-bottom:4px;">Prix de vente '+fmtK(prix)+' − Prix d\'acquisition '+fmtK(achat)+' = <b style="color:'+(pvBrute>=0?'var(--green)':'var(--red)')+'">'+fmtK(pvBrute)+'</b></div>';
   html += '<div style="font-size:11px;">'+pvLabel+'</div>';
   html += '</div>';
 
   // Waterfall
   html += '<div style="background:var(--s2);border-radius:8px;padding:12px 14px;border:1px solid var(--bd);">';
-  html += '<div style="font-size:10px;font-weight:600;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Décomposition waterfall</div>';
+  html += '<div style="font-size:10px;font-weight:600;color:var(--muted);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Décomposition waterfall</div>';
   [
     ['+', fmtK(prix),                   'Prix de vente',              'var(--green)'],
     ['−', fmtK(Math.round(fraisAgence)),'Agence ('+agencePct+'%)',    'var(--red)'],
@@ -4754,8 +4833,8 @@ function calcVente() {
   ].forEach(function(row) {
     var isTot = row[0]==='=';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:'+(isTot?'8':'4')+'px 0;'+(isTot?'border-top:1px solid var(--bd);margin-top:4px;font-weight:600;':'border-bottom:1px dashed var(--bd)33;')+'">';
-    html += '<span style="color:var(--dim)"><span style="color:'+row[3]+';margin-right:8px;font-family:JetBrains Mono,monospace;font-weight:600;">'+row[0]+'</span>'+row[2]+'</span>';
-    html += '<span style="font-family:JetBrains Mono,monospace;font-size:13px;color:'+row[3]+';">'+row[1]+'</span>';
+    html += '<span style="color:var(--dim)"><span style="color:'+row[3]+';margin-right:8px;font-family:\'JetBrains Mono\',monospace;font-weight:600;">'+row[0]+'</span>'+row[2]+'</span>';
+    html += '<span style="font-family:\'JetBrains Mono\',monospace;font-size:13px;color:'+row[3]+';">'+row[1]+'</span>';
     html += '</div>';
   });
   html += '</div>';
@@ -5067,15 +5146,15 @@ function calcLMNP2033() {
     ['Déficit restant 2033',   fmtK2(-(rows.find(function(r){return r.year===2033;})||{deficitCumul:0}).deficitCumul), 'var(--muted)', 'Stock reportable'],
   ].forEach(function(k) {
     html += '<div style="background:var(--s2);border-radius:8px;padding:10px 12px;">';
-    html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">'+k[0]+'</div>';
-    html += '<div style="font-size:16px;font-family:Playfair Display,serif;color:'+k[2]+';">'+k[1]+'</div>';
+    html += '<div style="font-size:10px;color:var(--muted);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">'+k[0]+'</div>';
+    html += '<div style="font-size:16px;font-family:\'Playfair Display\',serif;color:'+k[2]+';">'+k[1]+'</div>';
     html += '<div style="font-size:10px;color:var(--dim);margin-top:2px;">'+k[3]+'</div>';
     html += '</div>';
   });
   html += '</div>';
 
   // Légende
-  html += '<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:10px;font-family:JetBrains Mono,monospace;color:var(--muted);margin-bottom:10px;">';
+  html += '<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:10px;font-family:\'JetBrains Mono\',monospace;color:var(--muted);margin-bottom:10px;">';
   html += '<span style="color:#9b72cf">■ DPE travaux</span>';
   html += '<span style="color:var(--gold)">■ Liasse obligatoire (≥2033)</span>';
   html += '<span style="color:var(--red)">■ BIC positif imposable</span>';
@@ -5125,7 +5204,7 @@ function calcLMNP2033() {
   html += '</tbody></table></div>';
 
   // Note pédagogique
-  html += '<div style="background:var(--s2);border-radius:8px;padding:12px 14px;margin-top:12px;font-size:11px;font-family:JetBrains Mono,monospace;line-height:1.6;">';
+  html += '<div style="background:var(--s2);border-radius:8px;padding:12px 14px;margin-top:12px;font-size:11px;font-family:\'JetBrains Mono\',monospace;line-height:1.6;">';
   html += '<b style="color:var(--gold);">📋 Liasse obligatoire dès 2033 :</b> Le régime LMNP au réel est obligatoire si CA > 77 700 € ou si vous dépassez 15 ans de location. ';
   html += 'Les amortissements non encore déduits sont reportables indéfiniment. ';
   html += 'Le <b>déficit "hors amortissements"</b> est imputable sur le revenu global (max 10 700 €/an), ';
@@ -5218,9 +5297,7 @@ function injectRPData() {
 }
 function saveState() {
   try {
-    var data = JSON.stringify(S);
-    localStorage.setItem(SK, data);
-    // Notify Firebase sync if active
+    localStorage.setItem(SK, JSON.stringify(S));
     if (window._fbPush) {
       clearTimeout(window._fbPushTimer);
       window._fbPushTimer = setTimeout(window._fbPush, 1500);
@@ -5311,10 +5388,8 @@ function showPage(id) {
   document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
   var pg=document.getElementById('pg-'+id); if(pg) pg.classList.add('on');
   document.querySelectorAll('.nb').forEach(function(b){if(b.dataset.page===id)b.classList.add('on');});
-  // Save current page so refresh restores it
-  try { sessionStorage.setItem('pwa-last-page', id); } catch(e) {}
-  // Sync PWA bottom nav
-  if (window.syncPwaBtns) window.syncPwaBtns(id);
+  try{sessionStorage.setItem('pwa-last-page',id);}catch(e){}
+  if(window.syncPwaBtns) window.syncPwaBtns(id);
   renderAll();
   if(id==='retraite') runProjection();
   if(id==='enveloppes') { setTimeout(initAVLinxeaFields,50); setTimeout(initPEGFields,50); setTimeout(renderPEGRoulement_mini,150); setTimeout(function(){ var a=parseInt(document.getElementById('peg-roul-annee')&&document.getElementById('peg-roul-annee').value); if(!a){var el=document.getElementById('peg-roul-annee'); if(el) el.value=new Date().getFullYear();} },200); }
@@ -6800,8 +6875,32 @@ function renderAVCards(){
 function renderLivretsTable(){
   var el=document.getElementById('livrets-tbl');if(!el)return;
   if(!S.livrets.length){el.innerHTML='<div class="empty">Aucun livret</div>';return;}
-  var rows=S.livrets.map(function(lv){var int=lv.balance*lv.rate/100;return '<tr><td><b>'+lv.name+'</b></td><td><span class="tag t-livret">'+lv.type+'</span></td><td class="mono" style="color:var(--muted)">'+(lv.bank||'—')+'</td><td class="mono"><b>'+fmt(lv.balance)+'</b></td><td class="mono" style="color:var(--green)">'+fmtN(lv.rate)+' %</td><td class="mono pos">'+fmt(int)+'</td><td><div class="brow"><button class="btn gh sm" data-edit-l="'+lv.id+'">✏</button><button class="btn dn sm" data-del-l="'+lv.id+'">✕</button></div></td></tr>';});
-  el.innerHTML='<table class="tbl"><thead><tr><th>Nom</th><th>Type</th><th>Banque</th><th>Solde</th><th>Taux</th><th>Intérêts/an</th><th></th></tr></thead><tbody>'+rows.join('')+'</tbody></table>';
+  var now=new Date(),sy=new Date(now.getFullYear(),0,1);
+  var jE=Math.floor((now-sy)/86400000),jA=(now.getFullYear()%4===0)?366:365;
+  var frac=jE/jA,totAnn=0,totCours=0;
+  var rows=S.livrets.map(function(lv){
+    var intAnn=lv.balance*lv.rate/100,intCours=intAnn*frac;
+    totAnn+=intAnn;totCours+=intCours;
+    return '<tr><td><b>'+lv.name+'</b></td><td><span class="tag t-livret">'+lv.type+'</span></td>'
+      +'<td class="mono" style="color:var(--muted)">'+(lv.bank||'—')+'</td>'
+      +'<td class="mono"><b>'+fmt(lv.balance)+'</b></td>'
+      +'<td class="mono" style="color:var(--green)">'+fmtN(lv.rate)+' %</td>'
+      +'<td class="mono pos">'+fmt(intAnn)+'</td>'
+      +'<td class="mono" style="color:var(--gold);">+'+fmt(intCours)+'</td>'
+      +'<td><div class="brow"><button class="btn gh sm" data-edit-l="'+lv.id+'">&#9998;</button>'
+      +'<button class="btn dn sm" data-del-l="'+lv.id+'">&#x2715;</button></div></td></tr>';
+  });
+  rows.push('<tr style="border-top:2px solid var(--bd);font-weight:600;">'
+    +'<td colspan="5" style="color:var(--muted);font-size:11px;">TOTAL</td>'
+    +'<td class="mono pos">'+fmt(totAnn)+'</td>'
+    +'<td class="mono" style="color:var(--gold);">+'+fmt(totCours)+'</td>'
+    +'<td></td></tr>');
+  var dateStr=now.toLocaleDateString('fr-FR');
+  el.innerHTML='<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-bottom:8px;">'
+    +'Du 1er jan. au '+dateStr+' ('+jE+' j / '+jA+' j)</div>'
+    +'<table class="tbl"><thead><tr><th>Nom</th><th>Type</th><th>Banque</th><th>Solde</th><th>Taux</th>'
+    +'<th>Int/an</th><th style="color:var(--gold);">En cours</th><th></th>'
+    +'</tr></thead><tbody>'+rows.join('')+'</tbody></table>';
   el.querySelectorAll('[data-edit-l]').forEach(function(btn){btn.addEventListener('click',function(){openLivret(btn.dataset.editL);});});
   el.querySelectorAll('[data-del-l]').forEach(function(btn){btn.addEventListener('click',function(){delLivret(btn.dataset.delL);});});
 }
@@ -6843,9 +6942,86 @@ function drawPie(cid,segs,total,vid,nid,pid,legId){
 
 // ══ CHARTS ════════════════════════════════════════════════════
 var pieView='env';
+
+function renderPeaAvObjectif(c){
+  var pea=c.pea||0,av=c.av||0,tot=pea+av;
+  if(!tot)return;
+  var peaPct=pea/tot*100,avPct=av/tot*100;
+  var T_PEA=80,T_AV=20;
+  var canvas=document.getElementById('c-pea-av');
+  if(canvas){
+    var ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;
+    var cx=W/2,cy=H/2,r=Math.min(W,H)/2-10,ir=r*0.55;
+    ctx.clearRect(0,0,W,H);
+    // Ghost target ring
+    var tSegs=[{v:T_PEA,c:'#d4a85322'},{v:T_AV,c:'#e07a5b22'}];
+    var st=-Math.PI/2;
+    tSegs.forEach(function(s){var sw=s.v/100*Math.PI*2;ctx.beginPath();ctx.arc(cx,cy,r+8,st,st+sw);ctx.arc(cx,cy,r+2,st+sw,st,true);ctx.closePath();ctx.fillStyle=s.c;ctx.fill();st+=sw;});
+    // Actual donut
+    var segs=[{v:pea,c:'#d4a853'},{v:av,c:'#e07a5b'}];
+    st=-Math.PI/2;
+    segs.forEach(function(s){var sw=s.v/tot*Math.PI*2;ctx.beginPath();ctx.arc(cx,cy,r,st,st+sw);ctx.arc(cx,cy,ir,st+sw,st,true);ctx.closePath();ctx.fillStyle=s.c;ctx.fill();st+=sw;});
+    var vEl=document.getElementById('pea-av-val');if(vEl)vEl.textContent=fmt(tot);
+  }
+  // Badge
+  var badge=document.getElementById('pea-av-badge');
+  if(badge){
+    var diff=peaPct-T_PEA;
+    var sp=document.createElement('span');
+    if(Math.abs(diff)<=3){sp.style.color='var(--green)';sp.textContent='Objectif atteint';}
+    else if(diff<0){sp.style.color='var(--gold)';sp.textContent='PEA: '+fmtN(peaPct,1)+'% / cible 80%';}
+    else{sp.style.color='var(--blue)';sp.textContent='PEA: '+fmtN(peaPct,1)+'% / cible 80%';}
+    badge.innerHTML='';badge.appendChild(sp);
+  }
+  // Detail rows
+  var detail=document.getElementById('pea-av-detail');
+  if(detail){
+    var rows=[
+      {label:'PEA',val:pea,pct:peaPct,target:T_PEA,color:'#d4a853'},
+      {label:'Assurance Vie',val:av,pct:avPct,target:T_AV,color:'#e07a5b'},
+    ];
+    detail.innerHTML=rows.map(function(row){
+      var gap=row.pct-row.target;
+      var gStr=(gap>=0?'+':'')+fmtN(gap,1)+'%';
+      var gColor=Math.abs(gap)<=3?'var(--green)':gap<0?'var(--red)':'var(--blue)';
+      var missing=gap<0?fmt((row.target-row.pct)/100*tot)+' manquant':'';
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd);">'
+        +'<div style="width:10px;height:10px;border-radius:50%;background:'+row.color+';flex-shrink:0;"></div>'
+        +'<div style="flex:1;font-size:12px;font-weight:500;">'+row.label+'</div>'
+        +'<div style="font-family:JetBrains Mono,monospace;font-size:12px;">'+fmt(row.val)+'</div>'
+        +'<div style="font-family:JetBrains Mono,monospace;font-size:12px;width:40px;text-align:right;color:'+row.color+';">'+fmtN(row.pct,1)+'%</div>'
+        +'<div style="font-family:JetBrains Mono,monospace;font-size:10px;width:55px;text-align:right;color:'+gColor+';">'+gStr+'</div>'
+        +(missing?'<div style="font-size:10px;color:var(--muted);width:90px;text-align:right;">'+missing+'</div>':'<div style="width:90px;"></div>')
+        +'</div>';
+    }).join('');
+  }
+  // Progress bars
+  var prog=document.getElementById('pea-av-progress');
+  if(prog){
+    var items=[
+      {label:'PEA',pct:peaPct,target:T_PEA,color:'#d4a853'},
+      {label:'AV',pct:avPct,target:T_AV,color:'#e07a5b'},
+    ];
+    prog.innerHTML=items.map(function(item){
+      var barW=Math.min(100,item.pct/item.target*100);
+      var barColor=Math.abs(item.pct-item.target)<=3?'var(--green)':item.color;
+      return '<div style="margin-bottom:10px;">'
+        +'<div style="display:flex;justify-content:space-between;font-size:10px;font-family:JetBrains Mono,monospace;margin-bottom:4px;">'
+        +'<span>'+item.label+'</span>'
+        +'<span style="color:var(--muted);">'+fmtN(item.pct,1)+'% / cible '+item.target+'%</span>'
+        +'</div>'
+        +'<div style="position:relative;height:10px;background:var(--s3);border-radius:5px;overflow:hidden;">'
+        +'<div style="position:absolute;top:0;left:0;height:100%;width:'+barW+'%;background:'+barColor+';border-radius:5px;transition:width .6s;"></div>'
+        +'<div style="position:absolute;top:0;left:calc('+item.target+'% - 1px);width:2px;height:100%;background:var(--text);opacity:0.4;"></div>'
+        +'</div></div>';
+    }).join('');
+  }
+}
+
 function renderCharts(){
   var c=cAll(),total=c.total;if(!total)return;
   renderLineChart();
+  renderPeaAvObjectif(c);
 
   // ── Main pie ──
   var ms=[];
@@ -7313,7 +7489,7 @@ function genPDF(){
   doc.setTextColor(234,230,222);doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('Rapport du '+new Date().toLocaleDateString('fr-FR'),20,33);
   doc.setDrawColor(37,45,58);doc.line(20,37,190,37);
   var ky=47;
-  [[c.total,'Patrimoine total net'],[c.pea,'PEA Boursobank'],[c.av,'Assurance Vie Linxea Spirit 2'],[c.peg,'PEG SNCF'],[c.immoNet,'Immobilier net'],[c.livT,'Livrets & Épargne']].forEach(function(k){
+  [[c.total,'Patrimoine total net'],[c.pea,'PEA'],[c.av,'Assurance Vie'],[c.peg,'PEG SNCF'],[c.immoNet,'Immobilier net'],[c.livT,'Livrets & Épargne']].forEach(function(k){
     doc.setFillColor(22,27,35);doc.roundedRect(20,ky,170,12,2,2,'F');
     doc.setTextColor(138,149,168);doc.setFontSize(8);doc.text(k[1],26,ky+5);
     doc.setTextColor(234,230,222);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text(fmt(k[0]),26,ky+10);ky+=14;
@@ -8250,11 +8426,10 @@ if(isEmpty){
 }
 
 renderAll();
-// Restore last visited page on refresh
-(function() {
-  var lastPage = 'dashboard';
-  try { lastPage = sessionStorage.getItem('pwa-last-page') || 'dashboard'; } catch(e) {}
-  showPage(lastPage);
+(function(){
+  var last='dashboard';
+  try{last=sessionStorage.getItem('pwa-last-page')||'dashboard';}catch(e){}
+  showPage(last);
 })();
 setInterval(refreshPrices,60000);
 
@@ -8677,10 +8852,10 @@ var ACTU_FEEDS = [
     tag:'ETF',
     alert_keywords:['krach','correction','effondrement','bear market','récession','chute'],
     queries:[
-      'ETF MSCI World S&P500 bourse mars avril 2026',
-      'Amundi BNP ETF performance 2026',
-      'bourse actions marchés financiers 2026',
-      'Wall Street CAC40 actualité mars 2026'
+      'ETF MSCI World S&P500 bourse avril 2026',
+      'BNP Easy S&P500 ETF performance',
+      'Amundi ETF actualité',
+      'bourse actions Wall Street Paris'
     ],
     sources:['boursorama.com','lesechos.fr','capital.fr','investir.lesechos.fr']
   },
@@ -8689,9 +8864,9 @@ var ACTU_FEEDS = [
     tag:'PEA',
     alert_keywords:['suppression PEA','réforme PEA','plafond PEA','fiscalité PEA'],
     queries:[
-      'PEA Plan Épargne Actions actualité 2026',
-      'PEA fiscalité réforme mars avril 2026',
-      'plafond PEA modification loi 2026'
+      'PEA Plan Épargne Actions 2025 actualité',
+      'PEA fiscalité évolution réforme',
+      'plafond PEA modification loi'
     ],
     sources:['moneyvox.fr','boursorama.com','cbanque.com']
   },
@@ -8700,10 +8875,10 @@ var ACTU_FEEDS = [
     tag:'AV',
     alert_keywords:['réforme assurance vie','flat tax','prélèvements sociaux','succession assurance vie'],
     queries:[
-      'assurance vie actualité mars avril 2026',
-      'fonds euros taux rendement 2026',
-      'Linxea Spirit assurance vie 2026',
-      'fiscalité assurance vie succession 2026'
+      'assurance vie actualité 2025',
+      'fonds euros taux 2025',
+      'Linxea Spirit assurance vie',
+      'fiscalité assurance vie succession réforme'
     ],
     sources:['moneyvox.fr','boursorama.com','capital.fr','fortuneo.fr']
   },
@@ -8712,10 +8887,11 @@ var ACTU_FEEDS = [
     tag:'Immo',
     alert_keywords:['interdiction LMNP','réforme LMNP','DPE obligation','encadrement loyers','taxe foncière hausse'],
     queries:[
-      'LMNP réforme actualité 2026',
-      'DPE réglementation location mars 2026',
-      'investissement locatif immobilier 2026',
-      'taxe foncière évolution 2026'
+      'LMNP actualité 2025 réforme',
+      'DPE réglementation location 2025',
+      'investissement locatif actualité',
+      'immobilier Limoges prix marché',
+      'taxe foncière évolution'
     ],
     sources:['bfmimmo.com','logic-immo.com','meilleurs-agents.com','capital.fr','service-public.fr']
   },
@@ -8724,10 +8900,10 @@ var ACTU_FEEDS = [
     tag:'Crédit',
     alert_keywords:['hausse taux','BCE relèvement','taux directeur','taux crédit immobilier hausse'],
     queries:[
-      'taux immobilier crédit mars avril 2026',
-      'BCE taux directeur décision 2026',
-      'baromètre taux immobilier France 2026',
-      'renégociation crédit immobilier 2026'
+      'taux immobilier crédit 2025',
+      'BCE taux directeur décision',
+      'renégociation crédit immobilier',
+      'baromètre taux immobilier France'
     ],
     sources:['meilleurstaux.com','pretto.fr','moneyvox.fr','banque-france.fr']
   },
@@ -8736,10 +8912,10 @@ var ACTU_FEEDS = [
     tag:'Fiscal',
     alert_keywords:['hausse impôts','flat tax modification','prélèvements sociaux','barème IR','contribution exceptionnelle'],
     queries:[
-      'fiscalité France réforme mars avril 2026',
-      'impôt revenu barème modification 2026',
-      'prélèvements sociaux PFU flat tax 2026',
-      'budget loi finances 2026'
+      'fiscalité France réforme 2025',
+      'impôt revenu barème modification',
+      'prélèvements sociaux PFU flat tax',
+      'budget loi finances 2026 fiscalité'
     ],
     sources:['impots.gouv.fr','legifrance.gouv.fr','capital.fr','lesechos.fr']
   },
@@ -8748,318 +8924,114 @@ var ACTU_FEEDS = [
     tag:'Loi',
     alert_keywords:['amendement','sénat vote','assemblée nationale','projet de loi','loi finances','article budget'],
     queries:[
-      'loi finances amendement sénat mars avril 2026',
-      'assemblée nationale fiscalité patrimoine 2026',
-      'réforme fiscale épargne investissement 2026',
-      'sénat loi immobilier locatif 2026'
+      'projet loi finances amendement sénat 2025',
+      'assemblée nationale fiscalité patrimoine vote',
+      'sénat loi immobilier locatif amendement',
+      'projet loi épargne investissement 2025',
+      'réforme fiscale amendement 2025 2026'
     ],
     sources:['senat.fr','assemblee-nationale.fr','legifrance.gouv.fr','lefigaro.fr','lesechos.fr']
   },
 ];
 
 
-var _actuCache = {};
-var _actuAlerts = []; // High-impact news alerts for dashboard
+var _actuFeedCache={};
+var _actuFeedLoading={};
+var _actuGridBuilt=false;
 
-function checkActuAlerts(feedId, items) {
-  var feed = ACTU_FEEDS.find(function(f){ return f.id === feedId; });
-  if (!feed || !feed.alert_keywords) return;
-  items.forEach(function(item) {
-    var titleLow = item.title.toLowerCase();
-    feed.alert_keywords.forEach(function(kw) {
-      if (titleLow.includes(kw.toLowerCase())) {
-        // Check not already added
-        var exists = _actuAlerts.some(function(a){ return a.title === item.title; });
-        if (!exists) {
-          _actuAlerts.push({
-            feedLabel: feed.label,
-            feedColor: feed.color,
-            icon: feed.icon,
-            title: item.title,
-            link: item.link,
-            keyword: kw,
-            ageLabel: item.ageLabel,
-            ts: Date.now()
-          });
-        }
-      }
-    });
+async function fetchOneFeed(feed){
+  for(var qi=0;qi<feed.queries.length;qi++){
+    var res=await fetchActuFeed(feed.queries[qi]);
+    if(res.length>=3)return res.slice(0,5);
+    if(res.length>0&&qi===feed.queries.length-1)return res.slice(0,5);
+  }
+  return[];
+}
+
+async function renderFeedCard(feedId,forceRefresh){
+  if(_actuFeedLoading[feedId])return;
+  _actuFeedLoading[feedId]=true;
+  var feed=ACTU_FEEDS.find(function(f){return f.id===feedId;});
+  if(!feed){_actuFeedLoading[feedId]=false;return;}
+  var card=document.getElementById('actu-card-'+feedId);
+  if(!card){_actuFeedLoading[feedId]=false;return;}
+  var body=card.querySelector('.actu-card-body');
+  var btn=card.querySelector('.actu-cat-refresh');
+  var lbl=card.querySelector('.actu-card-time');
+  var cache=_actuFeedCache[feedId];
+  var cacheAge=cache?(Date.now()-cache.ts)/60000:999;
+  if(!forceRefresh&&cacheAge<15&&cache&&cache.items.length){
+    renderFeedItems(body,cache.items,feed,lbl);_actuFeedLoading[feedId]=false;return;
+  }
+  if(btn){btn.disabled=true;btn.innerHTML='...';}
+  body.innerHTML='<div style="color:var(--muted);font-size:11px;padding:14px 0;text-align:center;">Chargement...</div>';
+  try{
+    var items=await fetchOneFeed(feed);
+    checkActuAlerts(feedId,items);
+    _actuFeedCache[feedId]={items:items,ts:Date.now()};
+    renderFeedItems(body,items,feed,lbl);
+  }catch(e){body.innerHTML='<div style="color:var(--red);font-size:11px;padding:10px 0;">Erreur reseau</div>';}
+  if(btn){btn.disabled=false;btn.innerHTML='&#8635;';}
+  _actuFeedLoading[feedId]=false;
+}
+
+function renderFeedItems(body,items,feed,lbl){
+  if(!items||!items.length){body.innerHTML='<div style="color:var(--muted);font-size:11px;padding:16px 0;text-align:center;">Aucun article — cliquer pour reessayer</div>';return;}
+  var html='';
+  items.forEach(function(item){
+    var ageColor=item.ageDays<=2?'var(--green)':item.ageDays<=14?feed.color:'var(--muted)';
+    html+='<a href="'+item.link+'" target="_blank" rel="noopener" style="display:block;text-decoration:none;padding:9px 0;border-bottom:1px solid var(--bd);">';
+    html+='<div style="font-size:12px;color:var(--text);line-height:1.4;margin-bottom:3px;font-weight:500;">'+item.title+'</div>';
+    html+='<div style="display:flex;gap:8px;font-size:10px;font-family:JetBrains Mono,monospace;color:var(--muted);">';
+    if(item.source)html+='<span>'+item.source+'</span>';
+    html+='<span style="color:'+ageColor+';">'+item.ageLabel+'</span>';
+    html+='</div></a>';
   });
-  // Keep only last 5 alerts, sorted by recency
-  _actuAlerts = _actuAlerts.slice(-5);
-  renderActuAlertBanner();
+  body.innerHTML=html;
+  if(lbl)lbl.textContent=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
 }
 
-function renderActuAlertBanner() {
-  var banner = document.getElementById('actu-alert-banner');
-  if (!banner) return;
-  // Remove alerts older than 24h
-  _actuAlerts = _actuAlerts.filter(function(a){ return Date.now()-a.ts < 86400000; });
-  if (!_actuAlerts.length) { banner.style.display='none'; return; }
-  banner.style.display = '';
-  banner.innerHTML = '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;background:#e05c5c12;border:1px solid #e05c5c44;border-radius:10px;margin-bottom:14px;">'
-    + '<div style="font-size:18px;flex-shrink:0;">🚨</div>'
-    + '<div style="flex:1;">'
-    + '<div style="font-size:11px;font-weight:700;color:#e05c5c;font-family:JetBrains Mono,monospace;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Alertes actualité — impact potentiel sur votre patrimoine</div>'
-    + _actuAlerts.map(function(a){
-        return '<div style="margin-bottom:5px;">'
-          + '<span style="background:'+a.feedColor+'22;border:1px solid '+a.feedColor+'44;border-radius:4px;font-size:9px;padding:1px 6px;font-family:JetBrains Mono,monospace;color:'+a.feedColor+';margin-right:6px;">'+a.icon+' '+a.feedLabel+'</span>'
-          + '<a href="'+a.link+'" target="_blank" rel="noopener" style="font-size:11px;color:var(--text);text-decoration:none;font-weight:500;">'+a.title+'</a>'
-          + '<span style="font-size:9px;color:var(--muted);margin-left:6px;font-family:JetBrains Mono,monospace;">'+a.ageLabel+'</span>'
-          + '</div>';
-      }).join('')
-    + '</div>'
-    + '<button onclick="closeActuAlert(this)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;flex-shrink:0;">✕</button>'
-    + '</div>';
-}
-var _actuFetching = false;
-
-async function fetchActuFeed(query) {
-  var results = [];
-
-  // Liste de proxies CORS à essayer dans l'ordre
-  var PROXIES = [
-    function(url){ return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url); },
-    function(url){ return 'https://corsproxy.io/?' + encodeURIComponent(url); },
-    function(url){ return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url); },
-    function(url){ return 'https://thingproxy.freeboard.io/fetch/' + url; },
-  ];
-
-  async function tryFetch(rssUrl, maxItems) {
-    for (var pi = 0; pi < PROXIES.length; pi++) {
-      try {
-        var proxyUrl = PROXIES[pi](rssUrl);
-        var ctrl = new AbortController();
-        var timer = setTimeout(function(){ ctrl.abort(); }, 6000);
-        var r = await fetch(proxyUrl, { signal: ctrl.signal });
-        clearTimeout(timer);
-        if (r.ok) {
-          var text = await r.text();
-          if (text && !text.trim().startsWith('<html') && !text.trim().startsWith('<!') && text.includes('<item')) {
-            var parsed = parseRSSItems(text, maxItems);
-            if (parsed.length > 0) return parsed;
-          }
-        }
-      } catch(e) { /* try next proxy */ }
-    }
-    return [];
-  }
-
-  // Source 1 : Google News RSS (principal, meilleure source FR)
-  var rssGoogle = 'https://news.google.com/rss/search?q='
-    + encodeURIComponent(query)
-    + '&hl=fr&gl=FR&ceid=FR:fr';
-  var res1 = await tryFetch(rssGoogle, 6);
-  res1.forEach(function(item){ results.push(item); });
-
-  // Source 2 : si pas assez d'articles, essaie une variante de la query
-  if (results.length < 3) {
-    var queryShort = query.split(' ').slice(0, 4).join(' ');
-    var rssGoogle2 = 'https://news.google.com/rss/search?q='
-      + encodeURIComponent(queryShort)
-      + '&hl=fr&gl=FR&ceid=FR:fr';
-    var res2 = await tryFetch(rssGoogle2, 4);
-    res2.forEach(function(item){
-      if (!results.some(function(r){ return r.title === item.title; }))
-        results.push(item);
-    });
-  }
-
-  // Dédoublonner et trier par date
-  var seen = {};
-  results = results.filter(function(item) {
-    var key = item.title.slice(0, 50).toLowerCase();
-    if (seen[key]) return false;
-    seen[key] = true;
-    return true;
+function renderActuGrid(){
+  var el=document.getElementById('actu-content');if(!el)return;
+  var html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">';
+  ACTU_FEEDS.forEach(function(f){
+    html+='<div class="card actu-feed-card" id="actu-card-'+f.id+'" style="border-top:2px solid '+f.color+';padding:16px;">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
+    html+='<span style="font-size:14px;font-weight:500;">'+f.icon+' '+f.label+'</span>';
+    html+='<div style="display:flex;align-items:center;gap:8px;">';
+    html+='<span class="actu-card-time" style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;"></span>';
+    html+='<button class="actu-cat-refresh btn gh sm" data-feed-id="'+f.id+'" style="font-size:11px;padding:3px 10px;">&#8635;</button>';
+    html+='</div></div>';
+    html+='<div class="actu-card-body" style="min-height:60px;"></div>';
+    html+='</div>';
   });
-  results.sort(function(a, b){ return b.dateObj - a.dateObj; });
-
-  return results;
-}
-
-function parseRSSItems(xmlText, maxItems) {
-  var results = [];
-  try {
-    if (!xmlText || xmlText.trim().startsWith('<html') || xmlText.trim().startsWith('<!')) return results;
-    var parser = new DOMParser();
-    var doc = parser.parseFromString(xmlText, 'text/xml');
-    var items = doc.querySelectorAll('item');
-    var count = 0;
-    items.forEach(function(item) {
-      if (count >= maxItems) return;
-      var title   = item.querySelector('title')?.textContent || '';
-      var link    = item.querySelector('link')?.textContent || '';
-      if (!link) link = item.querySelector('guid')?.textContent || '#';
-      var pubDate = item.querySelector('pubDate')?.textContent
-                 || item.querySelector('dc\\:date')?.textContent || '';
-      var source  = item.querySelector('source')?.textContent
-                 || item.querySelector('dc\\:creator')?.textContent || '';
-      // Clean Google News title suffix
-      title = title.replace(/ - [^-]{3,40}$/, '').replace(/<!\[CDATA\[|\]\]>/g,'').trim();
-      link  = link.replace(/<!\[CDATA\[|\]\]>/g,'').trim();
-      if (title.length < 6) return;
-      var dateObj = pubDate ? new Date(pubDate) : new Date(0);
-      var age = Math.round((Date.now() - dateObj) / 3600000);
-      // Filter out articles older than 90 days
-      if (dateObj.getTime() > 0 && age > 90 * 24) return;
-      var ageLabel = age < 1 ? 'Il y a < 1h'
-        : age < 24 ? 'Il y a ' + age + 'h'
-        : age < 48 ? 'Hier'
-        : age < 168 ? 'Il y a ' + Math.round(age/24) + 'j'
-        : age < 720 ? 'Il y a ' + Math.round(age/168) + ' sem.'
-        : 'Il y a ' + Math.round(age/720) + ' mois';
-      results.push({ title, link, source, ageLabel, dateObj, ageDays: Math.round(age/24) });
-      count++;
-    });
-  } catch(e) {}
-  return results;
-}
-
-
-// ── Cache par feed indépendant ────────────────────────────────
-var _actuFeedCache   = {};  // { feedId: { items, ts } }
-var _actuFeedLoading = {};  // { feedId: bool } — anti double-lancement
-
-// ── Fetch UN seul feed (queries une par une) ──────────────────
-async function fetchOneFeed(feed) {
-  for (var qi = 0; qi < feed.queries.length; qi++) {
-    var res = await fetchActuFeed(feed.queries[qi]);
-    if (res.length >= 3) return res.slice(0, 5);
-    if (res.length > 0 && qi === feed.queries.length - 1) return res.slice(0, 5);
-  }
-  return [];
-}
-
-// ── Render UNE seule card ─────────────────────────────────────
-async function renderFeedCard(feedId, forceRefresh) {
-  if (_actuFeedLoading[feedId]) return; // déjà en cours
-  _actuFeedLoading[feedId] = true;
-
-  var feed = ACTU_FEEDS.find(function(f){ return f.id === feedId; });
-  if (!feed) { _actuFeedLoading[feedId] = false; return; }
-  var card = document.getElementById('actu-card-' + feedId);
-  if (!card) { _actuFeedLoading[feedId] = false; return; }
-  var body = card.querySelector('.actu-card-body');
-  var btn  = card.querySelector('.actu-cat-refresh');
-  var lbl  = card.querySelector('.actu-card-time');
-
-  // Cache 15 min
-  var cache = _actuFeedCache[feedId];
-  var cacheAge = cache ? (Date.now() - cache.ts) / 60000 : 999;
-  if (!forceRefresh && cacheAge < 15 && cache && cache.items.length) {
-    renderFeedItems(body, cache.items, feed, lbl);
-    _actuFeedLoading[feedId] = false;
-    return;
-  }
-
-  if (btn) { btn.disabled = true; btn.innerHTML = '⏳'; }
-  body.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:14px 0;text-align:center;">Chargement…</div>';
-
-  try {
-    var items = await fetchOneFeed(feed);
-    checkActuAlerts(feedId, items);
-    _actuFeedCache[feedId] = { items: items, ts: Date.now() };
-    renderFeedItems(body, items, feed, lbl);
-  } catch(e) {
-    body.innerHTML = '<div style="color:var(--red);font-size:11px;padding:10px 0;text-align:center;">❌ Erreur réseau</div>';
-  }
-  if (btn) { btn.disabled = false; btn.innerHTML = '⟳'; }
-  _actuFeedLoading[feedId] = false;
-}
-
-// ── Affiche les articles ──────────────────────────────────────
-function renderFeedItems(body, items, feed, lbl) {
-  if (!items || !items.length) {
-    body.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:16px 0;text-align:center;">Aucun article trouvé<br><span style="font-size:10px;">Clique ⟳ pour réessayer</span></div>';
-    return;
-  }
-  var html = '';
-  items.forEach(function(item) {
-    var ageColor = item.ageDays <= 2 ? 'var(--green)' : item.ageDays <= 14 ? feed.color : 'var(--muted)';
-    html += '<a href="'+item.link+'" target="_blank" rel="noopener" style="display:block;text-decoration:none;padding:9px 0;border-bottom:1px solid var(--bd);">';
-    html += '<div style="font-size:12px;color:var(--text);line-height:1.4;margin-bottom:3px;font-weight:500;">'+item.title+'</div>';
-    html += '<div style="display:flex;gap:8px;font-size:10px;font-family:JetBrains Mono,monospace;color:var(--muted);">';
-    if (item.source) html += '<span>'+item.source+'</span>';
-    html += '<span style="color:'+ageColor+';">'+item.ageLabel+'</span>';
-    html += '</div></a>';
-  });
-  body.innerHTML = html;
-  if (lbl) lbl.textContent = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-}
-
-// ── Construit la grille HTML ──────────────────────────────────
-var _actuGridBuilt = false;
-function renderActuGrid() {
-  var el = document.getElementById('actu-content');
-  if (!el) return;
-  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">';
-  ACTU_FEEDS.forEach(function(f) {
-    html += '<div class="card actu-feed-card" id="actu-card-'+f.id+'" style="border-top:2px solid '+f.color+';padding:16px;">';
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
-    html += '<span style="font-size:14px;font-weight:500;">'+f.icon+' '+f.label+'</span>';
-    html += '<div style="display:flex;align-items:center;gap:8px;">';
-    html += '<span class="actu-card-time" style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;"></span>';
-    html += '<button class="actu-cat-refresh btn gh sm" data-feed-id="'+f.id+'" style="font-size:11px;padding:3px 10px;" title="Actualiser ce thème uniquement">⟳</button>';
-    html += '</div></div>';
-    html += '<div class="actu-card-body" style="min-height:60px;"></div>';
-    html += '</div>';
-  });
-  html += '</div>';
-  html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:14px;text-align:center;">';
-  html += 'Google News · 90 derniers jours &nbsp;·&nbsp; ';
-  html += '<span style="color:var(--green);">●</span> &lt;2j &nbsp;';
-  html += '<span style="color:'+ACTU_FEEDS[0].color+';">●</span> &lt;2sem &nbsp;';
-  html += '<span style="color:var(--muted);">●</span> plus ancien';
-  html += '</div>';
-  el.innerHTML = html;
-  _actuGridBuilt = true;
-
-  // Chaque bouton ⟳ n'actualise QUE son propre feed
-  el.querySelectorAll('.actu-cat-refresh').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      var feedId = btn.dataset.feedId;
-      _actuFeedLoading[feedId] = false; // reset verrou
-      delete _actuFeedCache[feedId];    // vide cache de CE feed uniquement
-      renderFeedCard(feedId, true);
+  html+='</div>';
+  el.innerHTML=html;
+  _actuGridBuilt=true;
+  el.querySelectorAll('.actu-cat-refresh').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.preventDefault();e.stopPropagation();
+      var feedId=btn.dataset.feedId;
+      _actuFeedLoading[feedId]=false;
+      delete _actuFeedCache[feedId];
+      renderFeedCard(feedId,true);
     });
   });
 }
 
-// ── Point d'entrée — appelé par showPage('actu') ─────────────
-async function renderActu(forceRefresh) {
-  var el = document.getElementById('actu-content');
-  if (!el) return;
-
-  if (forceRefresh) {
-    _actuFeedCache   = {};
-    _actuFeedLoading = {};
-    _actuGridBuilt   = false;
-  }
-
-  if (!_actuGridBuilt || forceRefresh) renderActuGrid();
-
-  // Charge les feeds avec 400ms d'écart pour ne pas saturer les proxies
-  ACTU_FEEDS.forEach(function(feed, fi) {
-    setTimeout(function() {
-      renderFeedCard(feed.id, forceRefresh);
-    }, fi * 400);
+async function renderActu(forceRefresh){
+  var el=document.getElementById('actu-content');if(!el)return;
+  if(forceRefresh){_actuFeedCache={};_actuFeedLoading={};_actuGridBuilt=false;}
+  if(!_actuGridBuilt||forceRefresh)renderActuGrid();
+  ACTU_FEEDS.forEach(function(feed,fi){
+    setTimeout(function(){renderFeedCard(feed.id,forceRefresh);},fi*400);
   });
-
-  var updateEl = document.getElementById('actu-last-update');
-  if (updateEl) updateEl.textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  var updateEl=document.getElementById('actu-last-update');
+  if(updateEl)updateEl.textContent='Mis a jour '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
 }
 
-// ── Bouton global ⟳ jaune = recharge TOUT ────────────────────
-var btnActu = document.getElementById('btn-refresh-actu');
-if (btnActu) btnActu.addEventListener('click', function(){
-  _actuFeedCache   = {};
-  _actuFeedLoading = {};
-  _actuGridBuilt   = false;
-  renderActu(true);
-});
+var btnActu=document.getElementById('btn-refresh-actu');
+if(btnActu)btnActu.addEventListener('click',function(){_actuFeedCache={};_actuFeedLoading={};_actuGridBuilt=false;renderActu(true);});
 
 // showPage hook for actu
 
@@ -9320,11 +9292,6 @@ self.addEventListener('fetch', e => {
   var moreGrid = document.getElementById('pwa-more-grid');
   if (!bottomNav) return;
 
-  // Only activate PWA nav on mobile
-  var isMobileView = window.innerWidth <= 768;
-  if (!isMobileView) return; // desktop: do nothing, elements stay hidden
-  bottomNav.style.display = 'flex';
-
   // Build main tabs
   PAGES_MAIN.forEach(function(p) {
     var btn = document.createElement('button');
@@ -9429,276 +9396,317 @@ window.closePwaMore = function() {
   });
 })();
 
-// ══ PWA — Back button: go to dashboard instead of leaving ══════
+// ══ PWA — Keyboard handling (back button) ════════════════════
 window.addEventListener('popstate', function() {
-  var lastPage = 'dashboard';
-  try { lastPage = sessionStorage.getItem('pwa-last-page') || 'dashboard'; } catch(e) {}
-  if (lastPage !== 'dashboard') {
-    showPage('dashboard');
-  }
+  // no-op — prevents white screen on Android back button
 });
+history.pushState({}, '');
 </script>
 
 
 
 
 
+<!-- ══ GLOSSAIRE POPUP ══ -->
+<div id="glossaire-popup" style="display:none;position:fixed;z-index:9999;background:var(--s1);border:1px solid var(--gold);border-radius:10px;padding:12px 15px;max-width:300px;box-shadow:0 8px 32px #00000055;pointer-events:none;font-family:Inter,sans-serif;font-size:11px;"></div>
+
+<!-- ══ IA MODAL ══ -->
+<div id="ov-ia" class="ov">
+  <div class="modal" style="width:600px;max-width:96vw;max-height:88vh;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h2 style="font-family:'Playfair Display',serif;font-size:18px;">Analyse IA du patrimoine</h2>
+      <button onclick="closeOv('ov-ia')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);">&#x2715;</button>
+    </div>
+    <div id="ia-content" style="min-height:120px;">
+      <div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;">Cliquez Analyser pour obtenir une analyse personnalisee.</div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:10px;color:var(--muted);">Analyse basee sur vos donnees locales</span>
+      <button id="btn-ia-analyze" class="btn" onclick="lancerAnalyseIA()">Analyser ma situation</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ══ FIREBASE SECURE — Google Auth + Sync ═════════════════════
-(function() {
-  var FB_CONFIG = {
-    apiKey: "AIzaSyCk7gq4KXvI3FDbNfs22V1lzjVwg6jZuAo",
-    authDomain: "patritracker.firebaseapp.com",
-    databaseURL: "https://patritracker-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "patritracker",
-    storageBucket: "patritracker.firebasestorage.app",
-    messagingSenderId: "588310777550",
-    appId: "1:588310777550:web:4c5f69ea6e2a0f6fcf4a9f"
-  };
-  var AUTHORIZED_EMAIL = ""; // laissé vide = tout compte Google autorisé (tu peux mettre ton email)
-  var _db = null;
-  var _uid = null;
-  var _syncEnabled = false;
-  var _lastHash = null;
-  var _ignoreNext = false;
-  var _saveTimer = null;
-
-  // ── Overlay login ────────────────────────────────────────────
-  function createLoginOverlay() {
-    var tpl = document.getElementById('fb-login-tpl');
-    if (!tpl) return;
-    var el = tpl.cloneNode(true);
-    el.id = 'fb-login-overlay';
-    el.style.display = 'flex';
-    document.body.appendChild(el);
-
-    // Wire the Google sign-in button
-    var btn = el.querySelector('#fb-google-btn');
-    if (!btn) btn = document.getElementById('fb-google-btn');
-    if (btn) {
-      btn.addEventListener('click', function() {
-        btn.disabled = true;
-        btn.style.opacity = '0.6';
-        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="30 70"/></svg> Connexion en cours…';
-        var provider = new firebase.auth.GoogleAuthProvider();
-        provider.addScope('email');
-        provider.addScope('profile');
-        // Use popup only — redirect causes "missing initial state" on GitHub Pages
-        firebase.auth().signInWithPopup(provider).then(function() {
-          // success handled by onAuthStateChanged
-        }).catch(function(e) {
-          if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
-            // User closed popup — just reset button
-            resetGoogleBtn(btn, 'Fenêtre fermée. Réessaie.');
-          } else if (e.code === 'auth/popup-blocked') {
-            // Popup blocked — show manual instructions
-            resetGoogleBtn(btn, 'Popup bloqué. Autorise les popups pour ce site dans ton navigateur, puis réessaie.');
-          } else {
-            resetGoogleBtn(btn, e.message);
-          }
-        });
+// ══ GLOSSAIRE ════════════════════════════════════════════════
+var GLOSSAIRE = {
+  "PEA":{t:"PEA — Plan Epargne Actions",d:"Enveloppe fiscale. Exoneration IR apres 5 ans, PS 17,2% dus. Plafond 150 000 EUR."},
+  "PFU":{t:"PFU — Flat Tax 30%",d:"12,8% IR + 17,2% PS sur dividendes et plus-values hors PEA/AV."},
+  "LMNP":{t:"LMNP — Loueur Meuble Non Pro",d:"Location meublee : amortissement du bien et mobilier reduisant la base imposable."},
+  "TMI":{t:"TMI — Taux Marginal Imposition",d:"Taux applique a la tranche la plus haute. Tranches 2025 : 0/11/30/41/45%."},
+  "TER":{t:"TER — Total Expense Ratio",d:"Frais annuels totaux d'un ETF en %. S&P500 : 0,05-0,20%/an."},
+  "ETF":{t:"ETF — Fonds indiciel cote",d:"Replique un indice (S&P500, MSCI World). Faibles frais, diversification instantanee."},
+  "AV":{t:"AV — Assurance Vie",d:"Abattement 4600 EUR/an apres 8 ans. Avantage successoral 152 500 EUR par beneficiaire."},
+  "PEG":{t:"PEG — Plan Epargne Groupe",d:"Epargne salariale avec abondement employeur. Blocage 5 ans. Plus-values exonerees d'IR."},
+  "CTO":{t:"CTO — Compte-Titres Ordinaire",d:"Sans plafond ni avantage fiscal. Flat Tax 30% sur gains et dividendes."},
+  "DPE":{t:"DPE — Performance Energetique",d:"Classement A-G. Interdiction location : G en 2025, F en 2028, E en 2034."},
+  "IRL":{t:"IRL — Indice Reference Loyers",d:"Indice INSEE de revision annuelle des loyers. Publie chaque trimestre."},
+  "PS":{t:"PS — Prelevements Sociaux 17,2%",d:"CSG 9,2% + CRDS 0,5% + solidarite 7,5%. Dus meme sur gains exoneres d'IR."},
+  "PTZ":{t:"PTZ — Pret a Taux Zero",d:"Pret sans interets pour residence principale, sous conditions de ressources."},
+  "TAEG":{t:"TAEG — Taux Effectif Global",d:"Inclut interets, assurance, frais de dossier. Permet de comparer les offres."},
+  "BIC":{t:"BIC — Benefices Industriels",d:"Categorie fiscale de la location meublee LMNP. Amortissements deductibles."},
+  "SCPI":{t:"SCPI — Societe Civile Placement Immo",d:"Investissement immobilier collectif. Rendement ~4-5%/an. Liquidite limitee."},
+};
+(function(){
+  var popup=document.getElementById('glossaire-popup');
+  function wireGlossaire(){
+    document.querySelectorAll('.gls-term').forEach(function(el){
+      el.style.cssText='border-bottom:1px dashed var(--gold);cursor:help;color:inherit;';
+      el.addEventListener('mouseenter',function(e){
+        var d=GLOSSAIRE[el.dataset.gls];if(!d)return;
+        popup.innerHTML='<div style="font-weight:700;color:var(--gold);margin-bottom:6px;">'+d.t+'</div><div style="line-height:1.6;">'+d.d+'</div>';
+        popup.style.display='block';
+        var rect=el.getBoundingClientRect(),top=rect.bottom+8,left=rect.left;
+        if(left+300>window.innerWidth)left=window.innerWidth-310;
+        if(top+150>window.innerHeight)top=rect.top-160;
+        popup.style.top=top+'px';popup.style.left=left+'px';
       });
-    }
-  }
-
-  function resetGoogleBtn(btn, errMsg) {
-    btn.disabled = false;
-    btn.style.opacity = '1';
-    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Réessayer';
-    var errEl = document.getElementById('fb-login-error');
-    if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'Erreur : ' + errMsg; }
-  }
-
-  function hideLoginOverlay() {
-    var el = document.getElementById('fb-login-overlay');
-    if (el) {
-      el.style.transition = 'opacity .4s';
-      el.style.opacity = '0';
-      setTimeout(function(){ el.remove(); }, 400);
-    }
-  }
-
-  // ── Sync indicator in header ─────────────────────────────────
-  function createSyncUI() {
-    var el = document.createElement('div');
-    el.id = 'fb-sync-indicator';
-    el.style.cssText = 'display:flex;align-items:center;gap:5px;font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid transparent;transition:all .2s;user-select:none;flex-shrink:0;';
-    el.innerHTML = '<span id="fb-dot" style="width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s;"></span><span id="fb-lbl">…</span>';
-    el.title = 'Synchronisation Firebase — clic pour forcer';
-    el.addEventListener('click', function(){ pushToFirebase(); window._toast && window._toast('🔄 Sync forcée…'); });
-    var hdrRight = document.querySelector('.hdr-right');
-    if (hdrRight) hdrRight.insertBefore(el, hdrRight.firstChild);
-
-    // Logout button
-    var logoutBtn = document.createElement('button');
-    logoutBtn.id = 'fb-logout-btn';
-    logoutBtn.className = 'btn gh sm';
-    logoutBtn.style.cssText = 'font-size:10px;padding:4px 8px;flex-shrink:0;';
-    logoutBtn.textContent = '⎋ Déconnexion';
-    logoutBtn.style.display = 'none';
-    logoutBtn.addEventListener('click', function(){
-      firebase.auth().signOut().then(function(){
-        window._toast && window._toast('👋 Déconnecté');
-        setTimeout(function(){ location.reload(); }, 800);
-      });
+      el.addEventListener('mouseleave',function(){popup.style.display='none';});
     });
-    if (hdrRight) hdrRight.insertBefore(logoutBtn, hdrRight.firstChild);
   }
-
-  function updateSyncUI(state) {
-    var dot = document.getElementById('fb-dot');
-    var lbl = document.getElementById('fb-lbl');
-    var logout = document.getElementById('fb-logout-btn');
-    if (!dot || !lbl) return;
-    var map = {
-      connecting: ['var(--muted)', '…'],
-      connected:  ['var(--green)', 'sync ✓'],
-      synced:     ['var(--gold)',  'envoi…'],
-      received:   ['var(--blue)', 'réception…'],
-      error:      ['var(--red)',  'hors-ligne'],
-    };
-    var s = map[state] || map.connecting;
-    dot.style.background = s[0];
-    lbl.textContent = s[1];
-    if (logout) logout.style.display = state === 'error' ? 'none' : 'inline-flex';
-  }
-
-  // ── Hash helper ──────────────────────────────────────────────
-  function hashStr(str) {
-    var h = 0;
-    for (var i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
-    return h.toString(36);
-  }
-
-  // ── Firebase DB path for this user ───────────────────────────
-  function userRef() {
-    // Fixed path — single user app, no need for per-uid path
-    return _db.ref('patritracker/state');
-  }
-
-  // ── Push local → Firebase ────────────────────────────────────
-  function pushToFirebase() {
-    window._fbPush = pushToFirebase; // expose for saveState hook
-    if (!_syncEnabled || !_uid) return;
-    // Get current state and add timestamp
-    var S = window._pState ? window._pState() : null;
-    if (!S) return;
-    var tsVal = Date.now();
-    var dataObj = JSON.parse(JSON.stringify(S)); // deep clone
-    var h = hashStr(JSON.stringify(dataObj));
-    if (h === _lastHash) return; // no real change
-    _lastHash = h;
-    dataObj._ts = tsVal;
-    var raw = JSON.stringify(dataObj);
-    // Also update localStorage with _ts
-    try { localStorage.setItem('patrimoine_v8', raw); } catch(e) {}
-    _ignoreNext = true;
-    updateSyncUI('synced');
-    userRef().set({ data: raw, ts: tsVal, hash: h })
-      .then(function(){ updateSyncUI('connected'); })
-      .catch(function(){ updateSyncUI('error'); });
-  }
-
-  // ── Apply remote data to app ─────────────────────────────────
-  function applyRemote(raw) {
-    try {
-      var parsed = JSON.parse(raw);
-      localStorage.setItem('patrimoine_v8', raw);
-      var S = window._pState ? window._pState() : null;
-      if (S) {
-        Object.keys(parsed).forEach(function(k){ S[k] = parsed[k]; });
-        ['positions','immo','livrets','history','snapshots','actionsDone','pegRoulement'].forEach(function(k){ if(!S[k]) S[k]=[]; });
+  function initGlossaire(){
+    var terms=Object.keys(GLOSSAIRE);
+    function walk(node){
+      if(node.nodeType===3){
+        var txt=node.textContent,found=false;
+        terms.forEach(function(t){if(txt.includes(t))found=true;});
+        if(!found)return;
+        var sp=document.createElement('span'),html=txt;
+        terms.slice().sort(function(a,b){return b.length-a.length;}).forEach(function(t){
+          html=html.replace(new RegExp('\b'+t+'\b','g'),'<span class="gls-term" data-gls="'+t+'">'+t+'</span>');
+        });
+        if(html!==txt){sp.innerHTML=html;node.parentNode.replaceChild(sp,node);}
+      } else if(node.nodeType===1&&!['SCRIPT','STYLE','INPUT','TEXTAREA','A','BUTTON'].includes(node.tagName)){
+        Array.from(node.childNodes).forEach(walk);
       }
-      if (window._app && window._app.renderAll) window._app.renderAll();
-      window._toast && window._toast('🔄 Données synchronisées');
-    } catch(e) { console.warn('[FB] applyRemote error', e); }
+    }
+    var m=document.querySelector('main');if(m)walk(m);
+    wireGlossaire();
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    setTimeout(initGlossaire,1500);
+  });
+})();
+
+// ══ BOUTON IA ═══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',function(){
+  var hdr=document.querySelector('.hdr-right');
+  if(hdr){
+    var b=document.createElement('button');
+    b.className='btn sm';
+    b.style.cssText='background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;font-size:11px;';
+    b.textContent='IA';
+    b.title='Analyse IA de votre patrimoine';
+    b.addEventListener('click',function(){document.getElementById('ov-ia').classList.add('on');lancerAnalyseIA();});
+    hdr.insertBefore(b,hdr.firstChild);
+  }
+});
+
+async function lancerAnalyseIA(){
+  var el=document.getElementById('ia-content');
+  var btn=document.getElementById('btn-ia-analyze');
+  if(!el)return;
+  var S=window._pState?window._pState():null;
+  if(!S){el.innerHTML='<div style="color:var(--red);padding:20px;text-align:center;">Donnees non disponibles</div>';return;}
+  var c=window._cAll?window._cAll():{};
+  var now=new Date();
+  var resume=[];
+  resume.push('Profil : Maxime, 29 ans, cadre SNCF, couple, 1 enfant.');
+  resume.push('Patrimoine net : '+Math.round((c.total||0)/1000)+'k EUR | Brut : '+Math.round((c.brut||0)/1000)+'k EUR | Dettes : '+Math.round((c.dettes||0)/1000)+'k EUR');
+  resume.push('PEA : '+Math.round((c.pea||0)/1000)+'k EUR | AV : '+Math.round((c.av||0)/1000)+'k EUR | PEG : '+Math.round((c.peg||0)/1000)+'k EUR');
+  resume.push('Immobilier brut : '+Math.round((c.immoV||0)/1000)+'k EUR | Net : '+Math.round((c.immoNet||0)/1000)+'k EUR');
+  resume.push('Livrets : '+Math.round((c.livT||0)/1000)+'k EUR');
+  if(S.positions&&S.positions.length){
+    resume.push('Positions : '+S.positions.slice(0,6).map(function(p){return p.name+' ('+p.envelope+', '+Math.round((p.price||0)*(p.qty||0))+'EUR)';}).join(', '));
+  }
+  if(S.immo&&S.immo.length){S.immo.forEach(function(b){resume.push('Immo : '+b.name+' ('+b.type+', '+Math.round((b.valeur||0)/1000)+'k EUR, DPE '+(b.dpe||'?')+')');});}
+  var NL=String.fromCharCode(10);
+  var prompt=[
+    "Tu es un conseiller en gestion de patrimoine expert. Situation de mon client en "+now.getFullYear()+":",
+    "",
+    resume.join(NL),
+    "",
+    "Analyse en 4 parties :",
+    "1. Points forts du patrimoine",
+    "2. Points de vigilance ou risques",
+    "3. 3 actions prioritaires pour les 6 prochains mois",
+    "4. Projection a 10 ans",
+    "",
+    "Sois precis et chiffre. Profil : jeune cadre SNCF, LMNP, objectif retraite 2057."
+  ].join(NL);
+  el.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:30px;color:var(--muted);">'
+    +'<div style="font-size:28px;animation:spin 1.5s linear infinite;">&#129302;</div>'
+    +'<div style="font-size:13px;">Analyse en cours...</div></div>';
+  if(btn)btn.disabled=true;
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    var data=await resp.json();
+    var text='';
+    if(data.content&&data.content.length){text=data.content.map(function(b){return b.text||'';}).join('');}
+    else if(data.error){text='Erreur API : '+data.error.message;}
+    var html=text
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/^#+\s+(.*)/gm,'<h4 style="color:var(--gold);margin:14px 0 6px;">$1</h4>')
+      .replace(/^- (.*)/gm,'<div style="padding:4px 0 4px 12px;border-left:2px solid var(--bd);margin:3px 0;font-size:12px;">$1</div>');
+    html=html.split('\n\n').join('<br>').split('\n').join(' ');
+    el.innerHTML='<div style="font-size:12px;line-height:1.7;">'+html+'</div>'
+      +'<div style="font-size:10px;color:var(--muted);margin-top:14px;padding-top:10px;border-top:1px solid var(--bd);">'
+      +'Analyse par Claude &middot; '+new Date().toLocaleString('fr-FR')+'</div>';
+  }catch(e){
+    el.innerHTML='<div style="color:var(--red);padding:20px;text-align:center;">Erreur connexion API : '+e.message+'</div>';
+  }
+  if(btn)btn.disabled=false;
+}
+</script>
+
+
+<script>
+// ══ FIREBASE SECURE AUTH + SYNC ══════════════════════════════
+(function(){
+  var FB_CONFIG={
+    apiKey:"AIzaSyCk7gq4KXvI3FDbNfs22V1lzjVwg6jZuAo",
+    authDomain:"patritracker.firebaseapp.com",
+    databaseURL:"https://patritracker-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:"patritracker",
+    storageBucket:"patritracker.firebasestorage.app",
+    messagingSenderId:"588310777550",
+    appId:"1:588310777550:web:4c5f69ea6e2a0f6fcf4a9f"
+  };
+  var _db=null,_uid=null,_sync=false,_lastHash=null,_ignoreNext=false,_saveTimer=null;
+
+  function hashStr(s){var h=0;for(var i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return h.toString(36);}
+  function userRef(){return _db.ref('patritracker/state');}
+
+  function pushToFirebase(){
+    window._fbPush=pushToFirebase;
+    if(!_sync||!_uid)return;
+    var S=window._pState?window._pState():null;if(!S)return;
+    var data=JSON.parse(JSON.stringify(S));
+    var tsVal=Date.now();
+    var h=hashStr(JSON.stringify(data));
+    if(h===_lastHash)return;
+    _lastHash=h;data._ts=tsVal;
+    var raw=JSON.stringify(data);
+    try{localStorage.setItem('patrimoine_v8',raw);}catch(e){}
+    _ignoreNext=true;updateSyncUI('synced');
+    userRef().set({data:raw,ts:tsVal,hash:h})
+      .then(function(){updateSyncUI('connected');})
+      .catch(function(){updateSyncUI('error');});
+  }
+  window._fbPush=pushToFirebase;
+
+  function applyRemote(raw){
+    try{
+      var parsed=JSON.parse(raw);
+      localStorage.setItem('patrimoine_v8',raw);
+      var S=window._pState?window._pState():null;
+      if(S){Object.keys(parsed).forEach(function(k){S[k]=parsed[k];});['positions','immo','livrets','history','snapshots','actionsDone','pegRoulement'].forEach(function(k){if(!S[k])S[k]=[];});}
+      if(window._app&&window._app.renderAll)window._app.renderAll();
+      window._toast&&window._toast('Donnees synchronisees');
+    }catch(e){}
   }
 
-  // ── Listen for remote changes ────────────────────────────────
-  function startSync() {
-    // First: pull remote
-    userRef().once('value').then(function(snap) {
-      var val = snap.val();
-      if (val && val.data) {
-        var localRaw = localStorage.getItem('patrimoine_v8');
-        var localTs = 0;
-        try { localTs = JSON.parse(localRaw)._ts || 0; } catch(e) {}
-        var remoteTs = val.ts || 0;
-        // Give 5s grace to local — avoids overwriting just-made changes on refresh
-        var localIsNewer = localRaw && (localTs >= remoteTs - 5000);
-        if (!localRaw) {
-          // No local data — take remote
-          _lastHash = val.hash || hashStr(val.data);
-          applyRemote(val.data);
-        } else if (localIsNewer) {
-          // Local is same age or newer — push local to Firebase
-          var tmp2 = JSON.parse(localRaw); delete tmp2._ts;
-          _lastHash = hashStr(JSON.stringify(tmp2));
-          pushToFirebase();
-        } else {
-          // Remote is clearly newer — apply it
-          _lastHash = val.hash || hashStr(val.data);
-          applyRemote(val.data);
-        }
-      } else {
-        pushToFirebase(); // first device — seed the cloud
-      }
+  function startSync(){
+    userRef().once('value').then(function(snap){
+      var val=snap.val();
+      if(val&&val.data){
+        var localRaw=localStorage.getItem('patrimoine_v8'),localTs=0;
+        try{localTs=JSON.parse(localRaw)._ts||0;}catch(e){}
+        if(!localRaw||val.ts>localTs+5000){_lastHash=val.hash||hashStr(val.data);applyRemote(val.data);}
+        else{var tmp=JSON.parse(localRaw);delete tmp._ts;_lastHash=hashStr(JSON.stringify(tmp));pushToFirebase();}
+      } else {pushToFirebase();}
       updateSyncUI('connected');
     });
-
-    // Then: live listener
-    userRef().on('value', function(snap) {
-      if (_ignoreNext) { _ignoreNext = false; return; }
-      var val = snap.val();
-      if (!val || !val.data) return;
-      var h = val.hash || hashStr(val.data);
-      if (h === _lastHash) return;
-      _lastHash = h;
-      applyRemote(val.data);
-      updateSyncUI('received');
-      setTimeout(function(){ updateSyncUI('connected'); }, 1500);
+    userRef().on('value',function(snap){
+      if(_ignoreNext){_ignoreNext=false;return;}
+      var val=snap.val();if(!val||!val.data)return;
+      var h=val.hash||hashStr(val.data);if(h===_lastHash)return;
+      _lastHash=h;applyRemote(val.data);updateSyncUI('received');
+      setTimeout(function(){updateSyncUI('connected');},1500);
     });
   }
 
-  // ── Hook localStorage.setItem ────────────────────────────────
-  function hookSave() { window._fbPush = pushToFirebase; }
-
-  // ── Load Firebase SDKs + boot ────────────────────────────────
-  function loadScript(src, cb) {
-    var s = document.createElement('script');
-    s.src = src; s.onload = cb;
-    document.head.appendChild(s);
+  function createSyncUI(){
+    var el=document.createElement('div');
+    el.id='fb-sync-indicator';
+    el.style.cssText='display:flex;align-items:center;gap:5px;font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);cursor:pointer;padding:4px 8px;border-radius:6px;user-select:none;flex-shrink:0;';
+    el.innerHTML='<span id="fb-dot" style="width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s;"></span><span id="fb-lbl">...</span>';
+    el.title='Firebase sync - clic pour forcer';
+    el.addEventListener('click',function(){pushToFirebase();window._toast&&window._toast('Sync forcee...');});
+    var logoutBtn=document.createElement('button');
+    logoutBtn.className='btn gh sm';logoutBtn.style.cssText='font-size:10px;padding:4px 8px;flex-shrink:0;display:none;';
+    logoutBtn.id='fb-logout-btn';logoutBtn.textContent='Deconnexion';
+    logoutBtn.addEventListener('click',function(){firebase.auth().signOut().then(function(){setTimeout(function(){location.reload();},500);});});
+    var hdr=document.querySelector('.hdr-right');
+    if(hdr){hdr.insertBefore(el,hdr.firstChild);hdr.insertBefore(logoutBtn,hdr.firstChild);}
   }
 
-  document.addEventListener('DOMContentLoaded', function() {
+  function updateSyncUI(state){
+    var dot=document.getElementById('fb-dot'),lbl=document.getElementById('fb-lbl');
+    var logout=document.getElementById('fb-logout-btn');
+    if(!dot||!lbl)return;
+    var map={connecting:['var(--muted)','...'],connected:['var(--green)','sync OK'],synced:['var(--gold)','envoi...'],received:['var(--blue)','reception...'],error:['var(--red)','hors-ligne']};
+    var s=map[state]||map.connecting;
+    dot.style.background=s[0];lbl.textContent=s[1];
+    if(logout)logout.style.display=(state==='error')?'none':'inline-flex';
+  }
+
+  // Login overlay using DOM (no string injection)
+  function createLoginOverlay(){
+    var ov=document.createElement('div');
+    ov.id='fb-login-overlay';
+    ov.style.cssText='position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;';
+    var title=document.createElement('div');
+    title.style.cssText='font-family:"Playfair Display",serif;font-size:32px;color:var(--gold);';
+    title.textContent='PatriTracker';
+    var box=document.createElement('div');
+    box.style.cssText='background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:32px 36px;text-align:center;max-width:340px;width:90%;';
+    var lock=document.createElement('div');lock.style.fontSize='28px';lock.style.marginBottom='12px';lock.textContent='🔒';
+    var h=document.createElement('div');h.style.cssText='font-size:15px;font-weight:600;margin-bottom:6px;';h.textContent='Acces prive';
+    var sub=document.createElement('div');sub.style.cssText='font-size:12px;color:var(--muted);margin-bottom:24px;line-height:1.5;';sub.textContent='Connectez-vous avec votre compte Google.';
+    var gbtn=document.createElement('button');
+    gbtn.id='fb-google-btn';
+    gbtn.style.cssText='display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 20px;border-radius:10px;border:1px solid var(--bd);background:var(--s2);color:var(--text);font-size:14px;font-weight:500;cursor:pointer;';
+    gbtn.innerHTML='<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continuer avec Google';
+    var errEl=document.createElement('div');errEl.id='fb-login-error';errEl.style.cssText='margin-top:12px;font-size:11px;color:var(--red);display:none;';
+    gbtn.addEventListener('click',function(){
+      gbtn.disabled=true;gbtn.textContent='Connexion...';
+      var provider=new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider).catch(function(e){
+        gbtn.disabled=false;gbtn.textContent='Reessayer';
+        errEl.style.display='block';errEl.textContent='Erreur : '+e.message;
+      });
+    });
+    box.appendChild(lock);box.appendChild(h);box.appendChild(sub);box.appendChild(gbtn);box.appendChild(errEl);
+    ov.appendChild(title);ov.appendChild(box);
+    document.body.appendChild(ov);
+  }
+
+  function hideLoginOverlay(){
+    var ov=document.getElementById('fb-login-overlay');
+    if(ov){ov.style.opacity='0';ov.style.transition='opacity .4s';setTimeout(function(){ov.remove();},400);}
+  }
+
+  function loadScript(src,cb){var s=document.createElement('script');s.src=src;s.onload=cb;document.head.appendChild(s);}
+
+  document.addEventListener('DOMContentLoaded',function(){
     createSyncUI();
-    hookSave();
-
-    loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js', function() {
-      loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js', function() {
-        loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js', function() {
+    loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',function(){
+      loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',function(){
+        loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js',function(){
           firebase.initializeApp(FB_CONFIG);
-          _db = firebase.database();
-
-          // Watch auth state — show/hide login accordingly
-          firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-              _uid = user.uid;
-              _syncEnabled = true;
-              // Remove overlay if present
-              var ov = document.getElementById('fb-login-overlay');
-              if (ov) { ov.style.opacity='0'; setTimeout(function(){ ov.remove(); },400); }
-              updateSyncUI('connecting');
-              startSync();
-              console.log('[FB] Connecté :', user.email);
+          _db=firebase.database();
+          firebase.auth().onAuthStateChanged(function(user){
+            if(user){
+              _uid=user.uid;_sync=true;
+              hideLoginOverlay();updateSyncUI('connecting');startSync();
             } else {
-              _uid = null;
-              _syncEnabled = false;
-              updateSyncUI('error');
-              // Show login only if not already shown
-              if (!document.getElementById('fb-login-overlay')) {
-                createLoginOverlay();
-              }
+              _uid=null;_sync=false;updateSyncUI('error');
+              if(!document.getElementById('fb-login-overlay'))createLoginOverlay();
             }
           });
         });
@@ -9706,42 +9714,16 @@ window.addEventListener('popstate', function() {
     });
   });
 
-  // Sync on visibility change
-  document.addEventListener('visibilitychange', function() {
-    if (!document.hidden && _syncEnabled && _uid) {
-      userRef().once('value').then(function(snap) {
-        var val = snap.val();
-        if (!val || !val.data) return;
-        var h = val.hash || hashStr(val.data);
-        if (h !== _lastHash) { _lastHash = h; applyRemote(val.data); }
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden&&_sync&&_uid){
+      userRef().once('value').then(function(snap){
+        var val=snap.val();if(!val||!val.data)return;
+        var h=val.hash||hashStr(val.data);if(h!==_lastHash){_lastHash=h;applyRemote(val.data);}
       });
     }
   });
-
-  window.addEventListener('beforeunload', function() { pushToFirebase(); });
-
 })();
 </script>
-
-
-<!-- Login overlay template (used by Firebase auth) -->
-<div id="fb-login-tpl" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:20px;font-family:'Outfit',sans-serif;">
-  <div style="text-align:center;">
-    <div style="font-family:'Playfair Display',serif;font-size:32px;color:var(--gold);margin-bottom:6px;">Patri<em style="font-style:italic;color:var(--text)">Tracker</em></div>
-    <div style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Tableau de bord patrimonial · Maxime</div>
-  </div>
-  <div style="background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:32px 36px;text-align:center;max-width:340px;width:90%;">
-    <div style="font-size:28px;margin-bottom:12px;">🔒</div>
-    <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Accès privé</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:24px;line-height:1.5;">Connecte-toi avec ton compte Google pour accéder à tes données patrimoniales.</div>
-    <button id="fb-google-btn" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 20px;border-radius:10px;border:1px solid var(--bd);background:var(--s2);color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;">
-      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-      Continuer avec Google
-    </button>
-    <div id="fb-login-error" style="margin-top:12px;font-size:11px;color:var(--red);display:none;"></div>
-  </div>
-  <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Données chiffrées · Accès personnel uniquement</div>
-</div>
 
 </body>
 </html>
