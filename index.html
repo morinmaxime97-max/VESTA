@@ -2076,13 +2076,18 @@ body {
     </div>
 
     <div class="fg"><label>Nom affiché</label><input id="p-name" placeholder="Auto-rempli si ticker valide" autocomplete="off"></div>
+    <div class="fg" style="display:none;" id="fg-isin">
+      <label>ISIN <span style="color:var(--muted);font-size:9px;">(optionnel — pour AV et PEG)</span></label>
+      <input id="p-isin" placeholder="ex: IE000BI8OT95" autocomplete="off" style="font-family:'JetBrains Mono',monospace;font-size:12px;" oninput="this.value=this.value.toUpperCase()">
+    </div>
     <div class="fg2">
-      <div class="fg"><label>Enveloppe</label><select id="p-env"><option value="PEA">PEA</option><option value="AV">AV Linxea</option><option value="PEG">PEG SNCF</option><option value="CTO">CTO</option></select></div>
+      <div class="fg"><label>Enveloppe</label><select id="p-env" onchange="toggleISINField()" ><option value="PEA">PEA</option><option value="AV">AV Linxea</option><option value="PEG">PEG SNCF</option><option value="CTO">CTO</option></select></div>
       <div class="fg"><label>Sous-type (AV)</label>
         <select id="p-subtype">
           <option value="">—</option>
           <option value="UC Actions">UC Actions</option>
           <option value="UC Obligations">UC Oblig.</option>
+          <option value="Fonds euros">Fonds euros</option>
           <option value="Fonds euros">Fonds euros</option>
           <option value="Or ETC">Or ETC</option>
           <option value="SCPI">SCPI</option>
@@ -5495,7 +5500,7 @@ function openPos(eid) {
   var tb=document.getElementById('ter-badge');   if(tb) tb.textContent='';
 
   if(!eid){
-    ['p-ticker','p-name','p-qty','p-pru','p-cur','p-val','p-ter'].forEach(function(x){document.getElementById(x).value='';});
+    ['p-ticker','p-name','p-qty','p-pru','p-cur','p-val','p-ter'].forEach(function(x){document.getElementById(x).value='';}); var isinElC=document.getElementById('p-isin'); if(isinElC) isinElC.value=''; toggleISINField();
     document.getElementById('p-env').value='PEA';
     document.getElementById('p-subtype').value='';
     document.getElementById('p-geo').value='';
@@ -5504,6 +5509,9 @@ function openPos(eid) {
     var p=S.positions.find(function(x){return x.id===eid;});
     if(p){
       document.getElementById('p-ticker').value=p.ticker||'';
+      var isinElO=document.getElementById('p-isin');
+      if(isinElO) isinElO.value=p.isin||'';
+      toggleISINField();
       if(p.ticker) setTickerStatus('💡 Cliquez 🔍 pour actualiser le cours de '+p.ticker, 'info');
       document.getElementById('p-name').value=p.name||'';
       document.getElementById('p-env').value=p.envelope||'PEA';
@@ -5565,6 +5573,29 @@ document.getElementById('m-livret-save').addEventListener('click',function(){sav
 // ── Ticker auto-lookup : Entrée ou bouton ──
 var lookupBtn=document.getElementById('btn-ticker-lookup');
 if(lookupBtn) lookupBtn.addEventListener('click',function(){ tickerLookup(); });
+function toggleISINField() {
+  var env = document.getElementById('p-env');
+  var fg = document.getElementById('fg-isin');
+  if (fg && env) fg.style.display = (env.value === 'AV' || env.value === 'PEG') ? '' : 'none';
+}
+
+// Pre-fill known ISINs based on position name
+function autoFillISIN(name, env) {
+  var isinEl = document.getElementById('p-isin');
+  if (!isinEl) return;
+  var knownMap = {
+    'msci world': 'IE000BI8OT95',
+    'or etc': 'FR0013416716',
+    'gold': 'FR0013416716',
+    'spirica': '',  // fonds euros, no ISIN needed
+    'amundi mid': 'FR0010858282',
+  };
+  var nameLow = (name||'').toLowerCase();
+  for (var k in knownMap) {
+    if (nameLow.includes(k)) { isinEl.value = knownMap[k]; return; }
+  }
+}
+
 var tickerInput=document.getElementById('p-ticker');
 if(tickerInput) tickerInput.addEventListener('keydown',function(e){ if(e.key==='Enter'){e.preventDefault();tickerLookup();} });
 
@@ -6883,7 +6914,11 @@ function renderEnvTable(elId, env, total){
     var w=total?v/total*100:0, wEnv=envTotalLocal?v/envTotalLocal*100:0;
     var geoLabel = p.geo ? '<span class="tag" style="background:#5a647818;color:var(--muted);border:1px solid #5a647838;font-size:7px;margin-left:3px">'+p.geo.split(' / ')[0]+'</span>' : '';
     return '<tr data-pid="'+p.id+'">'
-      +'<td><b>'+p.name+'</b>'+(p.ticker?'<br><span class="mono" style="color:var(--muted)">'+p.ticker+'</span>':'')+geoLabel+'</td>'
+      +'<td><b>'+p.name+'</b>'
+      +(p.ticker?'<br><span class="mono" style="color:var(--muted);font-size:9px;">'+p.ticker+'</span>':'')
+      +(p.isin?'<br><span class="mono" style="color:var(--dim);font-size:9px;">ISIN: '+p.isin+'</span>':'')
+      +(p.subtype==='Fonds euros' && p._fondsEuroTaux?'<br><span style="color:var(--gold);font-size:9px;">'+p._fondsEuroTaux+'%/an — en cours: +'+(p._intEnCours?Math.round(p._intEnCours)+' EUR':'—')+'</span>':'')
+      +geoLabel+'</td>'
       +'<td class="mono">'+(p.qty?fmtN(p.qty,3):'—')+'</td>'
       +'<td class="mono">'+(p.pru?fmtN(p.pru)+' €':'—')+'</td>'
       +'<td class="inline-cours" data-pid="'+p.id+'"></td>'  // inline edit placeholder
@@ -10392,6 +10427,24 @@ var IA_TOOLS = [
       },
       required:["titre","message","niveau"]
     }
+  },
+  {
+    name: "simuler_scenario",
+    description: "Simule un scénario Et si : vente bien, refinancement, augmentation versement, achat bien. Calcul détaillé avec impact patrimoine.",
+    input_schema: {
+      type:"object",
+      properties: {
+        type: { type:"string", enum:["vente_bien","refinancement","augmentation_versement","achat_bien"] },
+        params: { type:"object", properties: {
+          nom: {type:"string"}, prix: {type:"number"}, annee: {type:"number"},
+          taux_actuel: {type:"number"}, taux_nouveau: {type:"number"},
+          capital: {type:"number"}, duree_mois: {type:"number"}, frais: {type:"number"},
+          enveloppe: {type:"string"}, supplement_mensuel: {type:"number"}, duree_ans: {type:"number"},
+          apport: {type:"number"}, loyer_mensuel: {type:"number"}, taxe_fonciere: {type:"number"}
+        }}
+      },
+      required:["type","params"]
+    }
   }
 ];
 
@@ -10573,6 +10626,10 @@ function executerOutil(toolName, inp) {
     return "DEMANDE_CONFIRMATION|" + (labels[toolName] || toolName);
   }
 
+  if (toolName === "simuler_scenario") {
+    var r = window.simulerScenario ? window.simulerScenario({ type: inp.type, params: inp.params || {} }) : null;
+    return r ? r.calcul : "simulerScenario non disponible";
+  }
   return "Outil non reconnu : " + toolName;
 }
 
@@ -10851,12 +10908,16 @@ async function callClaudeIA(userMsg, isFirst) {
       // ── Groq / OpenRouter avec function calling ──────────────
       // Convertir IA_TOOLS (format Anthropic) → OpenAI functions
       var oaFunctions = (withTools !== false ? IA_TOOLS : []).map(function(t) {
+        var schema = t.input_schema || { type:'object', properties:{} };
+        // Groq/OpenAI: remove empty required array, ensure valid schema
+        var params = { type: schema.type || 'object', properties: schema.properties || {} };
+        if (schema.required && schema.required.length > 0) params.required = schema.required;
         return {
           type: 'function',
           function: {
             name: t.name,
-            description: t.description,
-            parameters: t.input_schema || { type:'object', properties:{}, required:[] }
+            description: t.description.slice(0, 200), // trim long descriptions
+            parameters: params
           }
         };
       });
@@ -11823,42 +11884,160 @@ window.traiterFichierImport = traiterFichierImport;
 // 5. MISE À JOUR AUTOMATIQUE DES COURS (ETF / indices)
 // ══════════════════════════════════════════════════════════════
 var _lastPriceUpdate = 0;
+
+// ══ PEG SNCF — mise à jour cours ═════════════════════════════
+async function mettreAJourPEG(S) {
+  if (!S || !S.positions) return;
+  var pegPos = S.positions.filter(function(p){ return p.envelope === 'PEG'; });
+  if (!pegPos.length) return;
+
+  // Amundi Mid Cap Euro ESR — code FR Amundi
+  // Try to fetch via Amundi public API
+  var amundiISINs = ['FR0010655688','FR0010170720','FR0010296061'];
+  var proxies = [
+    function(u){ return 'https://corsproxy.io/?'+encodeURIComponent(u); },
+    function(u){ return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u); },
+  ];
+
+  // Try Yahoo Finance with known PEG fund tickers
+  var pegTickers = ['0P0000YWBH.F','0P0001BFXV.F'];
+  var result = null;
+  for (var ti=0; ti<pegTickers.length && !result; ti++) {
+    result = await fetchPrixTicker(pegTickers[ti]);
+  }
+
+  if (result && result.price > 0) {
+    pegPos.forEach(function(p) {
+      p.price = Math.round(result.price * 100) / 100;
+      p._lastPriceUpdate = Date.now();
+    });
+  }
+  // If no result: keep manual price, just update timestamp
+}
+window.mettreAJourPEG = mettreAJourPEG;
+
+// ══ FONDS EUROS — affichage rendement estimé ═════════════════
+function afficherRendementFondsEuro(S) {
+  if (!S || !S.positions) return;
+  var now = new Date();
+  var dayOfYear = Math.floor((now - new Date(now.getFullYear(),0,0))/86400000);
+  var fractionYear = dayOfYear/365;
+
+  S.positions.filter(function(p){ return p._fondsEuroTaux; }).forEach(function(p) {
+    var intEnCours = (p.price||0)*(p.qty||0) * (p._fondsEuroTaux/100) * fractionYear;
+    p._intEnCours = intEnCours;
+  });
+}
+window.afficherRendementFondsEuro = afficherRendementFondsEuro;
+
 var KNOWN_TICKERS = {
-  'CW8':    { name:'MSCI World Amundi', label:'MSCI World' },
-  'CW8.PA': { name:'MSCI World Amundi', label:'MSCI World' },
-  'ESE':    { name:'S&P 500 BNP',       label:'S&P 500'    },
-  'ESE.PA': { name:'S&P 500 BNP',       label:'S&P 500'    },
-  'PAEEM':  { name:'MSCI EM Amundi',    label:'MSCI EM'    },
-  'PAEEM.PA':{ name:'MSCI EM Amundi',   label:'MSCI EM'    },
-  'GLD':    { name:'Or ETC SPDR',       label:'Or'         },
-  'GC=F':   { name:'Gold Futures',      label:'Or'         },
-  'SP500':  { name:'S&P 500 Index',     label:'S&P 500'    },
-  '^GSPC':  { name:'S&P 500',           label:'S&P 500'    },
-  '^WORLD': { name:'MSCI World',        label:'MSCI World' },
+  // ETF PEA
+  'CW8':     { name:'MSCI World Amundi',      label:'MSCI World',    ticker:'CW8.PA'   },
+  'CW8.PA':  { name:'MSCI World Amundi',      label:'MSCI World',    ticker:'CW8.PA'   },
+  'ESE':     { name:'S&P 500 BNP',            label:'S&P 500',       ticker:'ESE.PA'   },
+  'ESE.PA':  { name:'S&P 500 BNP',            label:'S&P 500',       ticker:'ESE.PA'   },
+  'PAEEM':   { name:'MSCI EM Amundi',         label:'MSCI EM',       ticker:'PAEEM.PA' },
+  'PAEEM.PA':{ name:'MSCI EM Amundi',         label:'MSCI EM',       ticker:'PAEEM.PA' },
+  'EWLD':    { name:'MSCI World Lyxor',       label:'MSCI World',    ticker:'EWLD.PA'  },
+  'WPEA':    { name:'MSCI World BNPP PEA',    label:'MSCI World',    ticker:'WPEA.PA'  },
+  // Or
+  'GLD':     { name:'Or ETC SPDR',            label:'Or',            ticker:'GLD'      },
+  'GC=F':    { name:'Or Futures',             label:'Or',            ticker:'GC=F'     },
+  'GOLD':    { name:'Or Amundi',              label:'Or',            ticker:'GOLD.PA'  },
+  // Indices
+  '^GSPC':   { name:'S&P 500 Index',          label:'S&P 500',       ticker:'^GSPC'    },
+  '^MSWORLD':{ name:'MSCI World Index',       label:'MSCI World',    ticker:'^MSWORLD' },
+  // PEG SNCF — FCPE Amundi Label Equilibre ESR
+  // Non coté publiquement — proxy via MSCI Europe Mid Cap
+  'QS0002905659': { name:'PEG SNCF — Amundi Label Equilibre ESR', label:'PEG SNCF',
+    ticker: 'CEUX.PA',  // Amundi MSCI Europe ex-UK = meilleur proxy disponible
+    isPEG: true,
+    isin: 'QS0002905659',
+    note: 'FCPE — cours estimé via proxy MSCI Europe Mid Cap (CEUX.PA)'
+  },
+  'CEUX.PA': { name:'MSCI Europe ex-UK Amundi', label:'Europe ex-UK', ticker:'CEUX.PA' },
+  // AV UC — Linxea Spirit 2 (mapper les UC sur leurs ETF sous-jacents)
+  'LINXEA-WORLD': { name:'UC Monde (AV)',     label:'UC MSCI World', ticker:'CW8.PA'   },
+  'LINXEA-SP500': { name:'UC S&P500 (AV)',    label:'UC S&P 500',    ticker:'ESE.PA'   },
+  'LINXEA-EM':    { name:'UC Emergents (AV)', label:'UC EM',         ticker:'PAEEM.PA' },
 };
 
 async function fetchPrixTicker(ticker) {
-  var yahoUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=1d';
-  var proxies = [
-    'https://corsproxy.io/?' + encodeURIComponent(yahoUrl),
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent(yahoUrl),
-    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(yahoUrl),
+  // Resolve ticker alias
+  var known = KNOWN_TICKERS[ticker];
+  var resolvedTicker = (known && known.ticker) ? known.ticker : ticker;
+
+  var yahoUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
+    + encodeURIComponent(resolvedTicker) + '?interval=1d&range=5d';
+
+  // Also try query2 as backup
+  var yahoUrl2 = 'https://query2.finance.yahoo.com/v8/finance/chart/'
+    + encodeURIComponent(resolvedTicker) + '?interval=1d&range=5d';
+
+  var proxyFns = [
+    function(u){ return 'https://corsproxy.io/?' + encodeURIComponent(u); },
+    function(u){ return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
+    function(u){ return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u); },
+    function(u){ return 'https://thingproxy.freeboard.io/fetch/' + u; },
   ];
-  for (var i = 0; i < proxies.length; i++) {
-    try {
-      var ctrl = new AbortController();
-      var t = setTimeout(function(){ ctrl.abort(); }, 6000);
-      var res = await fetch(proxies[i], { signal: ctrl.signal });
-      clearTimeout(t);
-      if (!res.ok) continue;
-      var txt = await res.text();
-      if (txt.trim().startsWith('<')) continue;
-      var data = JSON.parse(txt);
-      var meta = data && data.chart && data.chart.result && data.chart.result[0] && data.chart.result[0].meta;
-      if (meta && meta.regularMarketPrice) {
-        return { price: parseFloat(meta.regularMarketPrice), currency: meta.currency || 'EUR', name: meta.longName || meta.shortName || ticker };
-      }
-    } catch(e) {}
+
+  var urls = [yahoUrl, yahoUrl2];
+
+  for (var ui = 0; ui < urls.length; ui++) {
+    for (var pi = 0; pi < proxyFns.length; pi++) {
+      try {
+        var proxyUrl = proxyFns[pi](urls[ui]);
+        var ctrl = new AbortController();
+        var t = setTimeout(function(){ ctrl.abort(); }, 7000);
+        var res = await fetch(proxyUrl, { signal: ctrl.signal });
+        clearTimeout(t);
+        if (!res.ok) continue;
+        var txt = await res.text();
+        if (!txt || txt.trim().startsWith('<') || txt.trim().startsWith('<!')) continue;
+        var data = JSON.parse(txt);
+        var result = data && data.chart && data.chart.result && data.chart.result[0];
+        var meta = result && result.meta;
+        if (meta && meta.regularMarketPrice) {
+          var price = parseFloat(meta.regularMarketPrice);
+          var name  = (known && known.name) || meta.longName || meta.shortName || resolvedTicker;
+          var label = (known && known.label) || name;
+          var note  = (known && known.note) || '';
+          return {
+            price: price,
+            currency: meta.currency || 'EUR',
+            name: name,
+            label: label,
+            note: note,
+            isPEG: !!(known && known.isPEG),
+            source: 'Yahoo Finance'
+          };
+        }
+      } catch(e) {}
+    }
+  }
+  return null;
+}
+
+// ══ ISIN → Ticker mapping ════════════════════════════════════
+var ISIN_MAP = {
+  'IE000BI8OT95': { tickers:['CW8.PA','IWDA.AS','LCWD.L'], name:'MSCI World Amundi (AV)', currency:'EUR' },
+  'FR0013416716': { tickers:['GBS.PA','GBSS.DE'],           name:'Or ETC WisdomTree (AV)', currency:'EUR' },
+  'LU1681048804': { tickers:['PAEEM.PA','AEME.PA'],         name:'MSCI EM Amundi', currency:'EUR' },
+  'FR0010655688': { tickers:['ESE.PA','500.PA'],             name:'S&P500 BNP (PEA)', currency:'EUR' },
+};
+
+// Fonds euros — taux annuels connus (mis à jour manuellement)
+var FONDS_EUROS = {
+  'Spirica Euro Nouvelle Generation': { taux2024: 3.01, taux2023: 2.80, name:'Spirica Euro Nouvelle Génération' },
+  'Spirica Euro': { taux2024: 3.01, taux2023: 2.80, name:'Spirica Euro Nouvelle Génération' },
+};
+
+async function fetchPrixISIN(isin) {
+  var map = ISIN_MAP[isin];
+  var tickers = map ? map.tickers : [isin];
+  for (var ti=0; ti<tickers.length; ti++) {
+    var price = await fetchPrixTicker(tickers[ti]);
+    if (price && price.price > 0) return price;
   }
   return null;
 }
@@ -11866,31 +12045,71 @@ async function fetchPrixTicker(ticker) {
 async function mettreAJourCoursAutomatique(showToast) {
   var S = window._pState ? window._pState() : null;
   if (!S || !S.positions || !S.positions.length) return;
-
-  // Throttle: max 1x per 30 min
   if (Date.now() - _lastPriceUpdate < 30*60*1000 && !showToast) return;
 
-  var updated = 0, errors = 0;
-  var promises = S.positions
-    .filter(function(p){ return p.ticker && p.ticker.length > 1 && p.envelope !== 'PEG'; })
-    .map(async function(p) {
-      var result = await fetchPrixTicker(p.ticker);
-      if (result && result.price && result.price > 0) {
-        var oldPrice = p.price;
-        p.price = Math.round(result.price * 100) / 100;
-        if (Math.abs(p.price - oldPrice) > 0.001) updated++;
-      } else {
-        errors++;
+  var updated=0, errors=0;
+  var promises = S.positions.map(async function(p) {
+    var result = null;
+    // Try by ticker first
+    if (p.ticker && p.ticker.length > 1 && p.envelope !== 'PEG') {
+      result = await fetchPrixTicker(p.ticker);
+    }
+    // Try by ISIN
+    if (!result && p.isin) {
+      result = await fetchPrixISIN(p.isin);
+    }
+    // Known AV ISINs
+    if (!result && p.envelope === 'AV') {
+      // Check if it's a fonds euros
+      var isFondsEuro = p.subtype === 'Fonds euros' || (p.name && p.name.toLowerCase().includes('euro'));
+      if (isFondsEuro) {
+        // Calculate from annual rate
+        var fe = FONDS_EUROS['Spirica Euro Nouvelle Generation'];
+        if (fe) {
+          var now = new Date();
+          var dayOfYear = Math.floor((now - new Date(now.getFullYear(),0,0))/86400000);
+          var fractionYear = dayOfYear / 365;
+          // Estimate current VL based on taux 2024
+          var basePrice = p.priceAvg || p.price || 1.0;
+          var estimatedReturn = basePrice * (1 + fe.taux2024/100 * fractionYear);
+          p._fondsEuroTaux = fe.taux2024;
+          p._fondsEuroEstim = estimatedReturn;
+          // Don't update price for fonds euros — just flag
+          updated++;
+          return;
+        }
       }
-    });
+      // Try ISIN lookup for UC
+      for (var isin in ISIN_MAP) {
+        var m = ISIN_MAP[isin];
+        if (p.name && m.name && p.name.toLowerCase().includes(m.name.split(' ')[0].toLowerCase())) {
+          result = await fetchPrixISIN(isin);
+          break;
+        }
+      }
+    }
+    if (result && result.price > 0) {
+      var oldPrice = p.price;
+      p.price = Math.round(result.price * 100) / 100;
+      if (Math.abs(p.price - oldPrice) > 0.001) updated++;
+    } else {
+      errors++;
+    }
+  });
 
   await Promise.all(promises);
-  _lastPriceUpdate = Date.now();
 
+  // PEG SNCF — update from manual entry or estimate
+  await mettreAJourPEG(S);
+
+  _lastPriceUpdate = Date.now();
   if (updated > 0) {
     if (window._saveState) window._saveState();
     if (window._renderAll) window._renderAll();
-    if (showToast && window._toast) window._toast('📈 ' + updated + ' cours mis à jour automatiquement');
+    if (showToast && window._toast) window._toast('📈 ' + updated + ' cours mis à jour');
+  }
+  if (showToast && updated === 0) {
+    if (window._toast) window._toast(errors > 0 ? '⚠️ Impossible de récupérer les cours' : '✓ Cours déjà à jour');
   }
   return { updated, errors };
 }
