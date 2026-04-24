@@ -761,7 +761,7 @@ body {
       <div id="av-update-status" style="font-size:10px;color:var(--green);font-family:'JetBrains Mono',monospace;margin-top:8px;min-height:14px;"></div>
     </div>
 
-    <div id="av-cards" class="ag"></div>
+    <div id="av-cards"></div>
   </div>
 
   <!-- PEG -->
@@ -881,6 +881,8 @@ body {
     </div>
     <div id="cto-tbl"></div>
   </div>
+
+
 </div>
 
 <!-- ══════════ IMMO ══════════ -->
@@ -6975,15 +6977,123 @@ function renderEnvTable(elId, env, total){
 }
 
 function renderAVCards(){
-  var el=document.getElementById('av-cards');if(!el)return;
-  var pos=byEnv('AV');
-  if(!pos.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">Aucun support AV</div>';return;}
-  var cards=pos.map(function(p){var v=posVal(p),pnl=v-posInvested(p),pct=posInvested(p)?pnl/posInvested(p)*100:0,c=AVSUB[p.subtype]||'#e07a5b';
-    return '<div class="card" style="border-top:2px solid '+c+';"><div class="chd" style="font-size:13px;">'+p.name+'<div class="brow"><span class="tag t-av">'+(p.subtype||'AV')+'</span><button class="btn gh sm" data-edit-av="'+p.id+'">✏</button><button class="btn dn sm" data-del-av="'+p.id+'">✕</button></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Valeur</div><div style="font-family:Playfair Display,serif;font-size:17px">'+fmt(v)+'</div></div><div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Investi</div><div style="font-family:Playfair Display,serif;font-size:17px">'+fmt(posInvested(p))+'</div></div><div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">PV</div><div class="mono '+pC(pnl)+'" style="font-size:12px">'+fmt(pnl)+'</div></div><div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Perf.</div><div class="mono '+pC(pct)+'" style="font-size:12px">'+fmtP(pct)+'</div></div></div></div>';
+  var el = document.getElementById('av-cards'); if(!el) return;
+  var pos = byEnv('AV');
+  var total = (window._cAll ? window._cAll() : {}).total || 0;
+
+  if (!pos.length) {
+    el.innerHTML = '<div class="empty" style="grid-column:1/-1">Aucun support AV <button class="btn sm" onclick="openPos();document.getElementById(\'p-env\').value=\'AV\'">+ Ajouter</button></div>';
+    return;
+  }
+
+  var envTotal = pos.reduce(function(s,p){ return s + posVal(p); }, 0);
+
+  // Build rows — same style as PEA
+  var rowsHtml = pos.map(function(p) {
+    var v   = posVal(p);
+    var inv = posInvested(p);
+    var pnl = v - inv;
+    var pct = inv ? pnl/inv*100 : 0;
+    var w   = envTotal ? v/envTotal*100 : 0;
+    var wAll= total   ? v/total*100   : 0;
+
+    // Fonds euros specifics
+    var isFE = p.subtype === 'Fonds euros' || (p.name||'').toLowerCase().includes('euro') || (p.tauxFondsEuro > 0);
+    var feInfo = '';
+    if (isFE) {
+      var fe = calcFondsEuro(p);
+      p._fondsEuroTaux = fe.taux;
+      p._intEnCours    = fe.interetsEnCours;
+      feInfo = '<br><span style="color:var(--gold);font-size:9px;">'
+        + fe.taux + '%/an · en cours: +' + Math.round(fe.interetsEnCours) + ' EUR · fin ' + new Date().getFullYear() + ': ' + Math.round(fe.capitalFin) + ' EUR'
+        + ' <input type="number" step="0.01" min="0" max="10" value="' + fe.taux + '" data-pos-id="' + p.id + '" '
+        + 'onchange="updateTauxFondsEuro(this)" '
+        + 'style="width:44px;font-size:9px;padding:1px 3px;font-family:JetBrains Mono,monospace;margin-left:4px;" title="Modifier le taux">%'
+        + '</span>';
+    }
+
+    var subtag = p.subtype ? '<span class="tag t-av" style="font-size:9px;margin-left:4px;">' + p.subtype.slice(0,12) + '</span>' : '';
+
+    return '<tr data-pid="' + p.id + '">'
+      + '<td><b>' + p.name + '</b>' + subtag
+      + (p.ticker ? '<br><span class="mono" style="color:var(--muted);font-size:9px;">' + p.ticker + '</span>' : '')
+      + (p.isin   ? '<br><span class="mono" style="color:var(--dim);font-size:9px;">ISIN: ' + p.isin + '</span>' : '')
+      + feInfo + '</td>'
+      + '<td class="mono">' + (p.qty ? fmtN(p.qty,3) : '—') + '</td>'
+      + '<td class="mono">' + (p.pru ? fmtN(p.pru) + ' €' : '—') + '</td>'
+      + '<td class="inline-cours-av" data-pid="' + p.id + '"></td>'
+      + '<td class="mono"><b>' + fmt(v) + '</b></td>'
+      + '<td class="mono ' + pC(pnl) + '">' + fmt(pnl) + '</td>'
+      + '<td class="mono ' + pC(pct) + '">' + fmtP(pct) + '</td>'
+      + '<td class="mono" style="color:var(--muted);" title="' + fmtN(w,1) + '% AV · ' + fmtN(wAll,1) + '% patrimoine">' + fmtN(w,1) + '%</td>'
+      + '<td><div class="brow">'
+      + '<button class="btn gh sm" data-refresh-av="' + p.id + '" title="Actualiser">⟳</button>'
+      + '<button class="btn gh sm" data-edit-av="' + p.id + '">✏</button>'
+      + '<button class="btn dn sm" data-del-av="' + p.id + '">✕</button>'
+      + '</div></td>'
+      + '</tr>';
   });
-  el.innerHTML=cards.join('');
-  el.querySelectorAll('[data-edit-av]').forEach(function(btn){btn.addEventListener('click',function(){openPos(btn.dataset.editAv);});});
-  el.querySelectorAll('[data-del-av]').forEach(function(btn){btn.addEventListener('click',function(){delPos(btn.dataset.delAv);});});
+
+  // Totals row
+  var totVal = envTotal;
+  var totInv = pos.reduce(function(s,p){ return s+posInvested(p); },0);
+  var totPnl = totVal - totInv;
+  var totPct = totInv ? totPnl/totInv*100 : 0;
+  rowsHtml.push('<tr style="border-top:2px solid var(--bd);font-weight:600;">'
+    + '<td colspan="4" style="color:var(--muted);font-size:11px;font-family:JetBrains Mono,monospace;">TOTAL AV</td>'
+    + '<td class="mono"><b>' + fmt(totVal) + '</b></td>'
+    + '<td class="mono ' + pC(totPnl) + '">' + fmt(totPnl) + '</td>'
+    + '<td class="mono ' + pC(totPct) + '">' + fmtP(totPct) + '</td>'
+    + '<td></td><td></td></tr>');
+
+  el.innerHTML = '<table class="tbl"><thead><tr>'
+    + '<th>Support</th><th>Qté</th><th>PRU</th>'
+    + '<th>Cours <span style="color:var(--gold);font-size:10px">✎</span></th>'
+    + '<th>Valeur</th><th>P&L €</th><th>P&L %</th><th>% AV</th><th></th>'
+    + '</tr></thead><tbody>' + rowsHtml.join('') + '</tbody></table>';
+
+  // Inline cours editors
+  el.querySelectorAll('.inline-cours-av').forEach(function(cell) {
+    var pid = cell.dataset.pid;
+    var p = S.positions.find(function(x){ return x.id===pid; });
+    if (!p) return;
+    var isFE = p.subtype === 'Fonds euros' || (p.name||'').toLowerCase().includes('euro') || (p.tauxFondsEuro > 0);
+    if (isFE) {
+      // Fonds euros: show capital instead of cours
+      var span = document.createElement('span');
+      span.className = 'mono';
+      span.style.color = 'var(--muted)';
+      span.style.fontSize = '11px';
+      span.textContent = 'Taux fixe';
+      cell.appendChild(span);
+    } else {
+      var widget = makeInlineEdit(pid, 'price', p.price ? fmtN(p.price)+' €' : '—');
+      cell.appendChild(widget);
+    }
+  });
+
+  // Wire buttons
+  el.querySelectorAll('[data-edit-av]').forEach(function(btn){
+    btn.addEventListener('click', function(){ openPos(btn.dataset.editAv); });
+  });
+  el.querySelectorAll('[data-del-av]').forEach(function(btn){
+    btn.addEventListener('click', function(){ delPos(btn.dataset.delAv); });
+  });
+  el.querySelectorAll('[data-refresh-av]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var p = S.positions.find(function(x){ return x.id===btn.dataset.refreshAv; });
+      if (!p) return;
+      var isFE = p.subtype === 'Fonds euros' || (p.name||'').toLowerCase().includes('euro');
+      if (isFE) { toast('Fonds euros — taux fixe garanti, pas de cours boursier'); return; }
+      if (!p.ticker && !p.isin) { toast('Pas de ticker — ouvrez ✏ pour en ajouter un'); return; }
+      btn.disabled = true; btn.textContent = '…';
+      refreshSinglePos(p).then(function(ok){
+        btn.disabled = false; btn.textContent = '⟳';
+        if (ok) { saveState(); renderAll(); toast('✅ ' + p.name + ' mis à jour'); }
+        else toast('⚠ Échec actualisation ' + (p.ticker||p.isin||''));
+      });
+    });
+  });
 }
 
 // ── Taux réglementés officiels ──────────────────────────────
@@ -12020,17 +12130,205 @@ async function fetchPrixTicker(ticker) {
 
 // ══ ISIN → Ticker mapping ════════════════════════════════════
 var ISIN_MAP = {
-  'IE000BI8OT95': { tickers:['CW8.PA','IWDA.AS','LCWD.L'], name:'MSCI World Amundi (AV)', currency:'EUR' },
-  'FR0013416716': { tickers:['GBS.PA','GBSS.DE'],           name:'Or ETC WisdomTree (AV)', currency:'EUR' },
-  'LU1681048804': { tickers:['PAEEM.PA','AEME.PA'],         name:'MSCI EM Amundi', currency:'EUR' },
-  'FR0010655688': { tickers:['ESE.PA','500.PA'],             name:'S&P500 BNP (PEA)', currency:'EUR' },
+  // Amundi ETF — MSCI World (plusieurs ISIN selon classe)
+  'IE000BI8OT95': { tickers:['CW8.PA','CW8.DE'],       name:'MSCI World Amundi (AV)', currency:'EUR' },
+  'LU1681041890': { tickers:['CW8.PA'],                 name:'MSCI World Amundi CW8', currency:'EUR' },
+  'LU2655993207': { tickers:['CW8.PA'],                 name:'Amundi Prime Global', currency:'EUR' },
+  // MSCI World autres
+  'IE00B4L5Y983': { tickers:['IWDA.AS'],                name:'iShares MSCI World Core', currency:'EUR' },
+  'IE00B60SX394': { tickers:['SWDA.AS'],                name:'iShares MSCI World Core', currency:'EUR' },
+  'LU0392494562': { tickers:['EXW1.DE'],                name:'iShares MSCI World', currency:'EUR' },
+  // S&P 500
+  'FR0010655688': { tickers:['ESE.PA','500.PA'],        name:'BNP S&P 500 ESE', currency:'EUR' },
+  'IE00B5BMR087': { tickers:['SXR8.DE','CSPX.AS'],      name:'iShares Core S&P 500', currency:'USD' },
+  'LU1829220216': { tickers:['LU2.PA','AMLV.PA'],       name:'Amundi S&P 500 II', currency:'EUR' },
+  // MSCI Emergents
+  'LU1681048804': { tickers:['PAEEM.PA','AEME.PA'],     name:'MSCI EM Amundi PAEEM', currency:'EUR' },
+  'IE00B4L5YC18': { tickers:['IEMA.AS'],                name:'iShares MSCI EM IMI', currency:'EUR' },
+  // Or
+  'FR0013416716': { tickers:['GBS.PA','4GLD.DE'],       name:'Or ETC WisdomTree GBS', currency:'EUR' },
+  'DE000A0S9GB0': { tickers:['SGOL.SW'],                name:'Or Aberdeen Physical', currency:'USD' },
+  // Europe
+  'LU1681043599': { tickers:['CEUX.PA'],                name:'Amundi MSCI Europe ex-UK', currency:'EUR' },
+  'FR0010261198': { tickers:['LYPC.PA'],                name:'Lyxor MSCI Europe ex-UK', currency:'EUR' },
+  // Obligations / Diversifié
+  'LU1829218986': { tickers:['AGG.PA'],                 name:'iShares Aggregate Bond', currency:'EUR' },
+  // SCPI / Immo
+  'FR0000015553': { tickers:['URW.AS'],                 name:'Unibail-Rodamco', currency:'EUR' },
+  // Linxea Spirit 2 — UC spécifiques (à compléter avec les vrais ISIN)
+  'LU0496786574': { tickers:['CW8.PA'],                 name:'Amundi Funds II MSCI World', currency:'EUR' },
+  'FR0011871128': { tickers:['LYPS.PA'],                name:'Lyxor S&P 500', currency:'EUR' },
+  // PEG SNCF
+  'QS0002905659': { tickers:['CEUX.PA'],                name:'PEG SNCF Amundi Equilibre ESR', currency:'EUR', isPEG:true },
+  // Anciens
 };
 
 // Fonds euros — taux annuels connus (mis à jour manuellement)
 var FONDS_EUROS = {
-  'Spirica Euro Nouvelle Generation': { taux2024: 3.01, taux2023: 2.80, name:'Spirica Euro Nouvelle Génération' },
-  'Spirica Euro': { taux2024: 3.01, taux2023: 2.80, name:'Spirica Euro Nouvelle Génération' },
+  // Linxea Spirit 2 = fonds Spirica
+  'Spirica Euro Nouvelle Generation': { taux2024:3.01, taux2023:2.80, taux2022:2.30, assureur:'Spirica (Linxea Spirit 2)' },
+  'Spirica Euro':                      { taux2024:3.01, taux2023:2.80, taux2022:2.30, assureur:'Spirica' },
+  'Fonds euros':                       { taux2024:3.01, taux2023:2.80, taux2022:2.30, assureur:'Spirica (défaut)' },
+  'Euro':                              { taux2024:3.01, taux2023:2.80, taux2022:2.30, assureur:'Spirica' },
+  // Autres contrats courants
+  'Linxea Avenir 2':                   { taux2024:3.30, taux2023:3.10, taux2022:2.50, assureur:'Suravenir' },
+  'Suravenir Rendement':               { taux2024:3.30, taux2023:3.10, taux2022:2.50, assureur:'Suravenir' },
+  'Garance':                           { taux2024:4.10, taux2023:3.80, taux2022:2.50, assureur:'Garance' },
+  'Actif General':                     { taux2024:2.90, taux2023:2.70, taux2022:1.80, assureur:'Generali' },
 };
+
+// ── Calcul fonds euros ────────────────────────────────────────
+function calcFondsEuro(position) {
+  var capital = (position.price || 1) * (position.qty || 0);
+  if (capital <= 0) capital = position.montant || 0;
+
+  // Find matching fonds euro config
+  var fe = null;
+  var nameLow = (position.name || '').toLowerCase();
+  for (var key in FONDS_EUROS) {
+    if (nameLow.includes(key.toLowerCase()) || key.toLowerCase().includes(nameLow.slice(0,5))) {
+      fe = FONDS_EUROS[key];
+      break;
+    }
+  }
+  // Use custom rate if set on position, otherwise find in FONDS_EUROS
+  var taux = position.tauxFondsEuro || (fe ? fe.taux2024 : 3.01);
+
+  var now = new Date();
+  var startYear = new Date(now.getFullYear(), 0, 1);
+  var joursEcoules = Math.floor((now - startYear) / 86400000);
+  var joursAnnee = (now.getFullYear() % 4 === 0) ? 366 : 365;
+  var fractionAnnee = joursEcoules / joursAnnee;
+
+  var interetsAnnuels = capital * taux / 100;
+  var interetsEnCours = interetsAnnuels * fractionAnnee;
+  var capitalFin = capital + interetsAnnuels;
+
+  return {
+    capital: capital,
+    taux: taux,
+    interetsAnnuels: interetsAnnuels,
+    interetsEnCours: interetsEnCours,
+    capitalFin: capitalFin,
+    joursEcoules: joursEcoules,
+    joursAnnee: joursAnnee,
+    assureur: fe ? fe.assureur : 'Fonds euros'
+  };
+}
+window.calcFondsEuro = calcFondsEuro;
+
+function renderFondsEurosWidget() {
+  var S   = window._pState ? window._pState() : null;
+  var card= document.getElementById('card-fonds-euro');
+  var el  = document.getElementById('fonds-euro-content');
+  if (!S || !el || !card) return;
+
+  // Find fonds euros positions in AV
+  var fondsEuroPositions = (S.positions || []).filter(function(p) {
+    if (p.envelope !== 'AV') return false;
+    var nameLow = (p.name || '').toLowerCase();
+    var subtype = (p.subtype || '').toLowerCase();
+    return subtype.includes('euro') || subtype.includes('fonds euro') ||
+           nameLow.includes('euro') || nameLow.includes('fonds euro') ||
+           nameLow.includes('spirica') || nameLow.includes('suravenir') ||
+           nameLow.includes('actif general') || nameLow.includes('garance');
+  });
+
+  // Also allow manually tagged positions
+  var manualFE = (S.positions || []).filter(function(p) {
+    return p.envelope === 'AV' && p.tauxFondsEuro > 0 && !fondsEuroPositions.includes(p);
+  });
+  var allFE = fondsEuroPositions.concat(manualFE);
+
+  if (!allFE.length) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+
+  var now = new Date();
+  var html = '';
+  var totalCapital = 0, totalIntAnn = 0, totalIntCours = 0;
+
+  allFE.forEach(function(p) {
+    var fe = calcFondsEuro(p);
+    totalCapital  += fe.capital;
+    totalIntAnn   += fe.interetsAnnuels;
+    totalIntCours += fe.interetsEnCours;
+
+    var fmt = function(n){ return Math.round(n).toLocaleString('fr-FR') + ' EUR'; };
+    var fmtN = function(n,d){ return n.toFixed(d||2).replace('.',',') + ' %'; };
+
+    html += '<div style="background:var(--s2);border-radius:10px;padding:14px;margin-bottom:12px;">';
+    // Header row
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">';
+    html += '<div>';
+    html += '<div style="font-weight:600;font-size:13px;">' + (p.name || 'Fonds euros') + '</div>';
+    html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;">' + fe.assureur + '</div>';
+    html += '</div>';
+    // Taux input
+    html += '<div style="display:flex;align-items:center;gap:8px;">';
+    html += '<label style="font-size:11px;color:var(--muted);">Taux</label>';
+    html += '<input type="number" step="0.01" min="0" max="10" value="' + fe.taux + '" '
+      + 'data-pos-id="' + p.id + '" '
+      + 'onchange="updateTauxFondsEuro(this)" '
+      + 'style="width:70px;font-family:JetBrains Mono,monospace;font-size:13px;font-weight:700;color:var(--green);text-align:center;">';
+    html += '<span style="font-size:11px;color:var(--muted);">%/an</span>';
+    html += '</div></div>';
+    // KPIs
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">';
+    html += kpiMiniStr('Capital investi',  fmt(fe.capital),        'var(--text)');
+    html += kpiMiniStr('Intérêts/an',      fmt(fe.interetsAnnuels),'var(--green)');
+    html += kpiMiniStr('En cours (' + fe.joursEcoules + 'j)', '+' + fmt(fe.interetsEnCours), 'var(--gold)');
+    html += kpiMiniStr('Capital fin ' + now.getFullYear(), fmt(fe.capitalFin), 'var(--green)');
+    html += '</div></div>';
+  });
+
+  // Totaux
+  if (allFE.length > 1) {
+    var fmt2 = function(n){ return Math.round(n).toLocaleString('fr-FR') + ' EUR'; };
+    html += '<div style="background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-top:4px;">';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">TOTAL FONDS EUROS</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">';
+    html += kpiMiniStr('Capital total',   fmt2(totalCapital),  'var(--text)');
+    html += kpiMiniStr('Intérêts/an',     fmt2(totalIntAnn),   'var(--green)');
+    html += kpiMiniStr('Acquis ' + now.getFullYear(), '+' + fmt2(totalIntCours), 'var(--gold)');
+    html += '</div></div>';
+  }
+
+  html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:10px;">'
+    + 'Intérêts du 1er jan. au ' + now.toLocaleDateString('fr-FR') + ' · Taux 2024 modifiable · '
+    + 'Hors prélèvements sociaux (17,2% sur les gains)</div>';
+
+  el.innerHTML = html;
+}
+
+function kpiMiniStr(label, val, color) {
+  return '<div style="background:var(--s3);border-radius:8px;padding:10px;">'
+    + '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">' + label + '</div>'
+    + '<div style="font-size:14px;font-weight:700;color:' + color + ';">' + val + '</div>'
+    + '</div>';
+}
+
+function updateTauxFondsEuro(input) {
+  var S = window._pState ? window._pState() : null;
+  if (!S) return;
+  var posId = input.dataset.posId;
+  var newTaux = parseFloat(input.value) || 0;
+  var pos = (S.positions || []).find(function(p){ return p.id === posId; });
+  if (!pos) return;
+  pos.tauxFondsEuro = newTaux;
+  if (window._saveState) window._saveState();
+  renderFondsEurosWidget();
+  if (window._toast) window._toast('Taux mis à jour : ' + newTaux + '%/an');
+}
+window.updateTauxFondsEuro = updateTauxFondsEuro;
+window.renderFondsEurosWidget = renderFondsEurosWidget;
+
+// Auto-render when enveloppes page opens
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(renderFondsEurosWidget, 2000);
+});
 
 async function fetchPrixISIN(isin) {
   var map = ISIN_MAP[isin];
@@ -12079,12 +12377,32 @@ async function mettreAJourCoursAutomatique(showToast) {
           return;
         }
       }
-      // Try ISIN lookup for UC
-      for (var isin in ISIN_MAP) {
-        var m = ISIN_MAP[isin];
-        if (p.name && m.name && p.name.toLowerCase().includes(m.name.split(' ')[0].toLowerCase())) {
-          result = await fetchPrixISIN(isin);
-          break;
+      // Try ISIN lookup for UC — name-based matching
+      var nameWords = (p.name || '').toLowerCase().split(/[\s\-\/]+/).filter(function(w){ return w.length > 3; });
+      var nameKeywords = {
+        'world': 'CW8.PA', 'monde': 'CW8.PA', 'msci world': 'CW8.PA', 'global': 'CW8.PA',
+        'sp500': 'ESE.PA', 's&p': 'ESE.PA', 'sp 500': 'ESE.PA', 'amerique': 'ESE.PA', 'america': 'ESE.PA',
+        'emergent': 'PAEEM.PA', 'emerging': 'PAEEM.PA', 'paeem': 'PAEEM.PA',
+        'or': 'GBS.PA', 'gold': 'GBS.PA',
+        'europe': 'CEUX.PA', 'europeen': 'CEUX.PA',
+        'obligat': 'AGG.PA', 'bond': 'AGG.PA',
+      };
+      var nameLow = (p.name || '').toLowerCase();
+      for (var kw in nameKeywords) {
+        if (nameLow.includes(kw)) {
+          result = await fetchPrixTicker(nameKeywords[kw]);
+          if (result) break;
+        }
+      }
+      // Also try ISIN_MAP name match
+      if (!result) {
+        for (var mapIsin in ISIN_MAP) {
+          var mapEntry = ISIN_MAP[mapIsin];
+          var mapName = (mapEntry.name || '').toLowerCase();
+          if (nameWords.some(function(w){ return mapName.includes(w); })) {
+            result = await fetchPrixISIN(mapIsin);
+            if (result) break;
+          }
         }
       }
     }
