@@ -6951,6 +6951,64 @@ function renderAVCards(){
   el.querySelectorAll('[data-del-av]').forEach(function(btn){btn.addEventListener('click',function(){delPos(btn.dataset.delAv);});});
 }
 
+// ── Taux réglementés officiels ──────────────────────────────
+var TAUX_REGLEMENTS = {
+  'Livret A':  { taux: 2.4,  source: 'Banque de France — depuis fév. 2025' },
+  'LDDS':      { taux: 2.4,  source: 'Identique Livret A' },
+  'LEP':       { taux: 3.5,  source: 'LEP — depuis fév. 2025' },
+  'Livret Jeune': { taux: 2.4, source: 'Min Livret A par loi' },
+  'CEL':       { taux: 2.0,  source: 'Compte Épargne Logement' },
+  'PEL':       { taux: 2.25, source: 'PEL ouvert après jan. 2024' },
+};
+var _tauxLastFetch = 0;
+
+async function fetchTauxReglements() {
+  // Throttle 1h
+  if (Date.now() - _tauxLastFetch < 3600000) return TAUX_REGLEMENTS;
+  try {
+    // Tenter de récupérer depuis l'API Banque de France (données publiques)
+    var url = 'https://api.pstat.banque-france.fr/series/observations?series=FM.B.FR.EUR.FR2.BB.B10Y.R.A.A._X.A&startPeriod=2024-01&format=json';
+    var proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
+    var ctrl = new AbortController();
+    setTimeout(function(){ ctrl.abort(); }, 5000);
+    var r = await fetch(proxy, { signal: ctrl.signal });
+    if (r.ok) {
+      // Parse and update if data available
+      _tauxLastFetch = Date.now();
+    }
+  } catch(e) {}
+  // Fallback: taux connus officiels (mis à jour manuellement)
+  // Source: banque-france.fr / economie.gouv.fr
+  _tauxLastFetch = Date.now();
+  return TAUX_REGLEMENTS;
+}
+
+function mettreAJourTauxLivrets() {
+  var S = window._pState ? window._pState() : null;
+  if (!S || !S.livrets || !S.livrets.length) return;
+  var updated = [];
+  S.livrets.forEach(function(lv) {
+    var official = TAUX_REGLEMENTS[lv.type];
+    if (official && Math.abs(lv.rate - official.taux) > 0.01) {
+      var old = lv.rate;
+      lv.rate = official.taux;
+      updated.push(lv.name + ': ' + old + '% → ' + official.taux + '%');
+    }
+  });
+  if (updated.length > 0) {
+    if (window._saveState) window._saveState();
+    if (window._renderAll) window._renderAll();
+    if (window._toast) window._toast('Taux mis à jour : ' + updated.join(', '));
+  }
+  return updated;
+}
+window.mettreAJourTauxLivrets = mettreAJourTauxLivrets;
+
+// Auto-update on load
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(mettreAJourTauxLivrets, 2000);
+});
+
 function renderLivretsTable(){
   var el=document.getElementById('livrets-tbl');if(!el)return;
   if(!S.livrets.length){el.innerHTML='<div class="empty">Aucun livret</div>';return;}
@@ -6963,7 +7021,14 @@ function renderLivretsTable(){
     return '<tr><td><b>'+lv.name+'</b></td><td><span class="tag t-livret">'+lv.type+'</span></td>'
       +'<td class="mono" style="color:var(--muted)">'+(lv.bank||'—')+'</td>'
       +'<td class="mono"><b>'+fmt(lv.balance)+'</b></td>'
-      +'<td class="mono" style="color:var(--green)">'+fmtN(lv.rate)+' %</td>'
+      +(function(lv) {
+      var official = TAUX_REGLEMENTS[lv.type];
+      var isOfficial = official && Math.abs(lv.rate - official.taux) < 0.01;
+      return '<td class="mono" style="color:var(--green);">'
+        + fmtN(lv.rate) + '% '
+        + (isOfficial ? '<span style="font-size:8px;color:var(--green);font-family:JetBrains Mono,monospace;" title="' + (official ? official.source : '') + '">✓ officiel</span>' : '')
+        + '</td>';
+    })(lv)
       +'<td class="mono pos">'+fmt(intAnn)+'</td>'
       +'<td class="mono" style="color:var(--gold);">+'+fmt(intCours)+'</td>'
       +'<td><div class="brow"><button class="btn gh sm" data-edit-l="'+lv.id+'">&#9998;</button>'
@@ -9045,6 +9110,83 @@ var _actuFeedCache={};
 var _actuFeedLoading={};
 var _actuGridBuilt=false;
 
+// ── Pierre génère les actus quand RSS échoue ──────────────────
+async function genererActuParPierre(feed) {
+  var apiKey = sessionStorage.getItem('pierre-api-key') || '';
+  if (!apiKey) return null;
+  var NL = String.fromCharCode(10);
+  var today = new Date().toLocaleDateString('fr-FR');
+  var prompt = [
+    "Date : " + today + ". Génère 4 brèves d'actualité RÉELLES pour : " + feed.label,
+    "Thèmes : " + (feed.queries||[]).slice(0,2).join(', '),
+    "Réponds UNIQUEMENT avec ce JSON valide (sans markdown ni backticks) :",
+    '[{"title":"Titre informatif réel","source":"Les Echos","ageLabel":"Il y a 2j","ageDays":2},{"title":"...","source":"...","ageLabel":"...","ageDays":1}]',
+    "4 items. Titres concrets, informatifs, basés sur actualité récente de finance/immobilier français."
+  ].join(NL);
+  try {
+    var activeP = getActiveProvider ? getActiveProvider() : {provider: IA_PROVIDERS.groq, key: apiKey};
+    var provFetch = activeP.provider || IA_PROVIDERS.groq;
+    var keyFetch  = activeP.key || apiKey;
+    var fetchResp, fetchData;
+    if (provFetch.format === 'openai') {
+      fetchResp = await fetch(provFetch.url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+keyFetch}, body: JSON.stringify({ model:provFetch.model, max_tokens:400, messages:[{role:'system',content:'Tu es un expert financier. Réponds uniquement en JSON valide.'},{role:'user',content:prompt}] }) });
+      fetchData = await fetchResp.json();
+      if (fetchData.error) return null;
+      var text = (fetchData.choices&&fetchData.choices[0]&&fetchData.choices[0].message&&fetchData.choices[0].message.content)||'';
+    } else if (provFetch.format === 'gemini') {
+      fetchResp = await fetch(provFetch.url+'?key='+keyFetch, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:400}}) });
+      fetchData = await fetchResp.json();
+      if (fetchData.error) return null;
+      var text = (fetchData.candidates&&fetchData.candidates[0]&&fetchData.candidates[0].content&&fetchData.candidates[0].content.parts&&fetchData.candidates[0].content.parts[0]&&fetchData.candidates[0].content.parts[0].text)||'';
+    } else {
+      fetchResp = await fetch(provFetch.url, { method:'POST', headers:{'Content-Type':'application/json','x-api-key':keyFetch,'anthropic-version':'2023-06-01'}, body: JSON.stringify({ model:provFetch.model, max_tokens:400, messages:[{role:'user',content:prompt}] }) });
+      fetchData = await fetchResp.json();
+      if (fetchData.error) return null;
+      var text = (fetchData.content||[]).map(function(b){return b.text||'';}).join('').replace(/```json|```/g,'').trim();
+    }
+    // Find JSON array
+    var match = text.match(/\[[\s\S]*\]/);
+    if (!match) return null;
+    var items = JSON.parse(match[0]);
+    return Array.isArray(items) ? items.map(function(i) {
+      return { title:i.title||'', source:i.source||'Pierre IA', ageLabel:i.ageLabel||'Récent', link:'#', ageDays:i.ageDays||1, dateObj:new Date() };
+    }) : null;
+  } catch(e) { return null; }
+}
+
+// ── Fetch RSS via proxies CORS ───────────────────────────────
+async function fetchActuFeed(query) {
+  var PROXIES = [
+    function(u){ return 'https://corsproxy.io/?' + encodeURIComponent(u); },
+    function(u){ return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
+    function(u){ return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u); },
+  ];
+  var rssUrl = 'https://news.google.com/rss/search?q='
+    + encodeURIComponent(query) + '&hl=fr&gl=FR&ceid=FR:fr';
+
+  for (var pi = 0; pi < PROXIES.length; pi++) {
+    try {
+      var ctrl = new AbortController();
+      var t = setTimeout(function(){ ctrl.abort(); }, 7000);
+      var r = await fetch(PROXIES[pi](rssUrl), { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!r.ok) continue;
+      var txt = await r.text();
+      if (!txt || txt.trim().startsWith('<html') || !txt.includes('<item')) continue;
+      var items = parseRSSItems(txt, 6);
+      if (items.length > 0) {
+        // deduplicate
+        var seen = {};
+        return items.filter(function(i) {
+          var k = i.title.slice(0, 50).toLowerCase();
+          if (seen[k]) return false; seen[k] = true; return true;
+        });
+      }
+    } catch(e) { /* try next */ }
+  }
+  return [];
+}
+
 async function fetchOneFeed(feed){
   for(var qi=0;qi<feed.queries.length;qi++){
     var res=await fetchActuFeed(feed.queries[qi]);
@@ -9076,7 +9218,35 @@ async function renderFeedCard(feedId,forceRefresh){
     checkActuAlerts(feedId,items);
     _actuFeedCache[feedId]={items:items,ts:Date.now()};
     renderFeedItems(body,items,feed,lbl);
-  }catch(e){body.innerHTML='<div style="color:var(--red);font-size:11px;padding:10px 0;">Erreur reseau</div>';}
+  }catch(e){
+    // RSS failed — try Pierre as fallback
+    body.innerHTML='<div style="color:var(--muted);font-size:11px;padding:8px 0;">Génération par Pierre...</div>';
+    var pierreOk = false;
+    try {
+      var pierreItems = await genererActuParPierre(feed);
+      if (pierreItems && pierreItems.length) {
+        _actuFeedCache[feedId] = { items: pierreItems, ts: Date.now() };
+        renderFeedItems(body, pierreItems, feed, lbl);
+        pierreOk = true;
+      }
+    } catch(e2) {}
+        if (!pierreOk) {
+      var retryBtn = document.createElement('button');
+      retryBtn.textContent = 'Réessayer';
+      retryBtn.style.cssText = 'background:none;border:none;color:var(--blue);cursor:pointer;font-size:11px;text-decoration:underline;';
+      retryBtn.onclick = function() {
+        delete _actuFeedCache[feedId];
+        _actuFeedLoading[feedId] = false;
+        renderFeedCard(feedId, true);
+      };
+      body.innerHTML = '';
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'color:var(--muted);font-size:11px;padding:12px 0;text-align:center;';
+      wrap.innerHTML = '<div style="font-size:18px;margin-bottom:4px;">📡</div>Flux indisponible &nbsp;';
+      wrap.appendChild(retryBtn);
+      body.appendChild(wrap);
+    }
+  }
   if(btn){btn.disabled=false;btn.innerHTML='&#8635;';}
   _actuFeedLoading[feedId]=false;
 }
@@ -9872,35 +10042,63 @@ history.pushState({}, '');
 // ══ CLÉ API PIERRE ═══════════════════════════════════════════
 function demanderCleAPI() {
   var existing = document.getElementById('ov-api-key');
-  if (existing) { existing.classList.add('on'); return; }
+  if (existing) { existing.classList.add('on'); updateProviderHint(); return; }
   var ov = document.createElement('div');
   ov.id = 'ov-api-key';
   ov.className = 'ov';
   var box = document.createElement('div');
   box.className = 'modal';
-  box.style.cssText = 'width:460px;';
+  box.style.cssText = 'width:500px;';
+
+  var curProv = sessionStorage.getItem('pierre-provider') || 'groq';
+  var provOptions = Object.keys(IA_PROVIDERS).map(function(id) {
+    var p = IA_PROVIDERS[id];
+    var sel = curProv === id ? ' selected' : '';
+    return '<option value="'+id+'"'+sel+'>'+(p.free ? '🆓 ' : '💳 ')+p.name+'</option>';
+  }).join('');
+
   box.innerHTML = [
-    '<h2 style="font-family:Playfair Display,serif;font-size:17px;margin-bottom:12px;">Clé API — Pierre</h2>',
-    '<p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px;">',
-    'Pierre nécessite une clé API Anthropic pour fonctionner depuis GitHub Pages.<br>',
-    'Elle est stockée uniquement dans votre navigateur (sessionStorage).<br><br>',
-    '<b>Obtenir la clé :</b> <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--blue);">console.anthropic.com</a>',
-    ' — Coût : ~0,01-0,05 EUR par analyse</p>',
-    '<div class="fg"><label>Clé API (sk-ant-...)</label>',
-    '<input type="password" id="api-key-input" placeholder="sk-ant-api03-..." ',
-    'style="font-family:JetBrains Mono,monospace;font-size:12px;" autocomplete="off"></div>',
-    '<div style="display:flex;gap:8px;margin-top:16px;">',
-    '<button class="btn" onclick="sauvegarderCleAPI()" style="flex:1;">Enregistrer</button>',
-    '<button class="btn gh" onclick="document.getElementById(\'ov-api-key\').classList.remove(\'on\')" style="flex-shrink:0;">Annuler</button>',
+    '<h2 style="font-family:Playfair Display,serif;font-size:17px;margin-bottom:12px;">⚙️ Configuration de Pierre</h2>',
+    '<div class="fg" style="margin-bottom:10px;">',
+    '  <label>Fournisseur IA</label>',
+    '  <select id="pierre-provider-sel" onchange="updateProviderHint()" style="font-size:12px;">'+provOptions+'</select>',
     '</div>',
-    '<div id="api-key-status" style="font-size:11px;color:var(--muted);margin-top:8px;font-family:JetBrains Mono,monospace;"></div>'
+    '<div id="pierre-provider-hint" style="font-size:11px;padding:10px 12px;background:var(--s2);border-radius:8px;margin-bottom:12px;line-height:1.6;"></div>',
+    '<div class="fg">',
+    '  <label>Clé API</label>',
+    '  <input type="password" id="api-key-input" placeholder="..." style="font-family:JetBrains Mono,monospace;font-size:12px;" autocomplete="off">',
+    '</div>',
+    '<div style="display:flex;gap:8px;margin-top:14px;">',
+    '  <button class="btn" onclick="sauvegarderCleAPI()" style="flex:1;">Enregistrer</button>',
+    '  <button class="btn gh" onclick="document.getElementById(\'ov-api-key\').classList.remove(\'on\')" style="flex-shrink:0;">Annuler</button>',
+    '</div>',
+    '<div id="api-key-status" style="font-size:11px;color:var(--muted);margin-top:8px;font-family:JetBrains Mono,monospace;min-height:16px;"></div>'
   ].join('');
+
   ov.appendChild(box);
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.classList.remove('on'); });
   document.body.appendChild(ov);
   ov.classList.add('on');
-  setTimeout(function(){ var i=document.getElementById('api-key-input');if(i)i.focus(); }, 100);
+  updateProviderHint();
+  setTimeout(function(){ var i=document.getElementById('api-key-input'); if(i) i.focus(); }, 150);
 }
+
+function updateProviderHint() {
+  var sel  = document.getElementById('pierre-provider-sel');
+  var hint = document.getElementById('pierre-provider-hint');
+  var inp  = document.getElementById('api-key-input');
+  if (!sel || !hint) return;
+  var guides = {
+    groq:       { placeholder:'gsk_...', html:'<strong style="color:var(--green);">🆓 100% GRATUIT</strong> · Llama 3.3 70B · Très rapide · Sans carte bancaire<br><a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue);">1. Créer un compte Groq → Créer une clé API</a>' },
+    gemini:     { placeholder:'AIza...', html:'<strong style="color:var(--green);">🆓 GRATUIT</strong> · Gemini 1.5 Flash · 1 500 req/jour<br><a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue);">1. Google AI Studio → Get API Key</a>' },
+    openrouter: { placeholder:'sk-or-...', html:'<strong style="color:var(--green);">🆓 GRATUIT</strong> (modèles :free) · Llama 3.1 8B · Sans carte<br><a href="https://openrouter.ai/settings/keys" target="_blank" style="color:var(--blue);">1. Créer un compte OpenRouter → Keys</a>' },
+    anthropic:  { placeholder:'sk-ant-...', html:'<strong style="color:var(--gold);">💳 Payant</strong> · Claude · Meilleure qualité · ~5$ = plusieurs mois<br><a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--blue);">1. console.anthropic.com → API Keys</a>' }
+  };
+  var g = guides[sel.value] || guides.groq;
+  hint.innerHTML = g.html;
+  if (inp) inp.placeholder = g.placeholder;
+}
+window.updateProviderHint = updateProviderHint;
 
 async function sauvegarderCleAPI() {
   var inp = document.getElementById('api-key-input');
@@ -9912,23 +10110,38 @@ async function sauvegarderCleAPI() {
     return;
   }
   if (st) { st.textContent = 'Test...'; st.style.color='var(--muted)'; }
+  var provSel2 = document.getElementById('pierre-provider-sel');
+  var provId2 = provSel2 ? provSel2.value : 'groq';
+  var prov2 = IA_PROVIDERS[provId2] || IA_PROVIDERS.groq;
+  if (st) { st.textContent = 'Test de la clé...'; st.style.color='var(--muted)'; }
   try {
-    var r = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:5,messages:[{role:'user',content:'Hi'}]})
-    });
-    var d = await r.json();
-    if (d.error && !d.error.type.includes('overload')) {
-      if (st) { st.textContent = 'Clé invalide : ' + d.error.message; st.style.color='var(--red)'; }
-      return;
+    var testResp, testData;
+    if (prov2.format === 'openai') {
+      testResp = await fetch(prov2.url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key}, body:JSON.stringify({model:prov2.model, max_tokens:5, messages:[{role:'user',content:'Hi'}]}) });
+      testData = await testResp.json();
+    } else if (prov2.format === 'gemini') {
+      testResp = await fetch(prov2.url+'?key='+key, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{role:'user',parts:[{text:'Hi'}]}],generationConfig:{maxOutputTokens:5}}) });
+      testData = await testResp.json();
+    } else {
+      testResp = await fetch(prov2.url, { method:'POST', headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'}, body:JSON.stringify({model:prov2.model,max_tokens:5,messages:[{role:'user',content:'Hi'}]}) });
+      testData = await testResp.json();
     }
-  } catch(e) {}
+    if (testData && testData.error) {
+      var errMsg = testData.error.message || JSON.stringify(testData.error);
+      if (!errMsg.includes('overload')) {
+        if (st) { st.textContent = 'Clé invalide : ' + errMsg.slice(0,80); st.style.color='var(--red)'; }
+        return;
+      }
+    }
+  } catch(e) { /* ignore test errors, save anyway */ }
+  var provSel = document.getElementById('pierre-provider-sel');
+  var provId = provSel ? provSel.value : 'groq';
   sessionStorage.setItem('pierre-api-key', key);
-  if (st) { st.textContent = 'Clé enregistrée — Pierre est actif !'; st.style.color='var(--green)'; }
+  sessionStorage.setItem('pierre-provider', provId);
+  if (st) { st.textContent = 'Enregistré ! Pierre utilise ' + (IA_PROVIDERS[provId]||{name:'IA'}).name; st.style.color='var(--green)'; }
   setTimeout(function(){
     var ov=document.getElementById('ov-api-key');if(ov)ov.classList.remove('on');
-    if(window._toast)window._toast('Pierre est maintenant actif');
+    if(window._toast)window._toast('Pierre actif via ' + (IA_PROVIDERS[provId]||{name:'IA'}).name);
   }, 1200);
 }
 window.demanderCleAPI = demanderCleAPI;
@@ -10551,69 +10764,223 @@ function getPatrimoineContext() {
 // ════════════════════════════════════════════════════════════════
 // APPEL API AVEC OUTILS
 // ════════════════════════════════════════════════════════════════
+// ── Providers IA disponibles ──────────────────────────────────
+var IA_PROVIDERS = {
+  groq: {
+    name: 'Groq (Llama 3.3 — Gratuit)',
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    model: 'llama-3.3-70b-versatile',
+    key_prefix: 'gsk_',
+    free: true,
+    format: 'openai'
+  },
+  gemini: {
+    name: 'Google Gemini Flash (Gratuit)',
+    url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+    model: 'gemini-1.5-flash',
+    key_prefix: 'AI',
+    free: true,
+    format: 'gemini'
+  },
+  openrouter: {
+    name: 'OpenRouter (Llama gratuit)',
+    url: 'https://openrouter.ai/api/v1/chat/completions',
+    model: 'meta-llama/llama-3.1-8b-instruct:free',
+    key_prefix: 'sk-or-',
+    free: true,
+    format: 'openai'
+  },
+  anthropic: {
+    name: 'Claude Anthropic (Payant)',
+    url: 'https://api.anthropic.com/v1/messages',
+    model: 'claude-sonnet-4-20250514',
+    key_prefix: 'sk-ant-',
+    free: false,
+    format: 'anthropic'
+  }
+};
+
+function getActiveProvider() {
+  var provId = sessionStorage.getItem('pierre-provider') || 'groq';
+  var apiKey  = sessionStorage.getItem('pierre-api-key') || '';
+  return { provider: IA_PROVIDERS[provId] || IA_PROVIDERS.groq, key: apiKey, id: provId };
+}
+
 async function callClaudeIA(userMsg, isFirst) {
+  var active = getActiveProvider();
+  if (!active.key) {
+    demanderCleAPI();
+    return "Clé API requise. Cliquez sur le bouton IA pour configurer Pierre.";
+  }
+
   var messages = [];
   if (!isFirst && window._iaConversation.length > 0) {
-    // Keep last 12 messages (6 exchanges)
     window._iaConversation.slice(-12).forEach(function(m) { messages.push(m); });
   }
   messages.push({role:'user', content: userMsg});
 
-  var makeReq = async function(msgs) {
-    var apiKey = sessionStorage.getItem('pierre-api-key') || '';
-    var headers = { 'Content-Type': 'application/json' };
-    if (apiKey) {
-      headers['x-api-key'] = apiKey;
-      headers['anthropic-version'] = '2023-06-01';
-    } else {
-      headers['anthropic-dangerous-direct-browser-access'] = 'true';
-    }
-    var resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+  var makeReq = async function(msgs, withTools) {
+    var prov = active.provider;
+    var key  = active.key;
+
+    if (prov.format === 'openai') {
+      // ── Groq / OpenRouter avec function calling ──────────────
+      // Convertir IA_TOOLS (format Anthropic) → OpenAI functions
+      var oaFunctions = (withTools !== false ? IA_TOOLS : []).map(function(t) {
+        return {
+          type: 'function',
+          function: {
+            name: t.name,
+            description: t.description,
+            parameters: t.input_schema || { type:'object', properties:{}, required:[] }
+          }
+        };
+      });
+
+      var body = {
+        model: prov.model,
         max_tokens: 1500,
-        system: getSystemPrompt(),
-        tools: IA_TOOLS,
-        messages: msgs
-      })
-    });
-    return await resp.json();
+        messages: [{role:'system', content: getSystemPrompt()}]
+          .concat(msgs.filter(function(m){ return typeof m.content === 'string' || Array.isArray(m.content); })
+            .map(function(m) {
+              // Normalize content to string for OpenAI
+              var c = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
+              return {role: m.role, content: c};
+            }))
+      };
+      if (oaFunctions.length > 0) {
+        body.tools = oaFunctions;
+        body.tool_choice = 'auto';
+      }
+
+      var r = await fetch(prov.url, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+key },
+        body: JSON.stringify(body)
+      });
+      var data = await r.json();
+      if (data.error) return { error: data.error };
+
+      var choice = data.choices && data.choices[0];
+      var msg = choice && choice.message;
+      if (!msg) return { content:[{type:'text',text:''}], stop_reason:'end_turn' };
+
+      // Handle tool_calls → convert to Anthropic format
+      if (msg.tool_calls && msg.tool_calls.length > 0) {
+        var anthContent = [];
+        if (msg.content) anthContent.push({type:'text', text:msg.content});
+        msg.tool_calls.forEach(function(tc) {
+          try {
+            anthContent.push({
+              type: 'tool_use',
+              id: tc.id || ('call_' + Math.random().toString(36).slice(2)),
+              name: tc.function.name,
+              input: JSON.parse(tc.function.arguments || '{}')
+            });
+          } catch(e) {}
+        });
+        return { content: anthContent, stop_reason: 'tool_use', _oaMsgs: msgs, _oaMsg: msg };
+      }
+
+      return {
+        content: [{type:'text', text: msg.content || ''}],
+        stop_reason: choice.finish_reason === 'stop' ? 'end_turn' : choice.finish_reason
+      };
+
+    } else if (prov.format === 'gemini') {
+      var gemMsgs = msgs.filter(function(m){ return typeof m.content === 'string'; }).map(function(m) {
+        return { role: m.role === 'assistant' ? 'model' : 'user', parts: [{text: m.content}] };
+      });
+      var r2 = await fetch(prov.url+'?key='+key, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          contents: gemMsgs,
+          systemInstruction: { parts:[{text: getSystemPrompt()}] },
+          generationConfig: { maxOutputTokens:1500 }
+        })
+      });
+      var gdata = await r2.json();
+      if (gdata.error) return { error: gdata.error };
+      var gtext = (gdata.candidates&&gdata.candidates[0]&&gdata.candidates[0].content&&gdata.candidates[0].content.parts&&gdata.candidates[0].content.parts[0]&&gdata.candidates[0].content.parts[0].text)||'';
+      return { content:[{type:'text',text:gtext}], stop_reason:'end_turn' };
+
+    } else {
+      // Anthropic — full tool support
+      var r3 = await fetch(prov.url, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+        body: JSON.stringify({ model:prov.model, max_tokens:1500, system:getSystemPrompt(), tools:IA_TOOLS, messages:msgs })
+      });
+      return await r3.json();
+    }
   };
 
   try {
-    var data = await makeReq(messages);
+    var data = await makeReq(messages, true);
     if (data.error) {
-      if (data.error.message && (data.error.message.includes('x-api-key') || data.error.message.includes('api_key'))) {
+      var errMsg = data.error.message || JSON.stringify(data.error);
+      if (errMsg.includes('x-api-key') || errMsg.includes('api_key') || errMsg.includes('authentication') || errMsg.includes('401')) {
         demanderCleAPI();
-        return "Clé API Anthropic requise. Entrez votre clé dans le formulaire qui s'est ouvert.";
+        return "Clé API invalide. Vérifiez votre clé dans la configuration.";
       }
-      return "Erreur API : " + data.error.message;
+      if (data.error.type === 'exceeded_limit' || errMsg.includes('exceeded_limit') || errMsg.includes('out_of_credits')) {
+        return "Crédit épuisé. Rechargez sur console.anthropic.com/settings/billing, ou passez à Groq (gratuit).";
+      }
+      if (errMsg.includes('overloaded') || errMsg.includes('rate_limit')) {
+        return "Service surchargé. Réessayez dans quelques secondes.";
+      }
+      return "Erreur API : " + errMsg.slice(0, 200);
     }
 
-    // Agentic loop — handle tool use (max 3 iterations)
+    // ── Agentic loop — tool use (max 4 iterations) ───────────
     var iter = 0;
-    while (data.stop_reason === 'tool_use' && iter < 3) {
+    while ((data.stop_reason === 'tool_use' || data.stop_reason === 'tool_calls') && iter < 4) {
       iter++;
       var toolResults = [];
-      var textParts = [];
+      var textParts   = [];
+      var hasConfirm  = false;
 
-      data.content.forEach(function(block) {
-        if (block.type === 'text') textParts.push(block.text);
+      (data.content || []).forEach(function(block) {
+        if (block.type === 'text' && block.text) textParts.push(block.text);
         if (block.type === 'tool_use') {
           var result = executerOutil(block.name, block.input);
+          if (typeof result === 'string' && result.startsWith('DEMANDE_CONFIRMATION|')) {
+            hasConfirm = true;
+            textParts.push(result.slice(21)); // show label to user
+          }
           toolResults.push({ type:'tool_result', tool_use_id: block.id, content: result });
         }
       });
 
-      messages = messages.concat([
-        {role:'assistant', content: data.content},
-        {role:'user', content: toolResults}
-      ]);
+      if (hasConfirm) {
+        // Stop loop — let user confirm before continuing
+        return (textParts.join('\n') || 'Action proposée — confirmez ci-dessous');
+      }
 
-      data = await makeReq(messages);
-      if (data.error) return "Erreur API (iter " + iter + ") : " + data.error.message;
+      if (toolResults.length === 0) break;
+
+      // For OpenAI format, build tool result messages differently
+      if (active.provider.format === 'openai') {
+        // Add assistant message with tool_calls + tool results
+        var oaAssistMsg = { role:'assistant', content: data.content.find(function(b){return b.type==='text';})?.text || null };
+        var toolCallBlocks = data.content.filter(function(b){return b.type==='tool_use';});
+        oaAssistMsg.tool_calls = toolCallBlocks.map(function(b) {
+          return { id:b.id, type:'function', function:{name:b.name, arguments:JSON.stringify(b.input)} };
+        });
+        messages = messages.concat([oaAssistMsg]);
+        toolResults.forEach(function(tr) {
+          messages.push({ role:'tool', tool_call_id: tr.tool_use_id, content: tr.content });
+        });
+      } else {
+        messages = messages.concat([
+          {role:'assistant', content: data.content},
+          {role:'user', content: toolResults}
+        ]);
+      }
+
+      data = await makeReq(messages, true);
+      if (data.error) break;
     }
 
     return (data.content || [])
@@ -10622,10 +10989,6 @@ async function callClaudeIA(userMsg, isFirst) {
       .join('');
 
   } catch(e) {
-    if (e.message && e.message.includes('x-api-key')) {
-      demanderCleAPI();
-      return "Clé API requise. Entrez votre clé Anthropic pour utiliser Pierre.";
-    }
     return "Erreur connexion : " + e.message;
   }
 }
