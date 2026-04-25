@@ -11008,101 +11008,20 @@ window.confirmerAction = confirmerAction;
 // ════════════════════════════════════════════════════════════════
 function getSystemPrompt() {
   var NL = String.fromCharCode(10);
+  // Version compressée — ~600 tokens au lieu de ~2500
   return [
-    "Tu es Pierre, conseiller privé de Maxime. Tu es expert reconnu dans TOUS ces domaines :",
-    "Gestion de patrimoine | Fiscalité française | Droit (civil, successoral, immobilier, des sociétés, du travail)",
-    "Finance de marché | Immobilier | Droit juridique | Planification retraite | Optimisation fiscale",
+    "Tu es Pierre, conseiller patrimonial de Maxime (29 ans, SNCF, couple, 1 enfant, retraite 2057).",
+    "Stratégie cible : 80% PEA + 20% AV. Tu es expert : patrimoine, fiscalité FR, immobilier, marchés, droit.",
     "",
-    "═══════════════════════════════════════════════════════",
-    "EXPERTISE PATRIMONIALE & FISCALE",
-    "═══════════════════════════════════════════════════════",
-    "PEA: Exonération IR après 5 ans (PS 17,2% dus). Plafond 150k EUR. Clôture au décès → anticiper.",
-    "Assurance Vie: Abattement 4600 EUR/an après 8 ans (9200 EUR couple). Succession: 152 500 EUR/bénéficiaire exonérés.",
-    "  Après 70 ans du souscripteur: abattement 30 500 EUR global sur primes puis droits normaux.",
-    "LMNP réel: Amortissement bien (~2-3%/an), mobilier (~10-20%/an), frais déductibles. BIC souvent nul.",
-    "  Réforme en cours: réintégration amortissements dans PV de cession. Impact majeur si vente.",
-    "PEG SNCF: Exonération IR sur gains, PS dus. Déblocage 5 ans ou cas légaux (mariage, naissance, licenciement...).",
-    "PER: Déductible du revenu imposable (plafond: 10% revenus N-1 ou 10% PASS). Fiscalité sortie rente ou capital.",
-    "Donation: 100k EUR/parent/enfant tous 15 ans. Don manuel: 31 865 EUR en plus. Donation-partage: fige valeurs.",
-    "Succession: Abattement enfant 100k EUR. Conjoint: exonération totale si marié/PACS. Ordre des héritiers.",
-    "SCI: Transmission optimisée (valeur parts décotée), démembrement possible. IS ou IR selon choix.",
-    "Démembrement: Usufruit/Nue-propriété. Barème fiscal par âge de l'usufruitier. Outil de transmission puissant.",
-    "Flat Tax PFU 30%: 12,8% IR + 17,2% PS sur dividendes/PV CTO. Option barème si TMI < 12,8%.",
-    "IR 2025: Tranches 0/11/30/41/45%. Abattement 10% (min 495, max 14 171 EUR). Décote, quotient familial.",
-    "IFI (Impôt Fortune Immobilière): Seuil 1,3M EUR net. Taux 0,5% à 1,5%. Exonérations: RP 30%, biens pro.",
-    "Plus-value immobilière: Abattements IR 6%/an de 6 à 21 ans (exo totale 22 ans). PS 1,65-9%/an (exo 30 ans).",
-    "  Surtaxe 2-6% sur PV > 50k EUR. Exonération RP. Abattement exceptionnel zones tendues.",
-    "Déficit foncier: imputable sur revenus globaux (10 700 EUR/an) si location nue. Régime réel obligatoire.",
-    "Micro-BIC: 50% abattement sur recettes < 77 700 EUR. Avantageux si charges réelles < 50%.",
-    "SCPI: Revenus fonciers imposés. Diversification immobilière sans gestion. TRI moyen 4-5%/an.",
-    "Crowdfunding immo: Obligations 8-12%/an. Risque perte capital. Fiscalité: IR ou PFU.",
+    "RÈGLES : Lis toujours lire_situation_complete avant d'analyser. Calcule avant d'estimer.",
+    "Propose sans jamais modifier sans accord. Sois direct, chiffré, actionnable. Vouvoie Maxime.",
+    "Max 400 mots. Termine par une action concrète ou question.",
     "",
-    "═══════════════════════════════════════════════════════",
-    "EXPERTISE FINANCE DE MARCHÉ",
-    "═══════════════════════════════════════════════════════",
-    "ETF/Trackers: Gestion passive. TER 0,05-0,5%/an. Réplication physique vs synthétique.",
-    "Indices clés: MSCI World (~1600 actions, 23 pays), S&P500 (500 US), MSCI EM (marchés émergents), CAC40.",
-    "DCA (Dollar Cost Averaging): Lissage du prix d'achat. Réduit le risque de timing. Idéal pour versements réguliers.",
-    "Volatilité: S&P500 ~16%/an. Obligation: protection partielle. Or: valeur refuge. Cash drag à éviter.",
-    "Obligations: Duration, sensibilité aux taux BCE. Spread crédit. Investment Grade vs High Yield.",
-    "Or: Valeur refuge. Pas de rendement intrinsèque. Corrélation négative marchés stress.",
-    "Private Equity: Illiquide, horizon 5-10 ans, cible TRI 15-25%. Accessible via FCPR/FPCI.",
-    "Taux BCE: Impact direct sur taux crédit immo, obligations, valorisation actions (actualisations).",
-    "Sharpe ratio, alpha, bêta: métriques de performance ajustée au risque.",
-    "Théorie portefeuille: Diversification, frontière efficiente, allocation optimale selon horizon et risque.",
-    "",
-    "═══════════════════════════════════════════════════════",
-    "EXPERTISE IMMOBILIÈRE",
-    "═══════════════════════════════════════════════════════",
-    "Rendement brut = loyers annuels / prix achat × 100.",
-    "Rendement net = (loyers - charges - taxe foncière - assurances - gestion) / prix achat × 100.",
-    "Rendement net-net = après fiscalité (IR/PS ou BIC LMNP).",
-    "Cashflow: loyer - crédit - charges. Objectif: positif ou neutre.",
-    "Prix marché: DVF (données réelles), MeilleursAgents, indices INSEE, observatoires locaux.",
-    "DPE: A+ à G. Obligations: G interdit 2025, F 2028, E 2034, D 2038. Impact valeur et assurabilité.",
-    "Rénovation énergétique: MaPrimeRénov', CEE, éco-PTZ. Déductible LMNP réel.",
-    "Bail: 3 ans résidentiel, 1 an meublé, 9 ans commercial. Révision IRL. Congé propriétaire: 6 mois.",
-    "Charges récupérables (décret 87-713): eau, ordures, entretien parties communes. Non récupérable: TF, ravalement.",
-    "Syndic et copropriété: Charges courantes vs travaux. Fonds de travaux obligatoire (loi ALUR 5% budget).",
-    "Crédit immo: Taux fixe/variable/capé. Assurance (délégation possible). TAEG. Renégociation si écart ≥ 0,8 pt.",
-    "PTZ: Sans intérêts, zones A/B1/B2/C. Sous conditions ressources. Complément non substituable.",
-    "Démembrement immo: Achat nue-propriété (décote 30-50% selon durée). Pas de revenus fonciers, pas d'IFI.",
-    "Viager: Bouquet + rente. Occupé (décote) vs libre. Risque aléatoire sur durée de vie.",
-    "Marchands de biens: TVA sur marge. Régime professionnel.",
-    "",
-    "═══════════════════════════════════════════════════════",
-    "EXPERTISE JURIDIQUE & DROIT",
-    "═══════════════════════════════════════════════════════",
-    "Régimes matrimoniaux: Communauté réduite aux acquêts (défaut), séparation de biens, participation aux acquêts.",
-    "  Impact sur patrimoine, crédit, transmission. Changement possible après 2 ans de mariage devant notaire.",
-    "PACS: Régime de séparation de biens par défaut. Modification possible. Avantage: exonération droits succession.",
-    "Mandat de protection future: Anticiper incapacité. Alternative à tutelle/curatelle.",
-    "Testament: Olographe (manuscrit/daté/signé) ou notarié. Réserve héréditaire (enfants intouchables).",
-    "  Quotité disponible: 1/2 avec 1 enfant, 1/3 avec 2, 1/4 avec 3+.",
-    "Assurance-vie hors succession: Clause bénéficiaire à rédiger soigneusement. Pas soumise aux droits si <70 ans.",
-    "Droit du travail SNCF: Statut particulier. Retraite régime spécial. Avantages spécifiques.",
-    "Bail d'habitation: Loi ALUR, loi ELAN. Encadrement loyers Paris/Lille. Préavis: 1 mois meublé, 3 mois vide.",
-    "LMNP juridique: Inscription CFE, déclaration P0i, liasse 2031. Bénéfice réel: compte de résultat BIC.",
-    "  LMP (> 23k EUR recettes ET > autres revenus): cotisations sociales mais déficit imputable revenus.",
-    "Société civile: SCI, SCM, SCCV. Capital social, associés, gérance, dissolution, liquidation.",
-    "Droit des successions: Héritiers réservataires, légataires, exécuteur testamentaire, notaire obligatoire > 5k EUR.",
-    "Usufruit légal du conjoint: droit au logement 1 an puis usufruit ou 1/4 en pleine propriété.",
-    "Contentieux locatif: Clause résolutoire, commandement de payer, expulsion (délais 18-36 mois).",
-    "Protection juridique: GAJ (Garantie Assistance Juridique) dans MRH. Plafond et délais de carence.",
-    "",
-    "═══════════════════════════════════════════════════════",
-    "RÈGLES DE COMPORTEMENT",
-    "═══════════════════════════════════════════════════════",
-    "1. Tu lis toujours les données avec lire_situation_complete avant d'analyser",
-    "2. Tu calcules avant d'estimer — tu utilises l'outil calculer",
-    "3. Tu es FORCE DE PROPOSITION : tu signales proactivement les opportunités et risques",
-    "4. Tu ALERTES fermement si quelque chose est sous-optimal, risqué ou illégal",
-    "5. Tu ne modifies JAMAIS sans accord explicite — tu proposes, tu attends confirmation",
-    "6. Tu navigues vers l'onglet concerné pour montrer les données",
-    "7. Tu recommandes un notaire, avocat ou expert-comptable quand c'est nécessaire",
-    "8. Tu mentionnes les limites de tes conseils (pas substitut à un professionnel agréé)",
-    "9. Tu vouvoies Maxime. Tu es direct, précis, chiffré, actionnable.",
-    "10. Tes réponses : structurées avec emojis, max 500 mots, terminent par une action ou question."
+    "FISCAL CLÉ : PEA exo IR >5 ans (PS 17,2%). AV abatt. 4600€/an >8 ans, 152 500€/bénéf. succession.",
+    "LMNP réel : amortissements (~2-3%/an bien), BIC souvent nul. PEG SNCF : exo IR, PS dus.",
+    "Donation : 100k€/parent/enfant/15 ans. PFU 30% (CTO). Option barème si TMI<12,8%.",
+    "Plus-value immo : exo IR 22 ans, totale 30 ans. DPE G interdit 2025, F 2028, E 2034.",
+    "IR tranches 2025 : 0/11/30/41/45%. Quotient familial. PER : déductible 10% revenus."
   ].join(NL);
 }
 
@@ -11113,87 +11032,67 @@ function getPatrimoineContext() {
   var S = window._pState ? window._pState() : null;
   if (!S) return "Données non disponibles.";
   var c  = window._cAll ? window._cAll() : {};
-  var now = new Date();
-  var salMax  = parseFloat(document.getElementById('f-sal-maxime')?.value) || 30000;
-  var salConj = parseFloat(document.getElementById('f-sal-conj')?.value) || 0;
-  var revFoyer= parseFloat(document.getElementById('f-revenu')?.value) || (salMax+salConj);
-  var parts   = parseFloat(document.getElementById('f-parts')?.value) || 2.5;
-  var loyers  = parseFloat(document.getElementById('f-loyers')?.value) || 6240;
-  var charges = parseFloat(document.getElementById('f-charges-lmnp')?.value) || 6240;
   var NL = String.fromCharCode(10);
   var lines = [
-    "DATE : " + now.toLocaleDateString('fr-FR'),
-    "",
-    "=== PROFIL ===",
-    "Maxime, 29 ans, agent de maîtrise SNCF. Couple marié/PACSÉ, 1 enfant.",
-    "Horizon retraite : 2057 (31 ans). Stratégie cible : 80% PEA (retraite) + 20% AV (transmission).",
-    "",
-    "=== REVENUS & FISCALITÉ ===",
-    "Salaire Maxime : " + salMax.toLocaleString('fr-FR') + " EUR/an (" + Math.round(salMax/12).toLocaleString('fr-FR') + " EUR/mois net)",
-    salConj > 0 ? "Salaire conjoint : " + salConj.toLocaleString('fr-FR') + " EUR/an" : "Conjoint : revenus non renseignés",
-    "Revenu net imposable foyer : " + revFoyer.toLocaleString('fr-FR') + " EUR | " + parts + " parts",
-    "LMNP : loyers " + loyers.toLocaleString('fr-FR') + " EUR/an | charges " + charges.toLocaleString('fr-FR') + " EUR/an | BIC net " + (loyers-charges).toLocaleString('fr-FR') + " EUR",
-    "",
-    "=== BILAN PATRIMONIAL ===",
-    "Patrimoine NET : " + Math.round(c.total||0).toLocaleString('fr-FR') + " EUR",
-    "Patrimoine BRUT : " + Math.round(c.brut||0).toLocaleString('fr-FR') + " EUR",
-    "Dettes totales : " + Math.round(c.dettes||0).toLocaleString('fr-FR') + " EUR",
-    "Ratio dette/brut : " + ((c.dettes||0)/(c.brut||1)*100).toFixed(1) + "%",
-    "",
-    "=== ENVELOPPES FINANCIÈRES ===",
-    "PEA : " + Math.round(c.pea||0).toLocaleString('fr-FR') + " EUR (" + ((c.pea||0)/((c.pea||0)+(c.av||0)||1)*100).toFixed(1) + "% du fin. | cible 80%)",
-    "Assurance Vie : " + Math.round(c.av||0).toLocaleString('fr-FR') + " EUR (" + ((c.av||0)/((c.pea||0)+(c.av||0)||1)*100).toFixed(1) + "% | cible 20%)",
-    "PEG SNCF : " + Math.round(c.peg||0).toLocaleString('fr-FR') + " EUR",
-    c.cto > 0 ? "CTO : " + Math.round(c.cto).toLocaleString('fr-FR') + " EUR" : ""
+    "DATE : " + new Date().toLocaleDateString('fr-FR'),
+    "PATRIMOINE NET : " + Math.round(c.total||0).toLocaleString('fr-FR') + " EUR | BRUT : " + Math.round(c.brut||0).toLocaleString('fr-FR') + " EUR | DETTES : " + Math.round(c.dettes||0).toLocaleString('fr-FR') + " EUR",
+    "PEA : " + Math.round(c.pea||0).toLocaleString('fr-FR') + " EUR | AV : " + Math.round(c.av||0).toLocaleString('fr-FR') + " EUR | PEG : " + Math.round(c.peg||0).toLocaleString('fr-FR') + " EUR | Livrets : " + Math.round(c.livT||0).toLocaleString('fr-FR') + " EUR",
+    "Salaire : ~30 000 EUR/an | Foyer : 2,5 parts | LMNP T2 Limoges loyer ~520 EUR/mois"
   ];
 
+  // Positions — format compact
   if (S.positions && S.positions.length) {
-    lines.push("", "=== POSITIONS ===");
+    lines.push("POSITIONS (" + S.positions.length + ") :");
     S.positions.forEach(function(p) {
-      var val = (p.price||0)*(p.qty||0);
-      var pv  = val - (p.priceAvg||p.price||0)*(p.qty||0);
-      var pvPct = val > 0 ? (pv/((p.priceAvg||p.price||0)*(p.qty||0))*100).toFixed(1) : 0;
-      lines.push(p.name + " [" + p.envelope + "] : " + Math.round(val).toLocaleString('fr-FR') + " EUR | PV " + (pv>=0?"+":"") + Math.round(pv).toLocaleString('fr-FR') + " EUR (" + pvPct + "%) | qté " + p.qty + " @ " + p.price + " EUR");
+      var val = (p.cours||p.pru||0) * (p.qty||0);
+      var pv = val - (p.pru||0) * (p.qty||0);
+      lines.push("  " + p.envelope + " | " + (p.name||'?').slice(0,30) + " : " + Math.round(val).toLocaleString('fr-FR') + " EUR (PV " + (pv>=0?'+':'') + Math.round(pv).toLocaleString('fr-FR') + " EUR)");
     });
   }
 
+  // Immo — format compact
   if (S.immo && S.immo.length) {
-    lines.push("", "=== IMMOBILIER ===");
+    lines.push("IMMO (" + S.immo.length + ") :");
     S.immo.forEach(function(b) {
-      var cf = (b.rent||0) - (b.mortgage||0);
-      lines.push(b.name + " [" + b.type + "] :");
-      lines.push("  Valeur : " + Math.round(b.valeur||0).toLocaleString('fr-FR') + " EUR | Achat : " + Math.round(b.bought||0).toLocaleString('fr-FR') + " EUR | Dette : " + Math.round(b.debt||0).toLocaleString('fr-FR') + " EUR");
-      lines.push("  DPE : " + (b.dpe||"?") + " | Loyer : " + (b.rent||0) + " EUR/mois | Crédit : " + (b.mortgage||0) + " EUR/mois | CF : " + cf + " EUR/mois");
-      lines.push("  TF : " + (b.taxeFonciere||0) + " EUR | PNO : " + (b.pno||0) + " EUR | Compta : " + (b.compta||0) + " EUR");
+      var cf = (b.loyerMensuel||0) - (b.creditMensualite||0) - (b.tf||0)/12;
+      lines.push("  " + (b.name||'?').slice(0,25) + " [" + (b.type||'?') + "] val:" + Math.round(b.estim||b.bought||0).toLocaleString('fr-FR') + " det:" + Math.round(b.creditCRD||0).toLocaleString('fr-FR') + " cf:" + Math.round(cf) + "/mois DPE:" + (b.dpe||'?'));
     });
   }
 
+  // Livrets — format compact
   if (S.livrets && S.livrets.length) {
-    lines.push("", "=== LIVRETS ===");
-    var totLiv = 0;
-    S.livrets.forEach(function(lv) {
-      totLiv += lv.balance||0;
-      lines.push(lv.name + " (" + lv.type + ") : " + Math.round(lv.balance||0).toLocaleString('fr-FR') + " EUR @ " + lv.rate + "%/an | banque : " + (lv.bank||"?"));
-    });
-    lines.push("Total livrets : " + totLiv.toLocaleString('fr-FR') + " EUR");
+    lines.push("LIVRETS : " + S.livrets.map(function(l){ return (l.name||'?').slice(0,12) + "=" + Math.round(l.balance||0).toLocaleString('fr-FR') + "EUR@" + (l.taux||0) + "%"; }).join(' | '));
   }
 
+  // Actions en cours
   if (S.iaActions && S.iaActions.length) {
-    lines.push("", "=== ACTIONS EN COURS (ajoutées par Pierre) ===");
-    S.iaActions.forEach(function(a) {
-      lines.push("- " + a.title + " [" + a.urgence + "]" + (a.echeance?" → "+a.echeance:""));
-    });
+    lines.push("ACTIONS PIERRE (" + S.iaActions.length + ") : " + S.iaActions.slice(0,3).map(function(a){ return a.title + "[" + a.urgence + "]"; }).join(' | '));
   }
 
-  if (S.snapshots && S.snapshots.length > 1) {
-    lines.push("", "=== ÉVOLUTION HISTORIQUE ===");
-    var first = S.snapshots[0], last = S.snapshots[S.snapshots.length-1];
-    var growth = ((last.total-first.total)/first.total*100).toFixed(1);
-    lines.push("Du " + first.date + " au " + last.date + " : " + first.total.toLocaleString('fr-FR') + " → " + last.total.toLocaleString('fr-FR') + " EUR (" + (growth>0?"+":"") + growth + "%)");
-  }
-
-  return lines.filter(function(l){ return l !== ""; }).join(NL);
+  return lines.filter(Boolean).join(NL);
 }
+
+// Estime les tokens (approximation : 1 token ≈ 4 chars)
+function estimerTokens(text) {
+  return Math.ceil((text || '').length / 4);
+}
+
+// Contexte réduit si dépassement tokens
+function getContexteAdapte(maxTokens) {
+  maxTokens = maxTokens || 3000;
+  var full = getPatrimoineContext();
+  if (estimerTokens(full) <= maxTokens) return full;
+  // Version ultra-compacte
+  var S = window._pState ? window._pState() : null;
+  var c = window._cAll ? window._cAll() : {};
+  var NL = String.fromCharCode(10);
+  return [
+    "NET:" + Math.round(c.total||0) + "EUR | PEA:" + Math.round(c.pea||0) + " AV:" + Math.round(c.av||0) + " PEG:" + Math.round(c.peg||0) + " Livrets:" + Math.round(c.livT||0),
+    "Immo: " + (S&&S.immo?S.immo.length:0) + " bien(s) | Positions: " + (S&&S.positions?S.positions.length:0)
+  ].join(NL);
+}
+window.getPatrimoineContext = getPatrimoineContext;
+window.getContexteAdapte = getContexteAdapte;
 
 // ════════════════════════════════════════════════════════════════
 // APPEL API AVEC OUTILS
@@ -11262,29 +11161,41 @@ async function callClaudeIA(userMsg, isFirst) {
       // Convertir IA_TOOLS (format Anthropic) → OpenAI functions
       var oaFunctions = (withTools !== false ? IA_TOOLS : []).map(function(t) {
         var schema = t.input_schema || { type:'object', properties:{} };
-        // Groq/OpenAI: remove empty required array, ensure valid schema
         var params = { type: schema.type || 'object', properties: schema.properties || {} };
         if (schema.required && schema.required.length > 0) params.required = schema.required;
         return {
           type: 'function',
           function: {
             name: t.name,
-            description: t.description.slice(0, 200), // trim long descriptions
+            description: t.description.slice(0, 150), // trim descriptions
             parameters: params
           }
         };
       });
 
+      // Limites tokens selon provider
+      var TPM_LIMITS = { groq: 6000, openrouter: 4000, gemini: 8000, anthropic: 16000 };
+      var provId = active.id || 'groq';
+      var maxCtxTokens = (TPM_LIMITS[provId] || 6000) - 1500; // réserver 1500 pour la réponse
+      var sysPrompt = getSystemPrompt();
+      var memCtx = window.getMemoirePromptContext ? window.getMemoirePromptContext() : '';
+      var patriCtx = window.getContexteAdapte ? window.getContexteAdapte(maxCtxTokens - estimerTokens(sysPrompt) - estimerTokens(memCtx) - 200) : '';
+      var fullSystem = sysPrompt + memCtx + (patriCtx ? ('\n\n=== SITUATION ===\n' + patriCtx) : '');
+
+      // Tronquer l'historique de conversation si trop long
+      var histFiltered = msgs.filter(function(m){ return typeof m.content === 'string' || Array.isArray(m.content); });
+      // Garder seulement les 6 derniers messages si dépassement
+      var histTokens = histFiltered.reduce(function(s,m){ return s + estimerTokens(typeof m.content === 'string' ? m.content : JSON.stringify(m.content)); }, 0);
+      if (histTokens > 2000) histFiltered = histFiltered.slice(-4);
+
       var body = {
         model: prov.model,
-        max_tokens: 1500,
-        messages: [{role:'system', content: getSystemPrompt()}]
-          .concat(msgs.filter(function(m){ return typeof m.content === 'string' || Array.isArray(m.content); })
-            .map(function(m) {
-              // Normalize content to string for OpenAI
-              var c = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
-              return {role: m.role, content: c};
-            }))
+        max_tokens: 1200,
+        messages: [{role:'system', content: fullSystem}]
+          .concat(histFiltered.map(function(m) {
+            var c = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
+            return {role: m.role, content: c};
+          }))
       };
       if (oaFunctions.length > 0) {
         body.tools = oaFunctions;
@@ -11296,6 +11207,23 @@ async function callClaudeIA(userMsg, isFirst) {
         headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+key },
         body: JSON.stringify(body)
       });
+
+      // Gestion rate limit 429 — retry après délai
+      if (r.status === 429) {
+        var retryAfter = parseInt(r.headers.get('retry-after') || '10', 10);
+        retryAfter = Math.min(retryAfter, 30); // max 30s
+        if (window._toast) window._toast('⏳ Rate limit Groq — nouvelle tentative dans ' + retryAfter + 's…');
+        await new Promise(function(res){ setTimeout(res, retryAfter * 1000); });
+        // Retry sans tools pour réduire les tokens
+        body.tools = undefined;
+        body.tool_choice = undefined;
+        r = await fetch(prov.url, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+key },
+          body: JSON.stringify(body)
+        });
+      }
+
       var data = await r.json();
       if (data.error) return { error: data.error };
 
@@ -11348,7 +11276,7 @@ async function callClaudeIA(userMsg, isFirst) {
       var r3 = await fetch(prov.url, {
         method:'POST',
         headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
-        body: JSON.stringify({ model:prov.model, max_tokens:1500, system:getSystemPrompt(), tools:IA_TOOLS, messages:msgs })
+        body: JSON.stringify({ model:prov.model, max_tokens:1200, system:getSystemPrompt() + (window.getMemoirePromptContext ? window.getMemoirePromptContext() : ''), tools:IA_TOOLS, messages:msgs })
       });
       return await r3.json();
     }
@@ -11365,8 +11293,11 @@ async function callClaudeIA(userMsg, isFirst) {
       if (data.error.type === 'exceeded_limit' || errMsg.includes('exceeded_limit') || errMsg.includes('out_of_credits')) {
         return "Crédit épuisé. Rechargez sur console.anthropic.com/settings/billing, ou passez à Groq (gratuit).";
       }
-      if (errMsg.includes('overloaded') || errMsg.includes('rate_limit')) {
-        return "Service surchargé. Réessayez dans quelques secondes.";
+      if (errMsg.includes('overloaded') || errMsg.includes('rate_limit') || errMsg.includes('Rate limit') || errMsg.includes('TPM') || errMsg.includes('429')) {
+        var conseil = errMsg.includes('TPM') || errMsg.includes('token')
+          ? '⏳ Limite de tokens/minute atteinte sur Groq. Attendez 30 secondes puis réessayez, ou passez sur Gemini (AIza...) dans les paramètres IA — limite plus haute.'
+          : '⏳ Service surchargé. Réessayez dans quelques secondes.';
+        return conseil;
       }
       return "Erreur API : " + errMsg.slice(0, 200);
     }
