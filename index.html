@@ -594,7 +594,7 @@ body {
   <button class="nb" data-page="retraite">🏖 Retraite 2057</button>
   <button class="nb" data-page="strategie">📋 Stratégie</button>
   <button class="nb" data-page="outils">🛠 Outils</button>
-  <button class="nb" data-page="actu">📰 Actualités</button>
+  <button class="nb" data-page="opportunites">🔍 Opportunités</button><button class="nb" data-page="actu">📰 Actualités</button>
   <button class="nb" data-page="history">🕐 Historique</button>
 </nav>
 
@@ -666,6 +666,24 @@ body {
     <div id="score-patri-content" style="min-height:80px;"></div>
   </div>
 
+  <!-- Anomalies patrimoniales -->
+  <div class="card mb" style="border-left:3px solid var(--red);">
+    <div class="chd" style="justify-content:space-between;">
+      <span>🔍 Détecteur d'anomalies <span class="chd-sub">Points d'attention</span></span>
+      <button class="btn gh sm" onclick="renderAnomaliesCard()" style="font-size:11px;">&#8635; Analyser</button>
+    </div>
+    <div id="anomalies-card" style="min-height:60px;"><div class="empty">Cliquez sur "Analyser" pour vérifier votre patrimoine.</div></div>
+  </div>
+
+  <!-- Anniversaires patrimoniaux -->
+  <div class="card mb" style="border-left:3px solid #9b72cf;">
+    <div class="chd" style="justify-content:space-between;">
+      <span>🎂 Anniversaires patrimoniaux <span class="chd-sub">PEA · AV · Immo</span></span>
+      <button class="btn gh sm" onclick="renderAnniversairesCard()" style="font-size:11px;">&#8635; Actualiser</button>
+    </div>
+    <div id="anniversaires-card" style="min-height:60px;"><div class="empty">Cliquez sur "Actualiser" pour voir vos prochaines échéances.</div></div>
+  </div>
+
   <!-- Pierre — Conseil IA du jour -->
   <div class="card mb" id="card-ia-conseil" style="border-left:3px solid #9b72cf;">
     <div class="chd" style="justify-content:space-between;">
@@ -699,6 +717,27 @@ body {
       <span>🏦 PEA <span class="tag t-pea">PEA</span></span>
       <div class="brow"><div id="pea-kpi" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);"></div></div>
     </div>
+  <div class="accordion-item" style="border:1px solid var(--bd);border-radius:10px;margin-bottom:10px;overflow:hidden;">
+    <button onclick="toggleAccordion('acc-pea-update')" style="width:100%;text-align:left;background:var(--s2);border:none;padding:11px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+      <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:15px;">✏</span><span style="font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;">Mettre à jour</span></div>
+      <span id="acc-pea-update-icon" style="color:var(--muted);font-size:12px;">▸</span>
+    </button>
+    <div id="acc-pea-update-body" style="display:none;padding:14px 16px;">
+<div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:12px;">
+    Mettez à jour manuellement un cours ou utilisez le bouton ⟳ sur chaque ligne du tableau.
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
+    <div>
+      <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Actualiser tous les cours</label>
+      <button class="btn sm" onclick="mettreAJourCoursAutomatique(true)" style="margin-top:6px;width:100%;">📈 Actualiser via Yahoo Finance</button>
+    </div>
+    <div>
+      <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Ajouter une position</label>
+      <button class="btn sm" id="btn-add-pea-acc" style="margin-top:6px;width:100%;">+ Nouvelle position PEA</button>
+    </div>
+    </div>
+  </div>
+  </div>
     <div id="pea-tbl"></div>
   </div>
 
@@ -709,56 +748,63 @@ body {
       <div class="brow">
         <div id="av-kpi" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--av);"></div>
         <a href="https://www.linxea.com/espace-client/" target="_blank" class="btn gh sm" style="text-decoration:none;font-size:11px;">🔗 Espace Linxea</a>
-        <button class="btn sm" id="btn-add-av">+ Support</button>
+        <button class="btn sm" id="btn-add-av">+ Ajouter</button>
       </div>
     </div>
 
-    <!-- Saisie rapide valorisations Linxea -->
-    <div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
-      <div style="font-size:10px;font-weight:600;color:var(--av);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">
-        ✏ Mettre à jour les valorisations depuis Linxea
-        <span style="color:var(--muted);font-weight:400;margin-left:8px;">Espace client → Synthèse → Valeur de rachat</span>
+    <div class="accordion-item" style="border:1px solid var(--bd);border-radius:10px;margin-bottom:10px;overflow:hidden;">
+      <button onclick="toggleAccordion('acc-av-update')" style="width:100%;text-align:left;background:var(--s2);border:none;padding:11px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:15px;">✏</span><span style="font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;">Mettre à jour</span></div>
+        <span id="acc-av-update-icon" style="color:var(--muted);font-size:12px;">▸</span>
+      </button>
+      <div id="acc-av-update-body" style="display:none;padding:14px 16px;">
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:10px;font-weight:600;color:var(--av);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">
+            ✏ Mettre à jour les valorisations depuis Linxea
+            <span style="color:var(--muted);font-weight:400;margin-left:8px;">Espace client → Synthèse → Valeur de rachat</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
+            <div>
+              <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">MSCI World UC (€)</label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="number" id="av-msci-val" placeholder="0" step="10" min="0"
+                  style="flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
+                  oninput="updateAVFromLinxea()">
+                <span style="font-size:10px;color:var(--muted);">€</span>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Fonds euro Spirica (€)</label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="number" id="av-euro-val" placeholder="0" step="10" min="0"
+                  style="flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
+                  oninput="updateAVFromLinxea()">
+                <span style="font-size:10px;color:var(--muted);">€</span>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Rendement fonds euro (%/an)</label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="number" id="av-euro-rate" placeholder="3.4" step="0.1" min="0" max="10" value="3.4"
+                  style="flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
+                  oninput="updateAVEuroRate()">
+                <span style="font-size:10px;color:var(--muted);">% net</span>
+              </div>
+              <div style="font-size:9px;color:var(--dim);margin-top:2px;">Spirica 2024 : ~4.4% brut · net ≈ 3.4%</div>
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Or ETC Amundi (€)</label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="number" id="av-or-val" placeholder="0" step="10" min="0"
+                  style="flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
+                  oninput="updateAVFromLinxea()">
+                <span style="font-size:10px;color:var(--muted);">€</span>
+              </div>
+            </div>
+          </div>
+          <div id="av-update-status" style="font-size:10px;color:var(--green);font-family:'JetBrains Mono',monospace;margin-top:8px;min-height:14px;"></div>
+        </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
-        <div>
-          <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">MSCI World UC (€)</label>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <input type="number" id="av-msci-val" placeholder="0" step="10" min="0"
-              style="flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
-              oninput="updateAVFromLinxea()">
-            <span style="font-size:10px;color:var(--muted);">€</span>
-          </div>
-        </div>
-        <div>
-          <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Fonds euro Spirica (€)</label>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <input type="number" id="av-euro-val" placeholder="0" step="10" min="0"
-              style="flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
-              oninput="updateAVFromLinxea()">
-            <span style="font-size:10px;color:var(--muted);">€</span>
-          </div>
-        </div>
-        <div>
-          <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Rendement fonds euro (%/an)</label>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <input type="number" id="av-euro-rate" placeholder="3.4" step="0.1" min="0" max="10" value="3.4"
-              style="flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
-              oninput="updateAVEuroRate()">
-            <span style="font-size:10px;color:var(--muted);">% net</span>
-          </div>
-          <div style="font-size:9px;color:var(--dim);margin-top:2px;">Spirica 2024 : ~4.4% brut · net ≈ 3.4%</div>
-        </div>
-        <div>
-          <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Or ETC Amundi (€)</label>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <input type="number" id="av-or-val" placeholder="0" step="10" min="0"
-              style="flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
-              oninput="updateAVFromLinxea()">
-            <span style="font-size:10px;color:var(--muted);">€</span>
-          </div>
-        </div>
-      </div>
-      <div id="av-update-status" style="font-size:10px;color:var(--green);font-family:'JetBrains Mono',monospace;margin-top:8px;min-height:14px;"></div>
     </div>
 
     <div id="av-cards"></div>
@@ -774,56 +820,55 @@ body {
       </div>
     </div>
 
-    <!-- Saisie PEG SNCF -->
-    <div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
-      <div style="font-size:10px;font-weight:600;color:var(--peg);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">
-        ✏ Mettre à jour le PEG SNCF — Amundi Mid-Cap Euro ESR
-        <span style="color:var(--muted);font-weight:400;margin-left:8px;">Amundi EE → Mon épargne → Détail du fonds</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:10px;">
-        <div>
-          <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Valeur liquidative (€/part)</label>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <input type="number" id="peg-vl" placeholder="0.00" step="0.01" min="0"
-              style="flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
-              oninput="updatePEGFromAmundi()">
+    <div class="accordion-item" style="border:1px solid var(--bd);border-radius:10px;margin-bottom:10px;overflow:hidden;">
+      <button onclick="toggleAccordion('acc-peg-update')" style="width:100%;text-align:left;background:var(--s2);border:none;padding:11px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:15px;">✏</span><span style="font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;">Mettre à jour</span></div>
+        <span id="acc-peg-update-icon" style="color:var(--muted);font-size:12px;">▸</span>
+      </button>
+      <div id="acc-peg-update-body" style="display:none;padding:14px 16px;">
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:10px;font-weight:600;color:var(--peg);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">
+            ✏ Mettre à jour le PEG SNCF — Amundi Mid-Cap Euro ESR
+            <span style="color:var(--muted);font-weight:400;margin-left:8px;">Amundi EE → Mon épargne → Détail du fonds</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:10px;">
+            <div>
+              <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Valeur liquidative (€/part)</label>
+              <input type="number" id="peg-vl" placeholder="0.00" step="0.01" min="0"
+                style="width:100%;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
+                oninput="updatePEGFromAmundi()">
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Nombre de parts</label>
+              <input type="number" id="peg-parts" placeholder="0" step="0.001" min="0"
+                style="width:100%;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
+                oninput="updatePEGFromAmundi()">
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Ou valeur totale directe (€)</label>
+              <input type="number" id="peg-total-direct" placeholder="0" step="10" min="0"
+                style="width:100%;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
+                oninput="updatePEGDirect()">
+            </div>
+          </div>
+          <div id="peg-update-status" style="font-size:10px;color:var(--green);font-family:'JetBrains Mono',monospace;margin-top:4px;min-height:14px;"></div>
+          <div style="font-size:10px;color:var(--dim);margin-top:8px;font-family:'JetBrains Mono',monospace;line-height:1.5;">
+            💡 ISIN : QS0002905659 · Amundi Actions Euro Mid Cap ESR 723 (C) · TER 1,31%/an · Risque 4/7 · Rdt intermédiaire 8 ans : 4,0%/an<br>
+            Min. 400€/an pour déclencher l'abondement SNCF (+100€) — versement avril uniquement
           </div>
         </div>
-        <div>
-          <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Nombre de parts</label>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <input type="number" id="peg-parts" placeholder="0" step="0.001" min="0"
-              style="flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
-              oninput="updatePEGFromAmundi()">
-          </div>
-        </div>
-        <div>
-          <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Ou valeur totale directe (€)</label>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <input type="number" id="peg-total-direct" placeholder="0" step="10" min="0"
-              style="flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
-              oninput="updatePEGDirect()">
-          </div>
-        </div>
-      </div>
-      <div id="peg-update-status" style="font-size:10px;color:var(--green);font-family:'JetBrains Mono',monospace;margin-top:4px;min-height:14px;"></div>
-      <div style="font-size:10px;color:var(--dim);margin-top:8px;font-family:'JetBrains Mono',monospace;line-height:1.5;">
-        💡 ISIN : QS0002905659 · Amundi Actions Euro Mid Cap ESR 723 (C) · TER 1,31%/an · Risque 4/7 · Rdt intermédiaire 8 ans : 4,0%/an<br>
-        Min. 400€/an pour déclencher l'abondement SNCF (+100€) — versement avril uniquement
       </div>
     </div>
 
     <div id="peg-tbl"></div>
 
-    <!-- Accordéon Roulement PEG → PEA (enveloppes) -->
+    <!-- Accordéon Roulement PEG → PEA -->
     <div style="background:var(--s2);border-radius:8px;border:1px solid var(--bd);margin-top:12px;overflow:hidden;">
       <button onclick="toggleAccordion('acc-peg-roulement-env')" style="width:100%;text-align:left;background:transparent;border:none;padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:11px;font-weight:700;color:var(--gold);">🔄 Roulement PEG → PEA — Saisie versement &amp; Calendrier</span>
         <span id="acc-peg-roulement-env-icon" style="font-size:11px;color:var(--gold);font-family:'JetBrains Mono',monospace;flex-shrink:0;">▸ Voir</span>
       </button>
       <div id="acc-peg-roulement-env-body" style="display:none;padding:12px 14px;border-top:1px solid var(--bd);">
-
-        <!-- Saisie versement annuel -->
         <div style="background:var(--s3);border-radius:8px;padding:12px 14px;margin-bottom:12px;border:1px solid var(--bd);">
           <div style="font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">
             📥 Enregistrer le versement de cette année
@@ -848,30 +893,17 @@ body {
                 oninput="calcPEGVersement()">
             </div>
           </div>
-
-          <!-- Résultat calcul -->
-          <div id="peg-roul-calcul" style="display:none;background:var(--s2);border-radius:6px;padding:10px 12px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.8;">
-          </div>
-
+          <div id="peg-roul-calcul" style="display:none;background:var(--s2);border-radius:6px;padding:10px 12px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.8;"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button onclick="savePEGVersement()" class="btn sm" style="background:var(--gold);color:#080b10;font-weight:700;">
-              ✓ Enregistrer dans le tableau
-            </button>
-            <button onclick="calcPEGVersement()" class="btn gh sm">
-              🔄 Recalculer
-            </button>
+            <button onclick="savePEGVersement()" class="btn sm" style="background:var(--gold);color:#080b10;font-weight:700;">✓ Enregistrer dans le tableau</button>
+            <button onclick="calcPEGVersement()" class="btn gh sm">🔄 Recalculer</button>
           </div>
           <div id="peg-roul-save-status" style="font-size:9px;color:var(--green);margin-top:6px;font-family:'JetBrains Mono',monospace;min-height:12px;"></div>
         </div>
-
-        <!-- Tableau des versements -->
         <div id="peg-roulement-mini" style="font-size:10px;color:var(--muted);">Chargement...</div>
       </div>
     </div>
-
   </div>
-
-
 
   <!-- CTO -->
   <div class="card mb">
@@ -925,9 +957,20 @@ body {
   </div>
 
   <!-- ══ CALENDRIER FISCAL ══ -->
-  <div class="card mb" id="card-calendrier-fiscal" style="margin-bottom:16px;">
-    <div class="chd">📅 Calendrier fiscal & patrimonial <span class="chd-sub" id="cal-annee"></span></div>
-    <div id="calendrier-fiscal-content"></div>
+  <div class="accordion-item" id="card-calendrier-fiscal" style="border:1px solid var(--bd);border-radius:10px;margin-bottom:16px;overflow:hidden;">
+    <button onclick="toggleAccordion('acc-calendrier')" style="width:100%;text-align:left;background:var(--s2);border:none;padding:13px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:18px;">📅</span>
+        <div>
+          <div style="font-family:'Outfit',sans-serif;font-weight:600;font-size:14px;">Calendrier fiscal &amp; patrimonial</div>
+          <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px;" id="cal-annee"></div>
+        </div>
+      </div>
+      <span id="acc-calendrier-icon" style="color:var(--muted);font-size:12px;">▸</span>
+    </button>
+    <div id="acc-calendrier-body" style="display:none;padding:16px;">
+      <div id="calendrier-fiscal-content"></div>
+    </div>
   </div>
 
 <div class="accordion-item" style="border:1px solid var(--bd);border-radius:10px;margin-bottom:10px;overflow:hidden;">
@@ -1385,6 +1428,22 @@ body {
   <div style="margin-bottom:18px;">
     <h1 style="font-family:'Playfair Display',serif;font-size:20px;">🛠 Outils</h1>
     <p style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:4px;">Cliquez un outil pour le déplier · Tous les calculs sont indicatifs</p>
+
+  <!-- ══ LECTURE INTELLIGENTE DE RELEVÉS ══ -->
+  <div class="card mb" style="border-left:3px solid #9b72cf;margin-top:14px;margin-bottom:14px;">
+    <div class="chd"><span>🔍 Lecture intelligente de documents</span></div>
+    <div style="font-size:12px;line-height:1.6;color:var(--text);margin-bottom:12px;">
+      Pierre peut analyser vos documents officiels et mettre à jour vos données automatiquement :
+      <span style="color:var(--muted);">avis d'imposition, taxe foncière, relevés bancaires, fiches de paie, fonds Amundi PEG, relevé Linxea AV.</span>
+    </div>
+    <div id="import-zone" style="border:2px dashed var(--bd);border-radius:12px;padding:24px;text-align:center;background:var(--s2);transition:.2s;cursor:pointer;" onclick="document.getElementById('file-import').click();" ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='var(--s3)'" ondragleave="this.style.borderColor='var(--bd)';this.style.background='var(--s2)'" ondrop="event.preventDefault();handleDocDrop(event);this.style.borderColor='var(--bd)';this.style.background='var(--s2)'">
+      <div style="font-size:32px;margin-bottom:8px;">📂</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Glissez un document ici ou cliquez pour parcourir</div>
+      <div style="font-size:11px;color:var(--muted);">PDF · CSV · TXT · Image (jusqu'à 5 Mo)</div>
+      <input type="file" id="file-import" accept=".pdf,.csv,.txt,.png,.jpg,.jpeg" style="display:none;" onchange="handleDocFile(this.files[0])">
+    </div>
+    <div id="import-result" style="margin-top:14px;font-size:11px;line-height:1.6;"></div>
+  </div>
 
 <div style="background:var(--s2);border-radius:10px;border:1px solid var(--bd);margin-bottom:14px;overflow:hidden;">
     <button onclick="toggleAccordion('acc-peg-roulement')" style="width:100%;text-align:left;background:transparent;border:none;padding:12px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
@@ -1998,6 +2057,152 @@ body {
 
 </div>
 
+<!-- ══════════ OPPORTUNITÉS ══════════ -->
+<div id="pg-opportunites" class="pg">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+    <div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:20px;">🔍 Opportunités d'investissement</h1>
+      <p style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:2px;">
+        Recherche de pépites · Scoring multi-critères · Watchlist personnalisée
+      </p>
+    </div>
+    <div class="brow">
+      <button class="btn sm" id="btn-search-opp" style="background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;">🔍 Rechercher avec Pierre</button>
+    </div>
+  </div>
+
+  <!-- Critères de recherche -->
+  <div class="card mb">
+    <div class="chd">⚙️ Critères de recherche</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;">
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Type d'actif</label>
+        <select id="opp-type" style="width:100%;margin-top:6px;font-size:12px;">
+          <option value="etf">ETF / Trackers</option>
+          <option value="actions-fr">Actions France (PEA)</option>
+          <option value="actions-eu">Actions Europe (PEA)</option>
+          <option value="actions-us">Actions US (CTO)</option>
+          <option value="dividendes">Actions à dividendes</option>
+          <option value="scpi">SCPI (immobilier)</option>
+          <option value="croissance">Valeurs de croissance</option>
+          <option value="value">Valeurs décotées (value)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Capitalisation</label>
+        <select id="opp-cap" style="width:100%;margin-top:6px;font-size:12px;">
+          <option value="any">Toutes</option>
+          <option value="large">Large cap (&gt; 10 Md€)</option>
+          <option value="mid">Mid cap (1-10 Md€)</option>
+          <option value="small">Small cap (&lt; 1 Md€)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Secteur</label>
+        <select id="opp-secteur" style="width:100%;margin-top:6px;font-size:12px;">
+          <option value="any">Tous secteurs</option>
+          <option value="tech">Technologie</option>
+          <option value="health">Santé / Pharma</option>
+          <option value="finance">Banque / Assurance</option>
+          <option value="energy">Énergie / Renouvelable</option>
+          <option value="conso">Consommation</option>
+          <option value="indus">Industrie</option>
+          <option value="luxe">Luxe</option>
+          <option value="reit">Immobilier (REITs)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Horizon investissement</label>
+        <select id="opp-horizon" style="width:100%;margin-top:6px;font-size:12px;">
+          <option value="long" selected>Long terme (10+ ans)</option>
+          <option value="moyen">Moyen terme (5-10 ans)</option>
+          <option value="court">Court terme (&lt; 5 ans)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">PER max</label>
+        <input type="number" id="opp-per-max" placeholder="ex: 25" step="1" min="0" max="100" style="width:100%;margin-top:6px;font-size:12px;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Rendement dividende min</label>
+        <input type="number" id="opp-div-min" placeholder="ex: 3" step="0.5" min="0" max="20" style="width:100%;margin-top:6px;font-size:12px;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Niveau de risque</label>
+        <select id="opp-risque" style="width:100%;margin-top:6px;font-size:12px;">
+          <option value="low">Faible</option>
+          <option value="med" selected>Modéré</option>
+          <option value="high">Élevé</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Critères ESG</label>
+        <select id="opp-esg" style="width:100%;margin-top:6px;font-size:12px;">
+          <option value="any">Indifférent</option>
+          <option value="esg">ESG / ISR uniquement</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding:10px 14px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--muted);">
+      💡 Pierre cherchera des opportunités correspondant à votre profil (PEA-friendly, situation fiscale, horizon retraite 2057). Score multi-critères : croissance · valuation · qualité · momentum.
+    </div>
+  </div>
+
+  <!-- Résultats de recherche -->
+  <div class="card mb" id="card-opp-results" style="display:none;">
+    <div class="chd" style="justify-content:space-between;">
+      <span>📊 Opportunités identifiées</span>
+      <span id="opp-results-meta" style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;"></span>
+    </div>
+    <div id="opp-results-content"></div>
+  </div>
+
+  <!-- Watchlist -->
+  <div class="card mb">
+    <div class="chd" style="justify-content:space-between;">
+      <span>⭐ Ma watchlist <span class="chd-sub" id="watchlist-count"></span></span>
+      <button class="btn gh sm" onclick="refreshWatchlist()" style="font-size:11px;">↻ Actualiser cours</button>
+    </div>
+    <div id="watchlist-content"></div>
+  </div>
+
+  <!-- Backtest historique -->
+  <div class="card mb">
+    <div class="chd">📈 Backtest — "Si j'avais investi..."</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:14px;">
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Actif</label>
+        <select id="bt-asset" style="width:100%;margin-top:6px;font-size:12px;">
+          <option value="^GSPC">S&P 500</option>
+          <option value="CW8.PA">MSCI World</option>
+          <option value="^FCHI">CAC 40</option>
+          <option value="PAEEM.PA">MSCI Émergents</option>
+          <option value="GLD">Or</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Versement mensuel</label>
+        <input type="number" id="bt-monthly" value="200" step="50" min="0" style="width:100%;margin-top:6px;font-size:12px;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Année de début</label>
+        <select id="bt-start" style="width:100%;margin-top:6px;font-size:12px;">
+          <option value="2010">2010 (15 ans)</option>
+          <option value="2015" selected>2015 (10 ans)</option>
+          <option value="2020">2020 (5 ans)</option>
+          <option value="2000">2000 (25 ans)</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button class="btn sm" onclick="lancerBacktest()" style="width:100%;">🚀 Lancer le backtest</button>
+      </div>
+    </div>
+    <div id="bt-result" style="font-size:11px;color:var(--muted);min-height:60px;padding:14px;background:var(--s2);border-radius:8px;">
+      Choisissez un actif et cliquez "Lancer le backtest" pour voir les performances historiques.
+    </div>
+  </div>
+</div>
+
 <div id="pg-actu" class="pg">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
     <div>
@@ -2039,11 +2244,26 @@ body {
 
 <div id="pg-history" class="pg">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-    <h1 style="font-family:'Playfair Display',serif;font-size:20px;">Historique des opérations</h1>
+    <h1 style="font-family:'Playfair Display',serif;font-size:20px;">🕐 Historique &amp; Snapshots</h1>
     <div class="brow">
       <button class="btn gh sm" id="btn-import">⬆ Importer</button>
       <button class="btn gh sm" id="btn-export">⬇ Exporter JSON</button>
     </div>
+  </div>
+  <div class="card" style="margin-bottom:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <h2 style="font-family:'Playfair Display',serif;font-size:16px;">📸 Snapshots du patrimoine</h2>
+      <div style="font-size:10px;color:var(--muted);">Restaurez votre patrimoine à n'importe quelle date</div>
+    </div>
+    <div id="snapshots-content"><div class="empty">Chargement...</div></div>
+  </div>
+  <h2 style="font-family:'Playfair Display',serif;font-size:16px;margin-bottom:8px;">📜 Journal des opérations</h2>
+  <div class="card" style="margin-bottom:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <h2 style="font-family:'Playfair Display',serif;font-size:14px;margin:0;">🗓️ Heatmap mensuelle</h2>
+      <button class="btn gh sm" onclick="renderHeatmapCalendrier()" style="font-size:10px;">↻ Actualiser</button>
+    </div>
+    <div id="heatmap-calendrier" style="min-height:80px;"><div class="empty" style="font-size:11px;">Visualisez vos mouvements financiers mois par mois.</div></div>
   </div>
   <div class="hf">
     <button class="hfb on" data-hf="all">Tout</button>
@@ -3768,15 +3988,7 @@ var _hdrClickTimer = null;
 var showBrut = false;
 
 
-// Global toast stub — real impl in DCL
-var toast = function(msg, type) {
-  var el = document.getElementById('toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.className = 'toast' + (type ? ' toast-'+type : '');
-  el.style.opacity = '1';
-  setTimeout(function(){ el.style.opacity = '0'; }, 3000);
-};
+// toast défini plus bas (function toast)
 
 
 // ══ TAX & UTIL HELPERS — Global scope ══
@@ -5478,6 +5690,7 @@ function showPage(id) {
   if(window.syncPwaBtns) window.syncPwaBtns(id);
   renderAll();
   if(id==='retraite') runProjection();
+  if(id==='fiscalite') setTimeout(function(){ if(window.renderCalendrierFiscal) renderCalendrierFiscal(); }, 50);
   if(id==='enveloppes') { setTimeout(initAVLinxeaFields,50); setTimeout(initPEGFields,50); setTimeout(renderPEGRoulement_mini,150); setTimeout(function(){ var a=parseInt(document.getElementById('peg-roul-annee')&&document.getElementById('peg-roul-annee').value); if(!a){var el=document.getElementById('peg-roul-annee'); if(el) el.value=new Date().getFullYear();} },200); }
   if(id==='strategie') { renderStrategie(); renderPEGRoulement(); }
   if(id==='analyse') renderAnalyse();
@@ -5554,6 +5767,10 @@ function openLivret(eid){
 // ══ BUTTON WIRING ════════════════════════════════════════════
 document.getElementById('btn-add-pos').addEventListener('click',function(){openPos();});
 document.getElementById('btn-add-pos2').addEventListener('click',function(){openPos();});
+document.addEventListener('DOMContentLoaded', function(){
+  var bpa = document.getElementById('btn-add-pea-acc');
+  if (bpa) bpa.addEventListener('click', function(){ openPos(); document.getElementById('p-env').value='PEA'; });
+});
 document.getElementById('btn-add-av').addEventListener('click',function(){openPos();document.getElementById('p-env').value='AV';});
 document.getElementById('btn-add-immo').addEventListener('click',function(){(window._openImmo||function(){})();});
 document.getElementById('btn-add-livret').addEventListener('click',function(){openLivret();});
@@ -6828,7 +7045,7 @@ function renderAll(){
   renderLivretsTable();
 
   // Charts
-  renderCharts();
+  try { renderCharts(); } catch(e) { console.warn('renderCharts:', e.message); }
   renderHistory('all');
   // Fiscalité — toujours recalculer (les éléments existent même si page cachée)
   renderFiscalite();
@@ -6846,6 +7063,7 @@ function renderEnvKPI(id,env,val,inv){
 function renderDonut(c){
   var canvas=document.getElementById('c-donut');if(!canvas)return;
   var ctx=canvas.getContext('2d'),W=144,H=144,cx=72,cy=72,r=58,ir=36;
+  if(!ctx)return;
   ctx.clearRect(0,0,W,H);
   // Inclure RP nette pour avoir 100% cohérent
   var segs=[
@@ -7214,6 +7432,7 @@ function drawPie(cid,segs,total,vid,nid,pid,legId){
   function draw2(){
     var nc=document.getElementById(cid);if(!nc)return;
     var ctx2=nc.getContext('2d'),hov=_P[cid].hov;
+    if(!ctx2)return;
     ctx2.clearRect(0,0,W,H);
     arcs.forEach(function(a){var isH=hov===a.i,ex=isH?5:0,ox=Math.cos(a.mid)*ex,oy=Math.sin(a.mid)*ex;ctx2.beginPath();ctx2.arc(cx+ox,cy+oy,r,a.start,a.end);ctx2.arc(cx+ox,cy+oy,ir,a.end,a.start,true);ctx2.closePath();ctx2.fillStyle=isH?a.color:(hov>=0?a.color+'77':a.color);ctx2.fill();});
     var v=document.getElementById(vid),n=document.getElementById(nid),p=document.getElementById(pid);
@@ -7240,6 +7459,7 @@ function renderPeaAvObjectif(c){
   var canvas=document.getElementById('c-pea-av');
   if(canvas){
     var ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;
+    if(!ctx)return;
     var cx=W/2,cy=H/2,r=Math.min(W,H)/2-10,ir=r*0.55;
     ctx.clearRect(0,0,W,H);
     // Ghost target ring
@@ -7321,8 +7541,8 @@ function renderPeaAvObjectif(c){
 
 function renderCharts(){
   var c=cAll(),total=c.total;if(!total)return;
-  renderLineChart();
-  renderPeaAvObjectif(c);
+  try { renderLineChart(); } catch(e) { console.warn('renderLineChart:', e.message); }
+  try { renderPeaAvObjectif(c); } catch(e) { console.warn('renderPeaAvObjectif:', e.message); }
 
   // ── Main pie ──
   var ms=[];
@@ -7443,6 +7663,7 @@ function clearSnapshots(){if(!confirm('Effacer ?'))return;S.snapshots=[];saveSta
 function renderLineChart(){
   var canvas=document.getElementById('c-line');if(!canvas)return;
   var ctx=canvas.getContext('2d'),W=canvas.offsetWidth||800,H=230;
+  if(!ctx)return;
   canvas.width=W;canvas.height=H;ctx.clearRect(0,0,W,H);
   var snaps=S.snapshots,lbl=document.getElementById('evo-lbl');
   if(snaps.length<2){ctx.fillStyle='#5a6478';ctx.font='11px Outfit,sans-serif';ctx.textAlign='center';ctx.fillText(snaps.length===0?'Cliquez "+ Snapshot aujourd\'hui" pour enregistrer le patrimoine actuel':'Ajoutez au moins 2 snapshots pour voir la courbe',W/2,H/2);if(lbl)lbl.textContent=snaps.length===0?'':snaps.length+' snapshot';return;}
@@ -7532,7 +7753,9 @@ function runProjection(){
 
 function drawProjChart(rows,retAge,age,startYear){
   var canvas=document.getElementById('c-proj');if(!canvas)return;
-  var ctx=canvas.getContext('2d'),W=canvas.offsetWidth||900,H=290;canvas.width=W;canvas.height=H;ctx.clearRect(0,0,W,H);
+  var ctx=canvas.getContext('2d'),W=canvas.offsetWidth||900,H=290;
+  if(!ctx)return;
+  canvas.width=W;canvas.height=H;ctx.clearRect(0,0,W,H);
   var pad={t:16,r:14,b:40,l:78},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
   var mx=Math.max.apply(null,rows.map(function(r){return r.total;}))*1.05;
   function tx(i){return pad.l+i/(rows.length-1)*cw;}function ty(v){return pad.t+ch-v/mx*ch;}
@@ -8389,6 +8612,7 @@ function runMonteCarlo(){
 function drawMCChart(p10,p25,p50,p75,p90,years,base){
   var canvas=document.getElementById('c-mc'); if(!canvas) return;
   var ctx=canvas.getContext('2d');
+  if(!ctx)return;
   var W=canvas.offsetWidth||900, H=300;
   canvas.width=W; canvas.height=H;
   ctx.clearRect(0,0,W,H);
@@ -8741,13 +8965,15 @@ if(isEmpty){
   setTimeout(function(){toast('Données de démo chargées — mettez à jour avec vos vraies valeurs !');},400);
 }
 
-renderAll();
-(function(){
-  var last='dashboard';
-  try{last=sessionStorage.getItem('pwa-last-page')||'dashboard';}catch(e){}
-  showPage(last);
-})();
-setInterval(refreshPrices,60000);
+document.addEventListener('DOMContentLoaded', function() {
+  renderAll();
+  (function(){
+    var last='dashboard';
+    try{last=sessionStorage.getItem('pwa-last-page')||'dashboard';}catch(e){}
+    showPage(last);
+  })();
+  setInterval(refreshPrices,60000);
+});
 
 // ══ NET / BRUT TOGGLE ════════════════════════════════════════
 // Patrimoine header — état : blurred | revealed-net | revealed-brut
@@ -10156,7 +10382,7 @@ window.closePwaMore = function() {
 window.addEventListener('popstate', function() {
   // no-op — prevents white screen on Android back button
 });
-history.pushState({}, '');
+try { window.history.pushState({}, ''); } catch(e) {}
 </script>
 
 
@@ -10555,6 +10781,18 @@ var IA_TOOLS = [
       },
       required:["type","params"]
     }
+  },
+  {
+    name: "memoriser",
+    description: "Mémorise un fait personnel important sur Maxime pour personnaliser tes futurs conseils. Utilise quand Maxime mentionne un projet, une préférence, un refus, ou un fait sur sa vie/famille/objectifs.",
+    input_schema: {
+      type: "object",
+      properties: {
+        categorie: { type: "string", enum: ["styleVie","preferences","refus","objectifs","faits"], description: "styleVie=situation familiale/projet de vie, preferences=ce qu'il aime, refus=ce qu'il refuse, objectifs=cibles patrimoniales, faits=info importante" },
+        contenu: { type: "string", description: "Le fait à mémoriser, en une phrase courte et précise" }
+      },
+      required: ["categorie","contenu"]
+    }
   }
 ];
 
@@ -10739,6 +10977,11 @@ function executerOutil(toolName, inp) {
   if (toolName === "simuler_scenario") {
     var r = window.simulerScenario ? window.simulerScenario({ type: inp.type, params: inp.params || {} }) : null;
     return r ? r.calcul : "simulerScenario non disponible";
+  }
+  if (toolName === "memoriser") {
+    var resMem = window.executerMemoriser ? window.executerMemoriser(inp) : null;
+    if (!resMem) return "Mémoire non disponible";
+    return resMem.success ? ("✓ Mémorisé en catégorie " + inp.categorie + " : " + inp.contenu) : ("Déjà connu : " + inp.contenu);
   }
   return "Outil non reconnu : " + toolName;
 }
@@ -11675,6 +11918,13 @@ function renderCalendrierFiscal() {
   html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:12px;">* Dates indicatives — vérifier sur impots.gouv.fr · 🔴 urgent · 🟡 important · 🔵 info · 🟢 opportunité</div>';
 
   el.innerHTML = html;
+  // Auto-open the accordion when content is ready
+  var body = document.getElementById('acc-calendrier-body');
+  var icon = document.getElementById('acc-calendrier-icon');
+  if (body && body.style.display === 'none') {
+    body.style.display = 'block';
+    if (icon) icon.textContent = '▾';
+  }
 }
 window.renderCalendrierFiscal = renderCalendrierFiscal;
 
@@ -12769,6 +13019,7 @@ function updateProjectionInteractive() {
   var canvas = document.getElementById('c-proj-interactive');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
+  if (!ctx) return;
   var W = canvas.offsetWidth || 800;
   var H = canvas.offsetHeight || 200;
   canvas.width = W; canvas.height = H;
@@ -12843,25 +13094,2264 @@ function updateProjectionInteractive() {
 }
 window.updateProjectionInteractive = updateProjectionInteractive;
 
-// Init on retraite page open
-(function(){
-  var origShow = window.showPage;
-  if (origShow) {
-    window.showPage = function(id) {
-      origShow.apply(this, arguments);
-      if (id === 'retraite') setTimeout(updateProjectionInteractive, 200);
-      if (id === 'dashboard') setTimeout(renderScorePatrimonial, 200);
-    };
-  }
-  // Also init when page loads on retraite
+// Init on retraite page open — géré par le dispatcher centralisé ci-dessous
   document.addEventListener('DOMContentLoaded', function() {
     setTimeout(updateProjectionInteractive, 2000);
   });
+
+</script>
+
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// 1. OPPORTUNITÉS — recherche via Pierre
+// ══════════════════════════════════════════════════════════════
+
+async function rechercherOpportunites() {
+  var btn = document.getElementById('btn-search-opp');
+  var card = document.getElementById('card-opp-results');
+  var content = document.getElementById('opp-results-content');
+  var meta = document.getElementById('opp-results-meta');
+  if (!btn || !card || !content) return;
+
+  // Read criteria
+  var crit = {
+    type: document.getElementById('opp-type').value,
+    cap: document.getElementById('opp-cap').value,
+    secteur: document.getElementById('opp-secteur').value,
+    horizon: document.getElementById('opp-horizon').value,
+    perMax: document.getElementById('opp-per-max').value || null,
+    divMin: document.getElementById('opp-div-min').value || null,
+    risque: document.getElementById('opp-risque').value,
+    esg: document.getElementById('opp-esg').value
+  };
+
+  card.style.display = 'block';
+  content.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">'
+    + '<div style="font-size:24px;animation:spin 2s linear infinite;display:inline-block;">🔍</div>'
+    + '<div style="margin-top:10px;font-size:13px;">Pierre recherche les meilleures opportunités...</div>'
+    + '<div style="font-size:10px;color:var(--dim);margin-top:6px;">Analyse multi-critères en cours</div>'
+    + '</div>';
+  btn.disabled = true;
+
+  var apiKey = sessionStorage.getItem('pierre-api-key') || '';
+  if (!apiKey) {
+    content.innerHTML = '<div style="padding:20px;color:var(--red);">Clé API Pierre requise. Configurez via le bouton IA.</div>';
+    btn.disabled = false;
+    return;
+  }
+
+  var typeLabels = {
+    etf:'ETF/Trackers', 'actions-fr':'actions françaises (PEA)', 'actions-eu':'actions européennes (PEA)',
+    'actions-us':'actions américaines (CTO)', dividendes:'actions à dividendes',
+    scpi:'SCPI', croissance:'valeurs de croissance', value:'valeurs décotées (value)'
+  };
+
+  var NL = String.fromCharCode(10);
+  var prompt = [
+    "Tu es Pierre, conseiller patrimoine expert. Recherche pour Maxime (29 ans, agent maîtrise SNCF, horizon retraite 2057) :",
+    "",
+    "CRITÈRES :",
+    "- Type : " + (typeLabels[crit.type] || crit.type),
+    "- Capitalisation : " + crit.cap,
+    "- Secteur : " + crit.secteur,
+    "- Horizon : " + crit.horizon,
+    crit.perMax ? "- PER max : " + crit.perMax : "",
+    crit.divMin ? "- Rendement dividende min : " + crit.divMin + "%" : "",
+    "- Niveau de risque : " + crit.risque,
+    "- ESG : " + crit.esg,
+    "",
+    "Propose 5 à 8 opportunités d'investissement RÉELLES et CONNUES.",
+    "Pour chaque, retourne ce JSON STRICT (sans markdown, sans backticks) :",
+    '[{"nom":"Nom complet","ticker":"XXX.PA","isin":"FR...","secteur":"Tech","cap":"Large","per":15.2,"div":2.5,"score":{"global":85,"croissance":80,"valuation":85,"qualite":90,"momentum":75},"prix":120.50,"raison":"Pourquoi recommandé pour ce profil en 2 phrases","risques":"Principaux risques en 1 phrase","horizon":"long"},...]',
+    "",
+    "Privilégie : éligibilité PEA si possible, qualité bilan, perspectives long terme, frais raisonnables.",
+    "Score sur 100 pour chaque dimension. Score global = moyenne pondérée."
+  ].join(NL);
+
+  try {
+    var active = window.getActiveProvider ? window.getActiveProvider() : null;
+    if (!active || !active.key) {
+      content.innerHTML = '<div style="padding:20px;color:var(--red);">Configurez Pierre via le bouton IA.</div>';
+      btn.disabled = false;
+      return;
+    }
+
+    var prov = active.provider;
+    var resp, data, text;
+    if (prov.format === 'openai') {
+      resp = await fetch(prov.url, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+active.key},
+        body: JSON.stringify({ model: prov.model, max_tokens: 2500, messages:[
+          {role:'system', content:'Tu es un expert en investissement. Réponds uniquement en JSON valide.'},
+          {role:'user', content: prompt}
+        ]})
+      });
+      data = await resp.json();
+      if (data.error) throw new Error(data.error.message);
+      text = (data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'';
+    } else if (prov.format === 'gemini') {
+      resp = await fetch(prov.url+'?key='+active.key, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:2500}})
+      });
+      data = await resp.json();
+      text = (data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text)||'';
+    } else {
+      resp = await fetch(prov.url, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':active.key,'anthropic-version':'2023-06-01'},
+        body: JSON.stringify({model:prov.model, max_tokens:2500, messages:[{role:'user',content:prompt}]})
+      });
+      data = await resp.json();
+      if (data.error) throw new Error(data.error.message);
+      text = (data.content||[]).map(function(b){return b.text||'';}).join('');
+    }
+
+    text = text.replace(/```json|```/g,'').trim();
+    var match = text.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error('Format de réponse invalide');
+    var opps = JSON.parse(match[0]);
+    renderOpportunites(opps, crit);
+    if (meta) meta.textContent = opps.length + ' résultats · ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  } catch(e) {
+    content.innerHTML = '<div style="padding:20px;color:var(--red);">Erreur : ' + e.message + '</div>';
+  }
+  btn.disabled = false;
+}
+
+function renderOpportunites(opps, crit) {
+  var el = document.getElementById('opp-results-content');
+  if (!el) return;
+  if (!opps || !opps.length) {
+    el.innerHTML = '<div class="empty">Aucune opportunité trouvée pour ces critères.</div>';
+    return;
+  }
+  // Stocker en cache global pour le event listener
+  window._dernieresOpportunites = opps;
+  // Sort by global score desc
+  opps.sort(function(a,b){ return ((b.score && b.score.global)||0) - ((a.score && a.score.global)||0); });
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">';
+  opps.forEach(function(o, i) {
+    var s = o.score || {};
+    var g = s.global || 0;
+    var col = g >= 80 ? 'var(--green)' : g >= 65 ? 'var(--gold)' : g >= 50 ? 'var(--blue)' : 'var(--muted)';
+    html += '<div style="background:var(--s2);border-radius:12px;padding:14px;border-left:3px solid '+col+';">';
+    // Header
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">';
+    html += '<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+(o.nom||'?')+'</div>';
+    html += '<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);">'+(o.ticker||'')+(o.isin?' · '+o.isin:'')+'</div></div>';
+    html += '<div style="text-align:right;flex-shrink:0;"><div style="font-size:24px;font-weight:700;color:'+col+';font-family:JetBrains Mono,monospace;">'+g+'</div><div style="font-size:9px;color:var(--muted);">/100</div></div>';
+    html += '</div>';
+    // Tags
+    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">';
+    if (o.secteur) html += '<span class="tag" style="font-size:9px;background:var(--s3);">'+o.secteur+'</span>';
+    if (o.cap) html += '<span class="tag" style="font-size:9px;background:var(--s3);">'+o.cap+'</span>';
+    if (o.per) html += '<span class="tag" style="font-size:9px;background:var(--s3);">PER '+o.per+'</span>';
+    if (o.div) html += '<span class="tag" style="font-size:9px;background:var(--s3);color:var(--green);">'+o.div+'% div</span>';
+    if (o.prix) html += '<span class="tag" style="font-size:9px;background:var(--s3);color:var(--gold);">'+o.prix+'€</span>';
+    html += '</div>';
+    // Score breakdown
+    if (s.croissance || s.valuation || s.qualite || s.momentum) {
+      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;">';
+      [{l:'Crois.',v:s.croissance},{l:'Valu.',v:s.valuation},{l:'Qual.',v:s.qualite},{l:'Mom.',v:s.momentum}].forEach(function(d) {
+        var cc = d.v >= 75 ? 'var(--green)' : d.v >= 50 ? 'var(--gold)' : 'var(--muted)';
+        html += '<div style="text-align:center;background:var(--s3);border-radius:6px;padding:6px 4px;">';
+        html += '<div style="font-size:10px;font-weight:700;color:'+cc+';">'+(d.v||'-')+'</div>';
+        html += '<div style="font-size:8px;color:var(--muted);">'+d.l+'</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    // Raison + Risques
+    if (o.raison) html += '<div style="font-size:11px;line-height:1.5;color:var(--text);margin-bottom:6px;">💡 '+o.raison+'</div>';
+    if (o.risques) html += '<div style="font-size:10px;line-height:1.5;color:var(--muted);margin-bottom:8px;">⚠️ '+o.risques+'</div>';
+    // Actions — data-attribute safe (pas de JSON inline)
+    html += '<div style="display:flex;gap:6px;">';
+    html += '<button class="btn sm" data-opp-idx="'+i+'" data-opp-action="watchlist" style="flex:1;font-size:10px;">⭐ Watchlist</button>';
+    if (o.ticker) html += '<a href="https://finance.yahoo.com/quote/'+o.ticker+'" target="_blank" class="btn gh sm" style="font-size:10px;">📊 Yahoo</a>';
+    html += '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+  // Event delegation — gère les clics sur les boutons watchlist
+  el.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-opp-action="watchlist"]');
+    if (!btn) return;
+    var idx = parseInt(btn.getAttribute('data-opp-idx'), 10);
+    var cache = window._dernieresOpportunites;
+    if (!cache || isNaN(idx) || !cache[idx]) {
+      if (window._toast) window._toast('⚠️ Opportunité introuvable');
+      return;
+    }
+    ajouterWatchlist(cache[idx]);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// 2. WATCHLIST personnalisée
+// ══════════════════════════════════════════════════════════════
+function ajouterWatchlist(opp) {
+  if (!window._pState) return;
+  var S = window._pState();
+  if (!S.watchlist) S.watchlist = [];
+  // Check duplicate
+  if (S.watchlist.some(function(w){ return w.ticker === opp.ticker; })) {
+    if (window._toast) window._toast('Déjà dans la watchlist');
+    return;
+  }
+  S.watchlist.push({
+    id: 'wl-' + Date.now(),
+    nom: opp.nom, ticker: opp.ticker, isin: opp.isin,
+    score: opp.score && opp.score.global, prix_initial: opp.prix,
+    secteur: opp.secteur, ajoute: new Date().toISOString().slice(0,10),
+    alerte_haute: null, alerte_basse: null, raison: opp.raison
+  });
+  if (window._saveState) window._saveState();
+  renderWatchlist();
+  if (window._toast) window._toast('✅ ' + opp.nom + ' ajouté à la watchlist');
+}
+window.ajouterWatchlist = ajouterWatchlist;
+
+function renderWatchlist() {
+  var el = document.getElementById('watchlist-content');
+  var lblCount = document.getElementById('watchlist-count');
+  if (!el) return;
+  var S = window._pState ? window._pState() : null;
+  var wl = (S && S.watchlist) || [];
+  if (lblCount) lblCount.textContent = wl.length + ' actif' + (wl.length>1?'s':'') + ' suivi' + (wl.length>1?'s':'');
+  if (!wl.length) {
+    el.innerHTML = '<div class="empty">Aucun actif suivi. Ajoutez-en depuis les opportunités ci-dessus.</div>';
+    return;
+  }
+  var html = '<table class="tbl"><thead><tr>'
+    + '<th>Actif</th><th>Score</th><th>Prix actuel</th><th>Variation</th><th>Alertes</th><th></th>'
+    + '</tr></thead><tbody>';
+  wl.forEach(function(w) {
+    var current = w.prix_actuel || w.prix_initial || 0;
+    var perf = w.prix_initial ? (current - w.prix_initial)/w.prix_initial*100 : 0;
+    var perfCol = perf >= 0 ? 'var(--green)' : 'var(--red)';
+    html += '<tr>';
+    html += '<td><b>'+w.nom+'</b><br><span style="font-family:JetBrains Mono,monospace;font-size:9px;color:var(--muted);">'+(w.ticker||'')+'</span></td>';
+    html += '<td><span style="font-family:JetBrains Mono,monospace;font-size:13px;font-weight:700;color:'+(w.score>=75?'var(--green)':w.score>=50?'var(--gold)':'var(--muted)')+';">'+(w.score||'-')+'</span></td>';
+    html += '<td class="mono">'+(current ? current.toFixed(2)+' €' : '-')+'</td>';
+    html += '<td class="mono" style="color:'+perfCol+';">'+(perf >= 0 ? '+' : '')+perf.toFixed(1)+'%</td>';
+    html += '<td><div style="display:flex;gap:4px;align-items:center;font-size:10px;">';
+    html += '<input type="number" step="0.01" placeholder="Bas" value="'+(w.alerte_basse||'')+'" style="width:55px;font-size:10px;padding:2px 4px;" onchange="updateAlerte(\''+w.id+'\',\'basse\',this.value)" title="Alerte si prix descend sous">';
+    html += '<input type="number" step="0.01" placeholder="Haut" value="'+(w.alerte_haute||'')+'" style="width:55px;font-size:10px;padding:2px 4px;" onchange="updateAlerte(\''+w.id+'\',\'haute\',this.value)" title="Alerte si prix dépasse">';
+    html += '</div></td>';
+    html += '<td><button class="btn dn sm" onclick="supprimerWatchlist(\''+w.id+'\')">✕</button></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+window.renderWatchlist = renderWatchlist;
+
+function updateAlerte(wid, type, val) {
+  var S = window._pState();
+  var w = (S.watchlist||[]).find(function(x){ return x.id === wid; });
+  if (!w) return;
+  w[type === 'basse' ? 'alerte_basse' : 'alerte_haute'] = parseFloat(val) || null;
+  if (window._saveState) window._saveState();
+}
+window.updateAlerte = updateAlerte;
+
+function supprimerWatchlist(wid) {
+  var S = window._pState();
+  S.watchlist = (S.watchlist||[]).filter(function(w){ return w.id !== wid; });
+  if (window._saveState) window._saveState();
+  renderWatchlist();
+}
+window.supprimerWatchlist = supprimerWatchlist;
+
+async function refreshWatchlist() {
+  var S = window._pState();
+  var wl = (S && S.watchlist) || [];
+  if (!wl.length) return;
+  var updated = 0;
+  for (var i = 0; i < wl.length; i++) {
+    var w = wl[i];
+    if (!w.ticker) continue;
+    var r = await window.fetchPrixTicker(w.ticker);
+    if (r && r.price > 0) {
+      w.prix_actuel = r.price;
+      // Check alerts
+      if (w.alerte_basse && r.price <= w.alerte_basse) {
+        if (window._toast) window._toast('🔻 ' + w.nom + ' a touché votre alerte basse : ' + r.price + '€');
+      }
+      if (w.alerte_haute && r.price >= w.alerte_haute) {
+        if (window._toast) window._toast('🔺 ' + w.nom + ' a touché votre alerte haute : ' + r.price + '€');
+      }
+      updated++;
+    }
+  }
+  if (window._saveState) window._saveState();
+  renderWatchlist();
+  if (window._toast) window._toast('📊 ' + updated + ' cours mis à jour');
+}
+window.refreshWatchlist = refreshWatchlist;
+
+// Wire button
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    var btn = document.getElementById('btn-search-opp');
+    if (btn) btn.addEventListener('click', rechercherOpportunites);
+    renderWatchlist();
+  }, 1500);
+});
+
+// ══════════════════════════════════════════════════════════════
+// 3. BACKTEST historique
+// ══════════════════════════════════════════════════════════════
+async function lancerBacktest() {
+  var asset = document.getElementById('bt-asset').value;
+  var monthly = parseFloat(document.getElementById('bt-monthly').value) || 200;
+  var startYear = parseInt(document.getElementById('bt-start').value) || 2015;
+  var resEl = document.getElementById('bt-result');
+  if (!resEl) return;
+
+  resEl.innerHTML = '<div style="text-align:center;color:var(--muted);"><span style="animation:spin 1.5s linear infinite;display:inline-block;">📊</span> Récupération des données historiques...</div>';
+
+  // Approximate historical CAGR (annualized return) for known assets
+  var cagrTable = {
+    '^GSPC':  { name:'S&P 500',    cagr:0.105, vol:0.16, since:1980 },
+    'CW8.PA': { name:'MSCI World', cagr:0.08,  vol:0.15, since:2008 },
+    '^FCHI':  { name:'CAC 40',     cagr:0.055, vol:0.18, since:1990 },
+    'PAEEM.PA': { name:'MSCI EM',  cagr:0.06,  vol:0.22, since:2010 },
+    'GLD':    { name:'Or',         cagr:0.07,  vol:0.18, since:2000 }
+  };
+  var info = cagrTable[asset] || { name:asset, cagr:0.07, vol:0.16 };
+  if (info.since && startYear < info.since) startYear = info.since;
+
+  var nowYear = new Date().getFullYear();
+  var years = nowYear - startYear;
+  var months = years * 12;
+  var rm = info.cagr / 12;
+
+  // Calculate with monthly DCA
+  var capital = 0;
+  var totalVerse = 0;
+  var dataPoints = [];
+  for (var m = 0; m < months; m++) {
+    capital = capital * (1 + rm) + monthly;
+    totalVerse += monthly;
+    if (m % 12 === 0) {
+      dataPoints.push({ year: startYear + m/12, capital: capital, verse: totalVerse });
+    }
+  }
+  dataPoints.push({ year: nowYear, capital: capital, verse: totalVerse });
+
+  var gain = capital - totalVerse;
+  var multiplier = capital / totalVerse;
+  var realCagr = Math.pow(capital / totalVerse, 1/years) - 1;
+
+  // Render result
+  var fmt = function(n){ return Math.round(n).toLocaleString('fr-FR') + ' €'; };
+  var html = '<div style="font-family:Inter,sans-serif;color:var(--text);">';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px;">';
+  html += '<div class="ms"><div class="ms-yr">Capital final</div><div class="ms-v" style="color:var(--gold);">'+fmt(capital)+'</div><div class="ms-l">en '+nowYear+'</div></div>';
+  html += '<div class="ms"><div class="ms-yr">Total versé</div><div class="ms-v">'+fmt(totalVerse)+'</div><div class="ms-l">'+years+' ans · '+monthly+'€/mois</div></div>';
+  html += '<div class="ms"><div class="ms-yr">Gain</div><div class="ms-v" style="color:var(--green);">+'+fmt(gain)+'</div><div class="ms-l">×'+multiplier.toFixed(2)+'</div></div>';
+  html += '<div class="ms"><div class="ms-yr">Rendement</div><div class="ms-v" style="color:var(--blue);">'+(info.cagr*100).toFixed(1)+'%</div><div class="ms-l">/an moyen</div></div>';
+  html += '</div>';
+  html += '<div style="font-size:11px;color:var(--muted);line-height:1.6;padding:10px 14px;background:var(--s3);border-radius:8px;">';
+  html += '<b>'+info.name+'</b> de '+startYear+' à '+nowYear+' :';
+  html += '<br>• Si vous aviez versé '+monthly+'€/mois pendant '+years+' ans, soit <b>'+fmt(totalVerse)+'</b> au total';
+  html += '<br>• Vous auriez aujourd\'hui environ <b style="color:var(--gold);">'+fmt(capital)+'</b>';
+  html += '<br>• Soit un gain de <b style="color:var(--green);">+'+fmt(gain)+'</b> grâce aux intérêts composés';
+  html += '<br>• Rendement annualisé moyen : '+(info.cagr*100).toFixed(1)+'% (volatilité annuelle ≈ '+(info.vol*100).toFixed(0)+'%)';
+  html += '<br><br><i style="color:var(--dim);">⚠ Performances passées historiques. Ne préjugent pas des futures. Hors fiscalité et frais.</i>';
+  html += '</div></div>';
+
+  resEl.innerHTML = html;
+}
+window.lancerBacktest = lancerBacktest;
+
+// ══════════════════════════════════════════════════════════════
+// 4. MODE "PIERRE M'APPREND"
+// ══════════════════════════════════════════════════════════════
+function toggleLearnMode() {
+  var enabled = sessionStorage.getItem('pierre-learn-mode') === '1';
+  sessionStorage.setItem('pierre-learn-mode', enabled ? '0' : '1');
+  if (window._toast) window._toast(enabled ? '🎓 Mode apprentissage désactivé' : '🎓 Mode apprentissage activé — Pierre vous expliquera vos actions');
+  updateLearnButton();
+}
+window.toggleLearnMode = toggleLearnMode;
+
+function updateLearnButton() {
+  var btn = document.getElementById('btn-learn-mode');
+  if (!btn) return;
+  var enabled = sessionStorage.getItem('pierre-learn-mode') === '1';
+  btn.textContent = enabled ? '🎓 ON' : '🎓 OFF';
+  btn.style.background = enabled ? 'linear-gradient(135deg,#52c97a,#9b72cf)' : '';
+  btn.style.color = enabled ? '#fff' : '';
+}
+
+async function pierreExplique(action, contexte) {
+  if (sessionStorage.getItem('pierre-learn-mode') !== '1') return;
+  var apiKey = sessionStorage.getItem('pierre-api-key');
+  if (!apiKey) return;
+
+  var NL = String.fromCharCode(10);
+  var prompt = [
+    "Mode apprentissage. Explique en 2-3 phrases ULTRA courtes pourquoi cette action est pertinente :",
+    "Action : " + action,
+    "Contexte : " + contexte,
+    "Sois pédagogue, concret, chiffré si possible. Pas de blabla."
+  ].join(NL);
+
+  try {
+    var active = window.getActiveProvider();
+    if (!active.key) return;
+    var prov = active.provider;
+    var resp, data, text = '';
+    if (prov.format === 'openai') {
+      resp = await fetch(prov.url, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+active.key},
+        body: JSON.stringify({ model: prov.model, max_tokens: 250, messages:[{role:'user',content:prompt}] })
+      });
+      data = await resp.json();
+      if (data.choices) text = data.choices[0].message.content;
+    } else if (prov.format === 'anthropic') {
+      resp = await fetch(prov.url, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':active.key,'anthropic-version':'2023-06-01'},
+        body: JSON.stringify({model:prov.model, max_tokens:250, messages:[{role:'user',content:prompt}]})
+      });
+      data = await resp.json();
+      if (data.content) text = data.content.map(function(b){return b.text||'';}).join('');
+    }
+    if (text) afficherBulleApprentissage(text);
+  } catch(e) {}
+}
+window.pierreExplique = pierreExplique;
+
+function afficherBulleApprentissage(text) {
+  var existing = document.getElementById('learn-bubble');
+  if (existing) existing.remove();
+  var b = document.createElement('div');
+  b.id = 'learn-bubble';
+  b.style.cssText = 'position:fixed;bottom:20px;right:20px;max-width:340px;background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;padding:14px 18px;border-radius:14px;box-shadow:0 8px 32px #00000060;z-index:9998;font-size:12px;line-height:1.6;animation:slideIn .3s;';
+  b.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:24px;height:24px;border-radius:50%;background:#fff;color:#5b8dee;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">P</div><strong>Pierre vous explique</strong><button onclick="document.getElementById(\'learn-bubble\').remove()" style="margin-left:auto;background:none;border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button></div>'
+    + '<div>' + text + '</div>';
+  document.body.appendChild(b);
+  setTimeout(function(){ var x = document.getElementById('learn-bubble'); if (x) x.style.opacity = '0.7'; }, 8000);
+  setTimeout(function(){ var x = document.getElementById('learn-bubble'); if (x) x.remove(); }, 12000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// 5. MULTI-AGENTS PIERRE
+// ══════════════════════════════════════════════════════════════
+window._pierreAgents = {
+  pierre: { nom:'Pierre', emoji:'🎯', role:'Conseiller patrimonial généraliste', specialite:'gestion patrimoine, allocation, fiscalité' },
+  notaire: { nom:'Maître Dubois', emoji:'⚖️', role:'Notaire IA', specialite:'succession, donation, transmission, démembrement' },
+  fiscaliste: { nom:'Sophie Bercy', emoji:'📋', role:'Fiscaliste IA', specialite:'optimisation fiscale, déclarations, IFI, plus-values' },
+  coach: { nom:'Coach Léa', emoji:'💪', role:'Coach épargne', specialite:'budget, motivation, automatisation, discipline' },
+  marche: { nom:'Marc Stratège', emoji:'📈', role:'Stratège marchés', specialite:'analyse marchés, ETF, allocation, market timing' }
+};
+
+window._currentAgent = 'pierre';
+
+function changerAgent(agentId) {
+  if (!window._pierreAgents[agentId]) return;
+  window._currentAgent = agentId;
+  sessionStorage.setItem('pierre-agent', agentId);
+  var a = window._pierreAgents[agentId];
+  if (window._toast) window._toast(a.emoji + ' ' + a.nom + ' à votre service');
+  // Reset conversation when changing agent
+  window._iaConversation = [];
+}
+window.changerAgent = changerAgent;
+
+function getAgentSystemPrompt(agentId) {
+  var a = window._pierreAgents[agentId] || window._pierreAgents.pierre;
+  var basePrompt = window.getSystemPrompt ? window.getSystemPrompt() : '';
+  var memoireCtx = window.getMemoirePromptContext ? window.getMemoirePromptContext() : '';
+  var NL = String.fromCharCode(10);
+  return [
+    "Tu es " + a.nom + ", " + a.role + ". Spécialité : " + a.specialite + ".",
+    "Tu réponds avec l'expertise de ton domaine, en restant factuel et chiffré.",
+    "Tu vouvoies Maxime. Tu es direct, précis, actionnable.",
+    "",
+    "MÉMORISATION : Si Maxime te confie un fait personnel important (situation familiale, projet, préférence, refus), utilise l'outil 'memoriser' pour t'en souvenir lors des prochaines conversations.",
+    "",
+    basePrompt,
+    memoireCtx
+  ].join(NL);
+}
+window.getAgentSystemPrompt = getAgentSystemPrompt;
+
+// ══════════════════════════════════════════════════════════════
+// 6. SNAPSHOTS HISTORIQUE — sauvegarde/restauration COMPLÈTE
+// ══════════════════════════════════════════════════════════════
+// Note : utilise S.snapshotsFull (différent de S.snapshots qui sert au line chart)
+
+function prendreSnapshot(label) {
+  var S = window._pState ? window._pState() : null;
+  if (!S) return;
+  if (!S.snapshotsFull) S.snapshotsFull = [];
+  // Calcul du patrimoine au moment du snapshot
+  var totalNet = 0;
+  try {
+    if (window._cAll) totalNet = window._cAll().net || 0;
+  } catch(e) {}
+  var snap = {
+    id: 'snap-' + Date.now(),
+    date: new Date().toISOString(),
+    label: label || 'Snapshot ' + new Date().toLocaleDateString('fr-FR'),
+    totalNet: totalNet,
+    state: JSON.parse(JSON.stringify({
+      positions: S.positions || [],
+      immo: S.immo || [],
+      livrets: S.livrets || [],
+      iaActions: S.iaActions || [],
+      pegRoulement: S.pegRoulement || [],
+      watchlist: S.watchlist || []
+    }))
+  };
+  S.snapshotsFull.push(snap);
+  // Keep last 30 snapshots only
+  if (S.snapshotsFull.length > 30) S.snapshotsFull = S.snapshotsFull.slice(-30);
+  if (window._saveState) window._saveState();
+  if (window._toast) window._toast('📸 Snapshot enregistré : ' + snap.label);
+  if (window.renderSnapshots) window.renderSnapshots();
+}
+window.prendreSnapshot = prendreSnapshot;
+
+function restaurerSnapshot(snapId) {
+  var S = window._pState();
+  var snap = (S.snapshotsFull||[]).find(function(s){ return s.id === snapId; });
+  if (!snap) return;
+  if (!confirm('⚠️ Restaurer le patrimoine au ' + new Date(snap.date).toLocaleString('fr-FR') + ' ?\n\nCette action écrasera vos données actuelles. Une snapshot du moment présent sera créée avant.')) return;
+  // Auto-snapshot before restore
+  prendreSnapshot('Avant restauration ' + new Date().toLocaleString('fr-FR'));
+  // Restore
+  if (snap.state.positions) S.positions = JSON.parse(JSON.stringify(snap.state.positions));
+  if (snap.state.immo) S.immo = JSON.parse(JSON.stringify(snap.state.immo));
+  if (snap.state.livrets) S.livrets = JSON.parse(JSON.stringify(snap.state.livrets));
+  if (snap.state.iaActions) S.iaActions = JSON.parse(JSON.stringify(snap.state.iaActions));
+  if (snap.state.pegRoulement) S.pegRoulement = JSON.parse(JSON.stringify(snap.state.pegRoulement));
+  if (snap.state.watchlist) S.watchlist = JSON.parse(JSON.stringify(snap.state.watchlist));
+  if (window._saveState) window._saveState();
+  if (window._renderAll) window._renderAll();
+  if (window._toast) window._toast('✅ Patrimoine restauré au ' + new Date(snap.date).toLocaleDateString('fr-FR'));
+}
+window.restaurerSnapshot = restaurerSnapshot;
+
+function renderSnapshots() {
+  var el = document.getElementById('snapshots-content');
+  if (!el) return;
+  var S = window._pState ? window._pState() : null;
+  var snaps = (S && S.snapshotsFull) || [];
+  if (!snaps.length) {
+    el.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;"><div class="empty">Aucun snapshot. Cliquez sur le bouton ci-dessous ou attendez le snapshot automatique quotidien.</div><div><button class="btn sm" onclick="creerSnapshotManuel()">📸 Créer un snapshot maintenant</button></div></div>';
+    return;
+  }
+  // Sort by date desc
+  snaps = snaps.slice().sort(function(a,b){ return new Date(b.date) - new Date(a.date); });
+
+  // === Section 1 : Comparateur de snapshots ===
+  var html = '';
+  if (snaps.length >= 2) {
+    html += '<div style="background:rgba(212,175,55,0.05);border:1px solid var(--gold);padding:12px;border-radius:6px;margin-bottom:14px;">';
+    html += '<div style="font-family:Playfair Display,serif;font-size:14px;color:var(--gold);margin-bottom:8px;">📊 Comparer 2 snapshots</div>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;">';
+    html += '<div class="fg" style="margin:0;"><label style="font-size:10px;">Snapshot A (référence)</label><select id="snap-cmp-a" style="font-size:11px;">';
+    snaps.forEach(function(s,i){
+      var d = new Date(s.date).toLocaleDateString('fr-FR');
+      html += '<option value="' + s.id + '"' + (i===Math.min(1,snaps.length-1)?' selected':'') + '>' + d + ' — ' + (s.label||'').slice(0,30) + '</option>';
+    });
+    html += '</select></div>';
+    html += '<div class="fg" style="margin:0;"><label style="font-size:10px;">Snapshot B (récent)</label><select id="snap-cmp-b" style="font-size:11px;">';
+    snaps.forEach(function(s,i){
+      var d = new Date(s.date).toLocaleDateString('fr-FR');
+      html += '<option value="' + s.id + '"' + (i===0?' selected':'') + '>' + d + ' — ' + (s.label||'').slice(0,30) + '</option>';
+    });
+    html += '</select></div>';
+    html += '<button class="btn sm" onclick="comparerSnapshots()">🔍 Comparer</button>';
+    html += '</div>';
+    html += '<div id="snap-cmp-result" style="margin-top:12px;"></div>';
+    html += '</div>';
+  }
+
+  // === Section 2 : Bouton créer manuel ===
+  html += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">';
+  html += '<button class="btn sm" onclick="creerSnapshotManuel()">📸 Créer un snapshot maintenant</button>';
+  html += '</div>';
+
+  // === Section 3 : Liste des snapshots ===
+  html += '<table class="tbl"><thead><tr>'
+    + '<th>Date</th><th>Label</th><th>Patrimoine</th><th>Pos.</th><th>Immo</th><th>Liv.</th><th></th>'
+    + '</tr></thead><tbody>';
+
+  snaps.forEach(function(snap) {
+    var d = new Date(snap.date);
+    var dStr = d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    var nbPos = (snap.state.positions||[]).length;
+    var nbImmo = (snap.state.immo||[]).length;
+    var nbLiv = (snap.state.livrets||[]).length;
+    var totalStr = snap.totalNet ? Math.round(snap.totalNet).toLocaleString('fr-FR') + ' €' : '—';
+    html += '<tr>';
+    html += '<td><span class="mono" style="font-size:10px;">' + dStr + '</span></td>';
+    html += '<td style="font-size:11px;">' + (snap.label||'—') + '</td>';
+    html += '<td class="mono" style="font-size:11px;color:var(--gold);">' + totalStr + '</td>';
+    html += '<td class="mono">' + nbPos + '</td>';
+    html += '<td class="mono">' + nbImmo + '</td>';
+    html += '<td class="mono">' + nbLiv + '</td>';
+    html += '<td><div class="brow">';
+    html += '<button class="btn sm" onclick="restaurerSnapshot(\'' + snap.id + '\')" title="Restaurer cet état">↺</button>';
+    html += '<button class="btn dn sm" onclick="supprimerSnapshot(\'' + snap.id + '\')" title="Supprimer">✕</button>';
+    html += '</div></td></tr>';
+  });
+  html += '</tbody></table>';
+  html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:10px;">'
+    + '* ' + snaps.length + ' snapshot' + (snaps.length>1?'s':'') + ' · Auto quotidien · Conservation 30 derniers · Restauration crée auto-snapshot avant'
+    + '</div>';
+  el.innerHTML = html;
+}
+window.renderSnapshots = renderSnapshots;
+
+function creerSnapshotManuel() {
+  var label = prompt('Label du snapshot (ex: "Avant achat T3", "Bilan annuel 2026") :', 'Manuel ' + new Date().toLocaleDateString('fr-FR'));
+  if (label !== null) prendreSnapshot(label || 'Manuel');
+}
+window.creerSnapshotManuel = creerSnapshotManuel;
+
+function supprimerSnapshot(snapId) {
+  if (!confirm('Supprimer ce snapshot ?')) return;
+  var S = window._pState();
+  S.snapshotsFull = (S.snapshotsFull||[]).filter(function(s){ return s.id !== snapId; });
+  if (window._saveState) window._saveState();
+  renderSnapshots();
+}
+window.supprimerSnapshot = supprimerSnapshot;
+
+// Comparateur de snapshots — vue patrimoine A vs B
+function comparerSnapshots() {
+  var aId = document.getElementById('snap-cmp-a').value;
+  var bId = document.getElementById('snap-cmp-b').value;
+  var result = document.getElementById('snap-cmp-result');
+  if (!result) return;
+  var S = window._pState();
+  var snaps = (S.snapshotsFull||[]);
+  var a = snaps.find(function(s){return s.id===aId;});
+  var b = snaps.find(function(s){return s.id===bId;});
+  if (!a || !b) { result.innerHTML = '<div class="empty">Snapshots introuvables.</div>'; return; }
+  if (a.id === b.id) { result.innerHTML = '<div class="empty">Choisissez deux snapshots différents.</div>'; return; }
+
+  // Calcul des deltas
+  var totalA = a.totalNet || 0;
+  var totalB = b.totalNet || 0;
+  var deltaTot = totalB - totalA;
+  var deltaPct = totalA > 0 ? (deltaTot / totalA * 100) : 0;
+  var dateA = new Date(a.date);
+  var dateB = new Date(b.date);
+  var nbDays = Math.abs(Math.round((dateB - dateA) / (1000*60*60*24)));
+  var nbMonths = nbDays / 30.44;
+  var perfMois = nbMonths > 0 ? deltaTot / nbMonths : 0;
+
+  // Calcul par catégorie
+  function sumPos(arr, env) {
+    return (arr||[]).filter(function(p){return env ? p.envelope===env : true;})
+      .reduce(function(s,p){return s + ((p.qty||0)*(p.cours||p.pru||0));}, 0);
+  }
+  function sumImmo(arr) {
+    return (arr||[]).reduce(function(s,i){return s + ((i.estim||i.bought||0));}, 0);
+  }
+  function sumLiv(arr) {
+    return (arr||[]).reduce(function(s,l){return s + (l.balance||0);}, 0);
+  }
+  var peaA = sumPos(a.state.positions, 'PEA');
+  var peaB = sumPos(b.state.positions, 'PEA');
+  var avA  = sumPos(a.state.positions, 'AV');
+  var avB  = sumPos(b.state.positions, 'AV');
+  var pegA = sumPos(a.state.positions, 'PEG');
+  var pegB = sumPos(b.state.positions, 'PEG');
+  var immoA = sumImmo(a.state.immo);
+  var immoB = sumImmo(b.state.immo);
+  var livA = sumLiv(a.state.livrets);
+  var livB = sumLiv(b.state.livrets);
+
+  var html = '<div style="display:grid;grid-template-columns:1fr;gap:10px;">';
+
+  // KPI principal
+  var deltaColor = deltaTot >= 0 ? 'var(--green)' : 'var(--red)';
+  var deltaSign = deltaTot >= 0 ? '+' : '';
+  html += '<div style="background:var(--bg2);padding:12px;border-radius:6px;border:1px solid var(--bd);">';
+  html += '<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">VARIATION PATRIMOINE NET</div>';
+  html += '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">';
+  html += '<div style="font-size:22px;font-weight:600;color:' + deltaColor + ';font-family:Playfair Display,serif;">' + deltaSign + Math.round(deltaTot).toLocaleString('fr-FR') + ' €</div>';
+  html += '<div style="font-size:14px;color:' + deltaColor + ';">(' + deltaSign + deltaPct.toFixed(2) + '%)</div>';
+  html += '</div>';
+  html += '<div style="font-size:10px;color:var(--muted);margin-top:6px;font-family:JetBrains Mono,monospace;">';
+  html += Math.round(totalA).toLocaleString('fr-FR') + ' € → ' + Math.round(totalB).toLocaleString('fr-FR') + ' €';
+  html += ' · ' + nbDays + ' jours · ' + (perfMois>=0?'+':'') + Math.round(perfMois).toLocaleString('fr-FR') + ' €/mois';
+  html += '</div></div>';
+
+  // Détail par catégorie
+  function rowDetail(label, vA, vB) {
+    var d = vB - vA;
+    var p = vA > 0 ? (d/vA*100).toFixed(1) : '—';
+    var c = d >= 0 ? 'var(--green)' : 'var(--red)';
+    var s = d >= 0 ? '+' : '';
+    return '<tr><td>' + label + '</td>'
+      + '<td class="mono">' + Math.round(vA).toLocaleString('fr-FR') + ' €</td>'
+      + '<td class="mono">' + Math.round(vB).toLocaleString('fr-FR') + ' €</td>'
+      + '<td class="mono" style="color:' + c + ';font-weight:600;">' + s + Math.round(d).toLocaleString('fr-FR') + ' €</td>'
+      + '<td class="mono" style="color:' + c + ';">' + (p==='—'?'—':s+p+'%') + '</td>'
+      + '</tr>';
+  }
+  html += '<table class="tbl"><thead><tr><th>Catégorie</th><th>A</th><th>B</th><th>Δ</th><th>Δ%</th></tr></thead><tbody>';
+  html += rowDetail('PEA', peaA, peaB);
+  html += rowDetail('AV', avA, avB);
+  html += rowDetail('PEG SNCF', pegA, pegB);
+  html += rowDetail('Immobilier', immoA, immoB);
+  html += rowDetail('Livrets', livA, livB);
+  html += '</tbody></table>';
+
+  // Mouvements de positions (ajouts/suppressions)
+  var posA = (a.state.positions||[]).map(function(p){return p.name + '|' + p.envelope;});
+  var posB = (b.state.positions||[]).map(function(p){return p.name + '|' + p.envelope;});
+  var added = posB.filter(function(p){return posA.indexOf(p)<0;});
+  var removed = posA.filter(function(p){return posB.indexOf(p)<0;});
+  if (added.length || removed.length) {
+    html += '<div style="background:var(--bg2);padding:10px;border-radius:6px;border:1px solid var(--bd);font-size:11px;">';
+    if (added.length) html += '<div style="color:var(--green);">➕ Ajoutées : ' + added.map(function(s){return s.split('|')[0]+' ('+s.split('|')[1]+')';}).join(', ') + '</div>';
+    if (removed.length) html += '<div style="color:var(--red);margin-top:4px;">➖ Retirées : ' + removed.map(function(s){return s.split('|')[0]+' ('+s.split('|')[1]+')';}).join(', ') + '</div>';
+    html += '</div>';
+  }
+
+  html += '</div>';
+  result.innerHTML = html;
+}
+window.comparerSnapshots = comparerSnapshots;
+
+// Rendu déclenché par le dispatcher centralisé ci-dessous
+
+// Auto-snapshot daily
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    var S = window._pState ? window._pState() : null;
+    if (!S) return;
+    if (!S.snapshotsFull) S.snapshotsFull = [];
+    var today = new Date().toDateString();
+    var hasToday = S.snapshotsFull.some(function(s){ return new Date(s.date).toDateString() === today; });
+    if (!hasToday) prendreSnapshot('Auto ' + new Date().toLocaleDateString('fr-FR'));
+  }, 5000);
+});
+
+// ══════════════════════════════════════════════════════════════
+// 7. NOTIFICATIONS NATIVES (Push + alertes intelligentes)
+// ══════════════════════════════════════════════════════════════
+
+// Demander la permission notifications
+function demanderPermissionNotifs() {
+  if (!('Notification' in window)) {
+    if (window._toast) window._toast('⚠️ Votre navigateur ne supporte pas les notifications');
+    return Promise.resolve('unsupported');
+  }
+  if (Notification.permission === 'granted') {
+    return Promise.resolve('granted');
+  }
+  if (Notification.permission === 'denied') {
+    if (window._toast) window._toast('❌ Notifications bloquées. Autorisez-les dans les paramètres du navigateur.');
+    return Promise.resolve('denied');
+  }
+  return Notification.requestPermission().then(function(perm) {
+    if (perm === 'granted') {
+      if (window._toast) window._toast('✅ Notifications activées');
+      envoyerNotif('PatriTracker', 'Notifications activées ! Vous recevrez les alertes importantes ici.');
+    } else {
+      if (window._toast) window._toast('⚠️ Notifications refusées');
+    }
+    return perm;
+  });
+}
+window.demanderPermissionNotifs = demanderPermissionNotifs;
+
+// Envoyer une notification native
+function envoyerNotif(titre, corps, opts) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  opts = opts || {};
+  try {
+    var notif = new Notification(titre, {
+      body: corps,
+      icon: opts.icon || '/icon-192.png',
+      badge: opts.badge || '/icon-192.png',
+      tag: opts.tag || 'patritracker',
+      requireInteraction: opts.requireInteraction || false,
+      silent: opts.silent || false
+    });
+    notif.onclick = function() {
+      window.focus();
+      if (opts.onClick) opts.onClick();
+      notif.close();
+    };
+    // Logger dans l'historique des notifs
+    var S = window._pState ? window._pState() : null;
+    if (S) {
+      if (!S.notifsLog) S.notifsLog = [];
+      S.notifsLog.push({
+        date: new Date().toISOString(),
+        titre: titre,
+        corps: corps,
+        type: opts.tag || 'general'
+      });
+      if (S.notifsLog.length > 50) S.notifsLog = S.notifsLog.slice(-50);
+      if (window._saveState) window._saveState();
+    }
+    return notif;
+  } catch(e) {
+    console.warn('Notif error:', e);
+  }
+}
+window.envoyerNotif = envoyerNotif;
+
+// Vérifier les conditions pour déclencher des notifications
+function verifierAlertes() {
+  var S = window._pState ? window._pState() : null;
+  if (!S || Notification.permission !== 'granted') return;
+  if (!S.notifsConfig) S.notifsConfig = { fiscal: true, watchlist: true, hebdo: true, mouvements: true };
+  if (!S.notifsLastCheck) S.notifsLastCheck = {};
+
+  var now = new Date();
+  var todayStr = now.toISOString().slice(0,10);
+
+  // 1) ALERTES FISCALES (1 fois par jour max)
+  if (S.notifsConfig.fiscal && S.notifsLastCheck.fiscal !== todayStr) {
+    var alertesFiscales = getAlertesFiscalesEnCours();
+    alertesFiscales.forEach(function(a) {
+      envoyerNotif('📅 Échéance fiscale : ' + a.titre, a.message, {
+        tag: 'fiscal-' + a.titre.replace(/\s/g,''),
+        requireInteraction: a.urgent
+      });
+    });
+    if (alertesFiscales.length > 0) {
+      S.notifsLastCheck.fiscal = todayStr;
+      if (window._saveState) window._saveState();
+    }
+  }
+
+  // 2) ALERTES WATCHLIST
+  if (S.notifsConfig.watchlist && S.watchlist && S.watchlist.length) {
+    if (!S.notifsLastCheck.watchlist) S.notifsLastCheck.watchlist = {};
+    S.watchlist.forEach(function(w) {
+      var lastKey = (w.ticker || w.name) + '_' + todayStr;
+      if (S.notifsLastCheck.watchlist[lastKey]) return;
+      var alerteHaute = w.alerteHaute && w.prix && w.prix >= w.alerteHaute;
+      var alerteBasse = w.alerteBasse && w.prix && w.prix <= w.alerteBasse;
+      if (alerteHaute) {
+        envoyerNotif('🚀 ' + (w.name || w.ticker) + ' a atteint votre objectif !',
+          'Prix actuel : ' + w.prix.toFixed(2) + ' € (seuil : ' + w.alerteHaute + ' €)',
+          { tag: 'wl-' + (w.ticker||w.name), requireInteraction: true });
+        S.notifsLastCheck.watchlist[lastKey] = true;
+      } else if (alerteBasse) {
+        envoyerNotif('📉 ' + (w.name || w.ticker) + ' est sous votre seuil',
+          'Prix actuel : ' + w.prix.toFixed(2) + ' € (seuil : ' + w.alerteBasse + ' €) - opportunité ?',
+          { tag: 'wl-' + (w.ticker||w.name), requireInteraction: true });
+        S.notifsLastCheck.watchlist[lastKey] = true;
+      }
+    });
+    if (window._saveState) window._saveState();
+  }
+
+  // 3) CONSEIL HEBDO PIERRE (dimanche soir)
+  if (S.notifsConfig.hebdo) {
+    var dayOfWeek = now.getDay();
+    var hour = now.getHours();
+    var weekKey = now.getFullYear() + '-W' + Math.floor(now.getDate()/7);
+    if (dayOfWeek === 0 && hour >= 18 && S.notifsLastCheck.hebdo !== weekKey) {
+      envoyerNotif('🎓 Conseil hebdo de Pierre',
+        'C\'est dimanche ! Ouvrez PatriTracker pour votre suivi hebdomadaire.',
+        { tag: 'hebdo' });
+      S.notifsLastCheck.hebdo = weekKey;
+      if (window._saveState) window._saveState();
+    }
+  }
+
+  // 4) MOUVEMENTS IMPORTANTS
+  if (S.notifsConfig.mouvements && S.snapshotsFull && S.snapshotsFull.length >= 2) {
+    if (S.notifsLastCheck.mouvements !== todayStr) {
+      var derniers = S.snapshotsFull.slice(-2);
+      var dA = derniers[0].totalNet || 0;
+      var dB = derniers[1].totalNet || 0;
+      var delta = dB - dA;
+      var deltaPct = dA > 0 ? Math.abs(delta/dA*100) : 0;
+      if (deltaPct >= 5) {
+        var emoji = delta >= 0 ? '📈' : '📉';
+        var sign = delta >= 0 ? '+' : '';
+        envoyerNotif(emoji + ' Mouvement important détecté',
+          'Variation : ' + sign + Math.round(delta).toLocaleString('fr-FR') + ' € (' + sign + deltaPct.toFixed(1) + '%)',
+          { tag: 'mouvement' });
+        S.notifsLastCheck.mouvements = todayStr;
+        if (window._saveState) window._saveState();
+      }
+    }
+  }
+}
+window.verifierAlertes = verifierAlertes;
+
+function getAlertesFiscalesEnCours() {
+  var alertes = [];
+  var now = new Date();
+  var year = now.getFullYear();
+  var month = now.getMonth() + 1;
+  var day = now.getDate();
+
+  if (month === 5 || (month === 6 && day <= 7)) {
+    alertes.push({
+      titre: 'Déclaration revenus',
+      message: 'La déclaration IR ' + (year-1) + ' approche. Pensez à déclarer LMNP, dividendes, plus-values.',
+      urgent: month === 6
+    });
+  }
+  if (month === 9 || month === 10) {
+    alertes.push({
+      titre: 'Taxe foncière',
+      message: 'Avis de taxe foncière disponible vers septembre, paiement avant 15 octobre.',
+      urgent: month === 10 && day >= 10
+    });
+  }
+  if ([1,4,7,10].indexOf(month) >= 0 && day <= 5) {
+    alertes.push({
+      titre: 'IRL trimestriel publié',
+      message: 'Nouvel IRL publié. Pensez à indexer votre loyer LMNP.',
+      urgent: false
+    });
+  }
+  if (month === 12 && day >= 15) {
+    alertes.push({
+      titre: 'PER : derniers jours',
+      message: 'Versez sur votre PER avant le 31/12 pour bénéficier de la déduction fiscale ' + year + '.',
+      urgent: day >= 25
+    });
+  }
+  var S = window._pState ? window._pState() : null;
+  if (S && S.positions) {
+    var peaTotal = S.positions.filter(function(p){return p.envelope==='PEA';})
+      .reduce(function(s,p){return s + ((p.qty||0)*(p.pru||p.cours||0));}, 0);
+    if (peaTotal >= 130000 && day === 1) {
+      alertes.push({
+        titre: 'PEA proche du plafond',
+        message: 'Votre PEA atteint ' + Math.round(peaTotal).toLocaleString('fr-FR') + ' € (plafond 150k€).',
+        urgent: false
+      });
+    }
+  }
+  return alertes;
+}
+
+function ouvrirCentreNotifs() {
+  var S = window._pState ? window._pState() : null;
+  if (!S) return;
+  if (!S.notifsConfig) S.notifsConfig = { fiscal: true, watchlist: true, hebdo: true, mouvements: true };
+  var logs = (S.notifsLog || []).slice().reverse();
+
+  var modal = document.createElement('div');
+  modal.className = 'ov';
+  modal.style.display = 'flex';
+  var permColor = Notification.permission === 'granted' ? 'var(--green)' : 'var(--red)';
+  var html = '<div class="modal" style="max-width:520px;">'
+    + '<h2>🔔 Centre de notifications</h2>'
+    + '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Permission actuelle : '
+    + '<strong style="color:' + permColor + ';">' + Notification.permission + '</strong></div>';
+  if (Notification.permission !== 'granted') {
+    html += '<button class="btn" id="btn-ask-perm" style="width:100%;margin-bottom:14px;">🔔 Activer les notifications</button>';
+  }
+  html += '<h3 style="font-family:Playfair Display,serif;font-size:14px;margin-bottom:8px;">Catégories</h3>'
+    + '<div style="display:grid;gap:8px;margin-bottom:18px;">'
+    + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-fiscal"' + (S.notifsConfig.fiscal?' checked':'') + '> 📅 Échéances fiscales</label>'
+    + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-wl"' + (S.notifsConfig.watchlist?' checked':'') + '> 🎯 Alertes watchlist</label>'
+    + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-hebdo"' + (S.notifsConfig.hebdo?' checked':'') + '> 🎓 Conseil hebdo Pierre</label>'
+    + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-mvt"' + (S.notifsConfig.mouvements?' checked':'') + '> 📈 Mouvements importants (≥5%)</label>'
+    + '</div>'
+    + '<h3 style="font-family:Playfair Display,serif;font-size:14px;margin-bottom:8px;">Historique (' + logs.length + ')</h3>'
+    + '<div style="max-height:240px;overflow-y:auto;border:1px solid var(--bd);border-radius:6px;padding:8px;background:var(--bg2);">';
+  if (logs.length === 0) {
+    html += '<div class="empty" style="font-size:11px;">Aucune notification reçue.</div>';
+  } else {
+    logs.forEach(function(n){
+      var d = new Date(n.date);
+      var dStr = d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      html += '<div style="border-bottom:1px solid var(--bd);padding:6px 0;font-size:11px;">'
+        + '<div style="color:var(--muted);font-family:JetBrains Mono,monospace;font-size:9px;">' + dStr + '</div>'
+        + '<div style="font-weight:600;margin-top:2px;">' + n.titre + '</div>'
+        + '<div style="color:var(--muted);margin-top:2px;">' + n.corps + '</div>'
+        + '</div>';
+    });
+  }
+  html += '</div>'
+    + '<div class="brow" style="margin-top:16px;justify-content:space-between;">'
+    + '<button class="btn dn sm" id="btn-clear-notifs">🗑 Vider</button>'
+    + '<button class="btn sm" id="btn-test-notif">🔔 Test</button>'
+    + '<button class="btn" id="btn-save-notifs">Enregistrer</button>'
+    + '</div></div>';
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) document.body.removeChild(modal);
+  });
+  var ap = document.getElementById('btn-ask-perm');
+  if (ap) ap.onclick = function() { demanderPermissionNotifs().then(function(){ document.body.removeChild(modal); ouvrirCentreNotifs(); }); };
+  document.getElementById('btn-save-notifs').onclick = function() {
+    S.notifsConfig.fiscal = document.getElementById('nc-fiscal').checked;
+    S.notifsConfig.watchlist = document.getElementById('nc-wl').checked;
+    S.notifsConfig.hebdo = document.getElementById('nc-hebdo').checked;
+    S.notifsConfig.mouvements = document.getElementById('nc-mvt').checked;
+    if (window._saveState) window._saveState();
+    if (window._toast) window._toast('✅ Préférences enregistrées');
+    document.body.removeChild(modal);
+  };
+  document.getElementById('btn-clear-notifs').onclick = function() {
+    if (!confirm('Effacer historique ?')) return;
+    S.notifsLog = [];
+    if (window._saveState) window._saveState();
+    document.body.removeChild(modal);
+    ouvrirCentreNotifs();
+  };
+  document.getElementById('btn-test-notif').onclick = function() {
+    if (Notification.permission === 'granted') {
+      envoyerNotif('🧪 Test PatriTracker', 'Notifications fonctionnelles !');
+    } else {
+      demanderPermissionNotifs();
+    }
+  };
+}
+window.ouvrirCentreNotifs = ouvrirCentreNotifs;
+
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(verifierAlertes, 8000);
+  setInterval(verifierAlertes, 30 * 60 * 1000);
+});
+
+// ══════════════════════════════════════════════════════════════
+// 8. MÉMOIRE LONG TERME PIERRE
+// ══════════════════════════════════════════════════════════════
+
+function getMemoirePierre() {
+  var S = window._pState ? window._pState() : null;
+  if (!S) return null;
+  if (!S.memoirePierre) {
+    S.memoirePierre = {
+      preferences: [],
+      refus: [],
+      styleVie: [],
+      objectifs: [],
+      faits: [],
+      lastUpdate: null
+    };
+  }
+  return S.memoirePierre;
+}
+window.getMemoirePierre = getMemoirePierre;
+
+function ajouterMemoirePierre(categorie, contenu, source) {
+  var mem = getMemoirePierre();
+  if (!mem) return false;
+  if (!mem[categorie]) mem[categorie] = [];
+  var existe = mem[categorie].some(function(m){ return m.contenu.toLowerCase() === contenu.toLowerCase(); });
+  if (existe) return false;
+  mem[categorie].push({
+    id: 'mem-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+    contenu: contenu,
+    source: source || 'auto',
+    date: new Date().toISOString()
+  });
+  if (mem[categorie].length > 30) mem[categorie] = mem[categorie].slice(-30);
+  mem.lastUpdate = new Date().toISOString();
+  if (window._saveState) window._saveState();
+  return true;
+}
+window.ajouterMemoirePierre = ajouterMemoirePierre;
+
+function supprimerMemoirePierre(categorie, id) {
+  var mem = getMemoirePierre();
+  if (!mem || !mem[categorie]) return;
+  mem[categorie] = mem[categorie].filter(function(m){ return m.id !== id; });
+  if (window._saveState) window._saveState();
+}
+window.supprimerMemoirePierre = supprimerMemoirePierre;
+
+function getMemoirePromptContext() {
+  var mem = getMemoirePierre();
+  if (!mem) return '';
+  var parts = [];
+  if ((mem.styleVie||[]).length) {
+    parts.push('CE QUE PIERRE SAIT DE VOUS :\n' + mem.styleVie.map(function(m){return '- ' + m.contenu;}).join('\n'));
+  }
+  if ((mem.preferences||[]).length) {
+    parts.push('VOS PRÉFÉRENCES :\n' + mem.preferences.map(function(m){return '- ' + m.contenu;}).join('\n'));
+  }
+  if ((mem.refus||[]).length) {
+    parts.push('CE QUE VOUS AVEZ REFUSÉ (ne pas re-suggérer) :\n' + mem.refus.map(function(m){return '- ' + m.contenu;}).join('\n'));
+  }
+  if ((mem.objectifs||[]).length) {
+    parts.push('VOS OBJECTIFS :\n' + mem.objectifs.map(function(m){return '- ' + m.contenu;}).join('\n'));
+  }
+  if ((mem.faits||[]).length) {
+    parts.push('FAITS IMPORTANTS :\n' + mem.faits.map(function(m){return '- ' + m.contenu;}).join('\n'));
+  }
+  return parts.length ? ('\n\n=== MÉMOIRE LONG TERME ===\n' + parts.join('\n\n') + '\n=== FIN MÉMOIRE ===\n') : '';
+}
+window.getMemoirePromptContext = getMemoirePromptContext;
+
+function ouvrirMemoirePierre() {
+  var mem = getMemoirePierre();
+  if (!mem) return;
+
+  var modal = document.createElement('div');
+  modal.className = 'ov';
+  modal.style.display = 'flex';
+
+  function renderCategorie(cat, label, emoji) {
+    var items = mem[cat] || [];
+    var html = '<div style="margin-bottom:14px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
+    html += '<h3 style="font-family:Playfair Display,serif;font-size:13px;">' + emoji + ' ' + label + ' (' + items.length + ')</h3>';
+    html += '<button class="btn gh sm" onclick="ajouterMemoireUI(\'' + cat + '\')" style="font-size:9px;">+ Ajouter</button>';
+    html += '</div>';
+    if (items.length === 0) {
+      html += '<div style="font-size:10px;color:var(--muted);font-style:italic;">Aucun élément</div>';
+    } else {
+      html += '<div style="display:grid;gap:5px;">';
+      items.forEach(function(m){
+        html += '<div style="background:var(--bg2);border:1px solid var(--bd);padding:6px 10px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;">';
+        html += '<div style="font-size:11px;flex:1;">' + m.contenu + '</div>';
+        html += '<button class="btn dn sm" onclick="supprimerMemoirePierre(\'' + cat + '\',\'' + m.id + '\');this.closest(\'.ov\').remove();ouvrirMemoirePierre();" style="font-size:9px;flex-shrink:0;">✕</button>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  modal.innerHTML = '<div class="modal" style="max-width:560px;max-height:90vh;overflow-y:auto;">'
+    + '<h2>🧠 Mémoire long terme de Pierre</h2>'
+    + '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Pierre se souvient de ces éléments pour personnaliser ses conseils.</div>'
+    + renderCategorie('styleVie', 'Style de vie / situation', '👨‍👩‍👧')
+    + renderCategorie('preferences', 'Préférences', '❤️')
+    + renderCategorie('refus', 'Refus / Aversions', '🚫')
+    + renderCategorie('objectifs', 'Objectifs', '🎯')
+    + renderCategorie('faits', 'Faits importants', '📝')
+    + '<div class="brow" style="margin-top:16px;justify-content:space-between;">'
+    + '<button class="btn dn sm" id="btn-mem-clear-all">🗑 Tout effacer</button>'
+    + '<button class="btn" id="btn-mem-close">Fermer</button>'
+    + '</div></div>';
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if(e.target === modal) document.body.removeChild(modal); });
+  document.getElementById('btn-mem-close').onclick = function() { document.body.removeChild(modal); };
+  document.getElementById('btn-mem-clear-all').onclick = function() {
+    if (!confirm('Effacer toute la mémoire de Pierre ?')) return;
+    var s = window._pState();
+    s.memoirePierre = null;
+    if (window._saveState) window._saveState();
+    document.body.removeChild(modal);
+    if (window._toast) window._toast('🧠 Mémoire effacée');
+  };
+}
+window.ouvrirMemoirePierre = ouvrirMemoirePierre;
+
+function ajouterMemoireUI(categorie) {
+  var labels = {
+    styleVie: 'Style de vie (ex: "Marié, 1 enfant de 2 ans, projet 2e enfant 2027")',
+    preferences: 'Préférence (ex: "Préfère ETF World plutôt que stockpicking")',
+    refus: 'Refus (ex: "Ne veut pas investir en crypto")',
+    objectifs: 'Objectif (ex: "Atteindre 200k€ de patrimoine net en 2030")',
+    faits: 'Fait important (ex: "Salaire augmente de 3%/an")'
+  };
+  var contenu = prompt(labels[categorie] || 'Contenu :');
+  if (!contenu) return;
+  ajouterMemoirePierre(categorie, contenu, 'manuel');
+  document.querySelector('.ov').remove();
+  ouvrirMemoirePierre();
+  if (window._toast) window._toast('🧠 Mémoire mise à jour');
+}
+window.ajouterMemoireUI = ajouterMemoireUI;
+
+function executerMemoriser(args) {
+  var cat = args.categorie || 'faits';
+  var contenu = args.contenu;
+  if (!contenu) return { success: false, error: 'Contenu manquant' };
+  var ok = ajouterMemoirePierre(cat, contenu, 'pierre');
+  return {
+    success: ok,
+    message: ok ? ('Mémorisé en catégorie "' + cat + '" : ' + contenu) : 'Déjà connu'
+  };
+}
+window.executerMemoriser = executerMemoriser;
+
+// ══════════════════════════════════════════════════════════════
+// 9. LECTURE INTELLIGENTE DE PDF
+// ══════════════════════════════════════════════════════════════
+
+var _pdfJsLoaded = false;
+function chargerPdfJs() {
+  if (_pdfJsLoaded) return Promise.resolve(true);
+  if (window.pdfjsLib) { _pdfJsLoaded = true; return Promise.resolve(true); }
+  return new Promise(function(resolve, reject) {
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload = function() {
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        _pdfJsLoaded = true;
+        resolve(true);
+      } else {
+        reject(new Error('PDF.js failed to load'));
+      }
+    };
+    script.onerror = function() { reject(new Error('PDF.js network error')); };
+    document.head.appendChild(script);
+  });
+}
+
+function extraireTextePdf(file) {
+  return chargerPdfJs().then(function() {
+    return new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var arr = new Uint8Array(e.target.result);
+        window.pdfjsLib.getDocument({ data: arr }).promise.then(function(pdf) {
+          var promises = [];
+          for (var i = 1; i <= pdf.numPages; i++) {
+            promises.push(pdf.getPage(i).then(function(page) {
+              return page.getTextContent().then(function(content) {
+                return content.items.map(function(it){return it.str;}).join(' ');
+              });
+            }));
+          }
+          Promise.all(promises).then(function(texts) {
+            resolve(texts.join('\n\n'));
+          }).catch(reject);
+        }).catch(reject);
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  });
+}
+window.extraireTextePdf = extraireTextePdf;
+
+function ouvrirLecteurPdf() {
+  var modal = document.createElement('div');
+  modal.className = 'ov';
+  modal.style.display = 'flex';
+  modal.innerHTML = '<div class="modal" style="max-width:560px;">'
+    + '<h2>📄 Lecture intelligente de document</h2>'
+    + '<div style="font-size:11px;color:var(--muted);margin-bottom:12px;">'
+    + 'Pierre lit votre document PDF (avis imposition, taxe foncière, relevé bancaire, fiche de paie, attestation AV...) et extrait automatiquement les données importantes.'
+    + '</div>'
+    + '<div class="fg"><label>Type de document</label>'
+    + '<select id="pdf-type">'
+    + '<option value="avis_imposition">Avis d\'imposition (IR)</option>'
+    + '<option value="taxe_fonciere">Taxe foncière</option>'
+    + '<option value="releve_bancaire">Relevé bancaire</option>'
+    + '<option value="releve_pea">Relevé PEA / CTO</option>'
+    + '<option value="releve_av">Relevé Assurance Vie</option>'
+    + '<option value="fiche_paie">Fiche de paie</option>'
+    + '<option value="autre">Autre (laisser Pierre détecter)</option>'
+    + '</select></div>'
+    + '<div class="fg"><label>Fichier PDF</label>'
+    + '<input type="file" id="pdf-file" accept="application/pdf">'
+    + '</div>'
+    + '<div id="pdf-status" style="font-size:10px;font-family:JetBrains Mono,monospace;min-height:20px;margin-bottom:10px;"></div>'
+    + '<div id="pdf-result" style="margin-bottom:10px;"></div>'
+    + '<div class="brow" style="justify-content:space-between;">'
+    + '<button class="btn dn sm" id="btn-pdf-cancel">Annuler</button>'
+    + '<button class="btn" id="pdf-analyze">🔍 Analyser avec Pierre</button>'
+    + '</div></div>';
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if(e.target === modal) document.body.removeChild(modal); });
+  document.getElementById('btn-pdf-cancel').onclick = function() { document.body.removeChild(modal); };
+
+  document.getElementById('pdf-analyze').onclick = function() {
+    var fileEl = document.getElementById('pdf-file');
+    var typeEl = document.getElementById('pdf-type');
+    var statusEl = document.getElementById('pdf-status');
+    var resultEl = document.getElementById('pdf-result');
+    if (!fileEl.files || !fileEl.files[0]) {
+      statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Sélectionnez un fichier PDF</span>';
+      return;
+    }
+    var file = fileEl.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Fichier trop gros (max 10 Mo)</span>';
+      return;
+    }
+    statusEl.innerHTML = '<span style="color:var(--gold);">⏳ Extraction du texte du PDF...</span>';
+
+    extraireTextePdf(file).then(function(texte) {
+      if (!texte || texte.length < 50) {
+        statusEl.innerHTML = '<span style="color:var(--red);">⚠️ PDF vide ou scanné (OCR non disponible). Essayez un PDF avec texte sélectionnable.</span>';
+        return;
+      }
+      if (texte.length > 12000) texte = texte.slice(0, 12000) + '\n[... document tronqué]';
+      statusEl.innerHTML = '<span style="color:var(--gold);">⏳ Analyse par Pierre en cours...</span>';
+
+      var typeDoc = typeEl.value;
+      var prompt = construirePromptAnalyseDoc(typeDoc, texte);
+
+      if (!window.callClaudeIA) {
+        statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Pierre indisponible. Configurez votre clé API.</span>';
+        return;
+      }
+
+      window.callClaudeIA([{ role: 'user', content: prompt }], { maxTokens: 2000, temperature: 0.2 })
+        .then(function(reponse) {
+          statusEl.innerHTML = '<span style="color:var(--green);">✅ Analyse terminée</span>';
+          var donnees = parserReponseDoc(reponse);
+          afficherResultatPdf(resultEl, reponse, donnees, typeDoc);
+        })
+        .catch(function(err) {
+          statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Erreur Pierre : ' + (err.message||err) + '</span>';
+        });
+    }).catch(function(err) {
+      statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Erreur extraction : ' + (err.message||err) + '</span>';
+    });
+  };
+}
+window.ouvrirLecteurPdf = ouvrirLecteurPdf;
+
+function construirePromptAnalyseDoc(typeDoc, texte) {
+  var instructions = {
+    avis_imposition: 'Extrais : revenu_fiscal_reference, nombre_parts, ir_a_payer, tmi (en %), revenus_categoriels (objet avec salaires, BIC, fonciers), annee.',
+    taxe_fonciere: 'Extrais : adresse, montant, base_nette, taux_communaux, taux_departementaux, echeance.',
+    releve_bancaire: 'Extrais : solde_fin, total_debits, total_credits, periode, banque.',
+    releve_pea: 'Extrais : valorisation_totale, liquidites, positions (array de {nom, qty, pru, cours, valeur}), plus_value_totale.',
+    releve_av: 'Extrais : valorisation_totale, fonds_euros (objet {montant, taux}), uc (array {nom, qty, valeur}), nom_contrat, date.',
+    fiche_paie: 'Extrais : salaire_brut, salaire_net, net_imposable, prelevement_source, total_retenues, periode, employeur.',
+    autre: 'Identifie le type de document et extrais toutes les données financières importantes.'
+  };
+  return 'Voici le contenu d\'un document PDF (type : ' + typeDoc + ').\n\n'
+    + 'INSTRUCTIONS : ' + (instructions[typeDoc] || instructions.autre) + '\n\n'
+    + 'RÉPONDS en 2 parties :\n'
+    + '1) Une analyse en français en 3-5 phrases courtes.\n'
+    + '2) Un bloc JSON entre ```json et ``` contenant les données structurées.\n\n'
+    + 'CONTENU DU DOCUMENT :\n---\n' + texte + '\n---';
+}
+
+function parserReponseDoc(reponse) {
+  if (!reponse) return null;
+  var match = reponse.match(/```json\s*([\s\S]*?)\s*```/);
+  if (!match) return null;
+  try { return JSON.parse(match[1]); } catch(e) { return null; }
+}
+
+function afficherResultatPdf(resultEl, reponseTexte, donnees, typeDoc) {
+  var analyseTexte = reponseTexte.replace(/```json[\s\S]*?```/g, '').trim();
+  var html = '<div style="background:var(--bg2);border:1px solid var(--gold);padding:12px;border-radius:6px;margin-top:10px;">';
+  html += '<div style="font-family:Playfair Display,serif;font-size:13px;color:var(--gold);margin-bottom:8px;">📋 Analyse de Pierre</div>';
+  html += '<div style="font-size:12px;line-height:1.5;white-space:pre-wrap;">' + analyseTexte + '</div>';
+
+  if (donnees && Object.keys(donnees).length) {
+    html += '<div style="margin-top:12px;border-top:1px solid var(--bd);padding-top:10px;">';
+    html += '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">DONNÉES EXTRAITES</div>';
+    html += '<table class="tbl" style="font-size:11px;">';
+    Object.keys(donnees).forEach(function(k) {
+      var v = donnees[k];
+      if (typeof v === 'object' && v !== null) v = JSON.stringify(v);
+      html += '<tr><td style="font-weight:600;">' + k + '</td><td class="mono">' + String(v).replace(/</g,'&lt;') + '</td></tr>';
+    });
+    html += '</table></div>';
+
+    html += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">';
+    if (typeDoc === 'avis_imposition' && donnees.revenu_fiscal_reference) {
+      html += '<button class="btn sm" id="btn-apply-fisc-pdf">✅ Appliquer aux paramètres fiscaux</button>';
+    }
+    html += '<button class="btn gh sm" id="btn-copy-json-pdf">📋 Copier JSON</button>';
+    html += '</div>';
+  }
+  html += '</div>';
+  resultEl.innerHTML = html;
+
+  // Bind buttons via closure — évite tout problème d'encodage JSON dans les attributs HTML
+  var btnApply = resultEl.querySelector('#btn-apply-fisc-pdf');
+  if (btnApply) btnApply.onclick = function() {
+    try { appliquerDonneesFiscales(donnees); } catch(e) { console.warn(e); }
+  };
+  var btnCopy = resultEl.querySelector('#btn-copy-json-pdf');
+  if (btnCopy) btnCopy.onclick = function() {
+    try {
+      navigator.clipboard.writeText(JSON.stringify(donnees, null, 2));
+      if (window._toast) window._toast('📋 JSON copié');
+    } catch(e) {
+      // Fallback si clipboard API indisponible
+      var ta = document.createElement('textarea');
+      ta.value = JSON.stringify(donnees, null, 2);
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (window._toast) window._toast('📋 JSON copié');
+    }
+  };
+}
+
+function appliquerDonneesFiscales(donnees) {
+  var S = window._pState();
+  if (!S.fiscal) S.fiscal = {};
+  if (donnees.revenu_fiscal_reference) S.fiscal.rfr = donnees.revenu_fiscal_reference;
+  if (donnees.parts || donnees.nombre_parts) S.fiscal.parts = donnees.parts || donnees.nombre_parts;
+  if (donnees.tmi) S.fiscal.tmi = donnees.tmi;
+  if (window._saveState) window._saveState();
+  if (window._renderAll) window._renderAll();
+  if (window._toast) window._toast('✅ Paramètres fiscaux mis à jour');
+  var ov = document.querySelector('.ov');
+  if (ov) ov.remove();
+}
+window.appliquerDonneesFiscales = appliquerDonneesFiscales;
+
+// Header buttons
+document.addEventListener('DOMContentLoaded', function() {
+  var hdr = document.querySelector('.hdr-right');
+  if (hdr) {
+    // Learn mode button
+    var btn = document.createElement('button');
+    btn.className = 'btn gh sm';
+    btn.id = 'btn-learn-mode';
+    btn.style.cssText = 'font-size:10px;flex-shrink:0;';
+    btn.title = 'Mode apprentissage : Pierre explique vos actions';
+    btn.textContent = '🎓 OFF';
+    btn.addEventListener('click', toggleLearnMode);
+    hdr.insertBefore(btn, hdr.firstChild);
+    updateLearnButton();
+
+    // Notifications button
+    var btnN = document.createElement('button');
+    btnN.className = 'btn gh sm';
+    btnN.id = 'btn-notifs';
+    btnN.style.cssText = 'font-size:11px;flex-shrink:0;';
+    btnN.title = 'Centre de notifications';
+    btnN.textContent = '🔔';
+    btnN.addEventListener('click', ouvrirCentreNotifs);
+    hdr.insertBefore(btnN, hdr.firstChild);
+
+    // Memory button
+    var btnM = document.createElement('button');
+    btnM.className = 'btn gh sm';
+    btnM.id = 'btn-memoire';
+    btnM.style.cssText = 'font-size:11px;flex-shrink:0;';
+    btnM.title = 'Mémoire long terme de Pierre';
+    btnM.textContent = '🧠';
+    btnM.addEventListener('click', ouvrirMemoirePierre);
+    hdr.insertBefore(btnM, hdr.firstChild);
+
+    // PDF reader button
+    var btnP = document.createElement('button');
+    btnP.className = 'btn gh sm';
+    btnP.id = 'btn-pdf-reader';
+    btnP.style.cssText = 'font-size:11px;flex-shrink:0;';
+    btnP.title = 'Lire un document PDF avec Pierre';
+    btnP.textContent = '📄';
+    btnP.addEventListener('click', ouvrirLecteurPdf);
+    hdr.insertBefore(btnP, hdr.firstChild);
+
+    // Académie patrimoniale
+    var btnAc = document.createElement('button');
+    btnAc.className = 'btn gh sm';
+    btnAc.id = 'btn-academie';
+    btnAc.style.cssText = 'font-size:11px;flex-shrink:0;';
+    btnAc.title = 'Académie patrimoniale - mini-cours';
+    btnAc.textContent = '📚';
+    btnAc.addEventListener('click', ouvrirAcademie);
+    hdr.insertBefore(btnAc, hdr.firstChild);
+
+    // Export PDF rapport
+    var btnPdfExp = document.createElement('button');
+    btnPdfExp.className = 'btn gh sm';
+    btnPdfExp.id = 'btn-pdf-export';
+    btnPdfExp.style.cssText = 'font-size:11px;flex-shrink:0;';
+    btnPdfExp.title = 'Exporter rapport patrimonial PDF';
+    btnPdfExp.textContent = '📊';
+    btnPdfExp.addEventListener('click', exportPdfRapport);
+    hdr.insertBefore(btnPdfExp, hdr.firstChild);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// 10. ANNIVERSAIRES PATRIMONIAUX (PEA 5/8 ans, AV 8 ans, Immo 22/30 ans)
+// ══════════════════════════════════════════════════════════════
+
+function getAnniversairesPatrimoniaux() {
+  var S = window._pState ? window._pState() : null;
+  if (!S) return [];
+  var events = [];
+  var now = new Date();
+
+  // PEA - date d'ouverture (premier achat PEA = approximation)
+  var firstPEA = (S.history || []).filter(function(h){return h.cat==='pea';})
+    .sort(function(a,b){return (a.date||'') < (b.date||'') ? -1 : 1;})[0];
+  if (firstPEA && firstPEA.date) {
+    var d = new Date(firstPEA.date);
+    var anniv5 = new Date(d); anniv5.setFullYear(d.getFullYear()+5);
+    var anniv8 = new Date(d); anniv8.setFullYear(d.getFullYear()+8);
+    var jr5 = Math.round((anniv5 - now) / (1000*60*60*24));
+    var jr8 = Math.round((anniv8 - now) / (1000*60*60*24));
+    if (jr5 > 0 && jr5 <= 365*2) {
+      events.push({
+        emoji: '🎂', titre: 'PEA : 5 ans (exonération IR)',
+        date: anniv5, joursRestants: jr5,
+        description: 'Au bout de 5 ans, vos retraits PEA sont exonérés d\'impôt sur le revenu (PS 17,2% restent dus). Vous pourrez retirer sans clôturer.'
+      });
+    } else if (jr5 <= 0 && jr5 > -365) {
+      events.push({
+        emoji: '🎉', titre: 'PEA > 5 ans (exonération active)',
+        date: anniv5, joursRestants: 0,
+        description: 'Votre PEA a franchi 5 ans ! Les retraits sont exonérés d\'IR. Pensez à utiliser cet avantage si besoin.'
+      });
+    }
+    if (jr8 > 0 && jr8 <= 365*2) {
+      events.push({
+        emoji: '🏆', titre: 'PEA : 8 ans (versements illimités)',
+        date: anniv8, joursRestants: jr8,
+        description: 'Après 8 ans, vous pouvez continuer à verser tout en effectuant des retraits sans clôturer le PEA.'
+      });
+    }
+  }
+
+  // AV - date d'ouverture
+  var firstAV = (S.history || []).filter(function(h){return h.cat==='av';})
+    .sort(function(a,b){return (a.date||'') < (b.date||'') ? -1 : 1;})[0];
+  if (firstAV && firstAV.date) {
+    var dav = new Date(firstAV.date);
+    var anniv8av = new Date(dav); anniv8av.setFullYear(dav.getFullYear()+8);
+    var jr = Math.round((anniv8av - now) / (1000*60*60*24));
+    if (jr > 0 && jr <= 365*3) {
+      events.push({
+        emoji: '💎', titre: 'AV : 8 ans (abattement annuel)',
+        date: anniv8av, joursRestants: jr,
+        description: 'Après 8 ans : abattement annuel sur plus-values 4 600 € seul / 9 200 € couple. Fiscalité réduite à 7,5% au-delà.'
+      });
+    } else if (jr <= 0 && jr > -365) {
+      events.push({
+        emoji: '🎉', titre: 'AV > 8 ans (abattement actif)',
+        date: anniv8av, joursRestants: 0,
+        description: 'Votre AV a plus de 8 ans : vous pouvez retirer 4 600 €/an de plus-value en franchise d\'IR.'
+      });
+    }
+  }
+
+  // Immobilier - 22 ans (exonération IR plus-value) et 30 ans (PS)
+  (S.immo || []).forEach(function(b){
+    var dateAchat = b.bought_date || b.dateAchat || b.dateAcq;
+    if (!dateAchat) return;
+    var da = new Date(dateAchat);
+    if (isNaN(da.getTime())) return;
+    var a22 = new Date(da); a22.setFullYear(da.getFullYear()+22);
+    var a30 = new Date(da); a30.setFullYear(da.getFullYear()+30);
+    var jr22 = Math.round((a22 - now) / (1000*60*60*24));
+    var jr30 = Math.round((a30 - now) / (1000*60*60*24));
+    if (jr22 > 0 && jr22 <= 365*5) {
+      events.push({
+        emoji: '🏠', titre: b.name + ' : 22 ans (exo IR plus-value)',
+        date: a22, joursRestants: jr22,
+        description: 'Après 22 ans : la plus-value à la revente est exonérée d\'IR (PS 17,2% restent dus jusqu\'à 30 ans).'
+      });
+    }
+    if (jr30 > 0 && jr30 <= 365*5) {
+      events.push({
+        emoji: '🏆', titre: b.name + ' : 30 ans (exonération totale)',
+        date: a30, joursRestants: jr30,
+        description: 'Après 30 ans : exonération totale (IR + PS) de la plus-value à la revente.'
+      });
+    }
+  });
+
+  events.sort(function(a,b){return (a.joursRestants||0) - (b.joursRestants||0);});
+  return events;
+}
+window.getAnniversairesPatrimoniaux = getAnniversairesPatrimoniaux;
+
+function renderAnniversairesCard() {
+  var el = document.getElementById('anniversaires-card');
+  if (!el) return;
+  var events = getAnniversairesPatrimoniaux();
+  if (!events.length) {
+    el.innerHTML = '<div class="empty" style="padding:14px;">Aucune échéance majeure dans les prochaines années.</div>';
+    return;
+  }
+  var html = '<div style="display:grid;gap:8px;">';
+  events.forEach(function(ev){
+    var jr = ev.joursRestants;
+    var jrText, jrColor;
+    if (jr === 0) {
+      jrText = 'EN COURS'; jrColor = 'var(--green)';
+    } else if (jr <= 30) {
+      jrText = 'Dans ' + jr + ' jours'; jrColor = 'var(--gold)';
+    } else if (jr <= 365) {
+      jrText = 'Dans ' + Math.round(jr/30) + ' mois'; jrColor = 'var(--gold)';
+    } else {
+      jrText = 'Dans ' + Math.round(jr/365 * 10)/10 + ' ans'; jrColor = 'var(--muted)';
+    }
+    html += '<div style="background:var(--bg2);border:1px solid var(--bd);border-left:3px solid ' + jrColor + ';padding:10px;border-radius:6px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:6px;">';
+    html += '<div style="font-weight:600;font-size:12px;">' + ev.emoji + ' ' + ev.titre + '</div>';
+    html += '<div style="font-size:10px;font-family:JetBrains Mono,monospace;color:' + jrColor + ';font-weight:600;">' + jrText + '</div>';
+    html += '</div>';
+    html += '<div style="font-size:11px;color:var(--muted);line-height:1.4;">' + ev.description + '</div>';
+    html += '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:4px;">📅 ' + ev.date.toLocaleDateString('fr-FR') + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+window.renderAnniversairesCard = renderAnniversairesCard;
+
+// ══════════════════════════════════════════════════════════════
+// 11. DÉTECTEUR D'ANOMALIES PATRIMONIALES
+// ══════════════════════════════════════════════════════════════
+
+function detecterAnomalies() {
+  var S = window._pState ? window._pState() : null;
+  if (!S) return [];
+  var anomalies = [];
+
+  // 1) Livret A non plein (épargne précaution)
+  var livretA = (S.livrets||[]).find(function(l){return /livret a/i.test(l.name||'');});
+  var totalLivrets = (S.livrets||[]).reduce(function(s,l){return s + (l.balance||0);}, 0);
+  if (totalLivrets < 5000) {
+    anomalies.push({
+      severite: 'warn',
+      emoji: '🛡️',
+      titre: 'Épargne de précaution insuffisante',
+      message: 'Votre épargne liquide totale est de ' + Math.round(totalLivrets).toLocaleString('fr-FR') + ' €. Cible recommandée : 3 à 6 mois de dépenses (~10 à 20 k€).',
+      action: 'Augmenter Livret A et LEP avant d\'investir davantage en bourse.'
+    });
+  }
+
+  // 2) LEP non utilisé alors qu'éligible
+  var lep = (S.livrets||[]).find(function(l){return /^lep/i.test(l.name||'');});
+  var rfr = S.fiscal && S.fiscal.rfr ? S.fiscal.rfr : 0;
+  if (rfr > 0 && rfr < 22823 && (!lep || (lep.balance||0) < 1000)) {
+    anomalies.push({
+      severite: 'warn',
+      emoji: '💰',
+      titre: 'LEP sous-utilisé alors qu\'éligible',
+      message: 'RFR (' + Math.round(rfr).toLocaleString('fr-FR') + ' €) sous le plafond LEP (22 823 € / 1 part). Le LEP rapporte 3,5% net jusqu\'à 10 000 €.',
+      action: 'Remplir le LEP en priorité : +110 €/an sur 10 k€ vs Livret A.'
+    });
+  }
+
+  // 3) PEA : sur-concentration sur un actif
+  var posPEA = (S.positions||[]).filter(function(p){return p.envelope==='PEA';});
+  var totalPEA = posPEA.reduce(function(s,p){return s + ((p.qty||0)*(p.cours||p.pru||0));}, 0);
+  if (totalPEA > 5000) {
+    posPEA.forEach(function(p){
+      var val = (p.qty||0) * (p.cours||p.pru||0);
+      var part = val / totalPEA;
+      if (part > 0.5) {
+        anomalies.push({
+          severite: 'warn',
+          emoji: '⚠️',
+          titre: 'PEA : sur-concentration sur ' + p.name,
+          message: p.name + ' représente ' + (part*100).toFixed(0) + '% de votre PEA. Risque spécifique élevé.',
+          action: 'Ajouter d\'autres ETF complémentaires (World, Émergents, Europe).'
+        });
+      }
+    });
+  }
+
+  // 4) AV trop sécurisée pour l'âge
+  var posAV = (S.positions||[]).filter(function(p){return p.envelope==='AV';});
+  var totalAV = posAV.reduce(function(s,p){return s + ((p.qty||0)*(p.cours||p.pru||0));}, 0);
+  var fondsEurosAV = posAV.filter(function(p){return /fonds euro/i.test((p.subtype||'')+' '+(p.name||''));})
+    .reduce(function(s,p){return s + ((p.qty||0)*(p.cours||p.pru||0));}, 0);
+  if (totalAV > 1000 && fondsEurosAV / totalAV > 0.7) {
+    var age = (S.profil && S.profil.age) ? S.profil.age : 29;
+    if (age < 50) {
+      anomalies.push({
+        severite: 'info',
+        emoji: '📈',
+        titre: 'AV trop sécurisée pour votre âge',
+        message: (fondsEurosAV/totalAV*100).toFixed(0) + '% en fonds euros. À ' + age + ' ans, l\'horizon permet plus d\'UC actions.',
+        action: 'Augmenter la part UC actions (ETF World) pour viser 6-8% annualisé sur le long terme.'
+      });
+    }
+  }
+
+  // 5) Cashflow locatif négatif
+  (S.immo||[]).forEach(function(b){
+    if (!b.loyerMensuel) return;
+    var charges = (b.tf||0)/12 + (b.charges||0) + (b.assurancePNO||0)/12;
+    var mens = b.creditMensualite || 0;
+    var cf = (b.loyerMensuel||0) - charges - mens;
+    if (cf < -50) {
+      anomalies.push({
+        severite: 'error',
+        emoji: '🔴',
+        titre: 'Cashflow négatif : ' + b.name,
+        message: 'Cashflow mensuel : ' + Math.round(cf) + ' €. Coût annuel : ' + Math.abs(Math.round(cf*12)).toLocaleString('fr-FR') + ' €.',
+        action: 'Renégocier le crédit, augmenter le loyer (IRL), ou envisager la revente.'
+      });
+    }
+  });
+
+  // 6) Aucun versement PEA depuis 6 mois
+  if (totalPEA > 1000) {
+    var hist = S.history || [];
+    var sixMoisAvant = new Date(); sixMoisAvant.setMonth(sixMoisAvant.getMonth()-6);
+    var dernierAchat = hist.filter(function(h){return h.cat==='pea' && h.action==='achat';})
+      .sort(function(a,b){return (b.date||'') > (a.date||'') ? 1 : -1;})[0];
+    if (dernierAchat && new Date(dernierAchat.date) < sixMoisAvant) {
+      var moisInactif = Math.round((new Date() - new Date(dernierAchat.date)) / (1000*60*60*24*30));
+      anomalies.push({
+        severite: 'info',
+        emoji: '💤',
+        titre: 'PEA inactif depuis ' + moisInactif + ' mois',
+        message: 'Aucun versement PEA détecté depuis ' + new Date(dernierAchat.date).toLocaleDateString('fr-FR') + '.',
+        action: 'Reprendre les versements mensuels (DCA) — la régularité bat le timing.'
+      });
+    }
+  }
+
+  // 7) DPE F ou G immo (interdiction location)
+  (S.immo||[]).forEach(function(b){
+    if (b.dpe && /^[FG]$/i.test(b.dpe)) {
+      anomalies.push({
+        severite: 'error',
+        emoji: '🏚️',
+        titre: 'DPE ' + b.dpe.toUpperCase() + ' : ' + b.name,
+        message: 'Les biens DPE G sont interdits à la location depuis 2025, F dès 2028. Travaux obligatoires.',
+        action: 'Planifier rénovation thermique (isolation, chaudière) ou envisager la vente.'
+      });
+    } else if (b.dpe && /^E$/i.test(b.dpe)) {
+      anomalies.push({
+        severite: 'warn',
+        emoji: '⚠️',
+        titre: 'DPE E : ' + b.name,
+        message: 'Les biens DPE E seront interdits à la location à partir de 2034. Anticipez.',
+        action: 'Évaluer le coût d\'une rénovation thermique pour passer en D.'
+      });
+    }
+  });
+
+  // 8) Plafond PEA proche
+  if (totalPEA >= 130000) {
+    anomalies.push({
+      severite: 'info',
+      emoji: '📊',
+      titre: 'PEA proche du plafond',
+      message: 'Versements cumulés ' + Math.round(totalPEA).toLocaleString('fr-FR') + ' € (plafond 150 000 €).',
+      action: 'Préparer une AV ou CTO pour vos prochains versements bourse.'
+    });
+  }
+
+  return anomalies;
+}
+window.detecterAnomalies = detecterAnomalies;
+
+function renderAnomaliesCard() {
+  var el = document.getElementById('anomalies-card');
+  if (!el) return;
+  var anos = detecterAnomalies();
+  if (!anos.length) {
+    el.innerHTML = '<div class="empty" style="padding:14px;color:var(--green);">✅ Aucune anomalie détectée. Votre patrimoine est en bonne santé.</div>';
+    return;
+  }
+  var html = '<div style="display:grid;gap:8px;">';
+  anos.forEach(function(a){
+    var color = a.severite === 'error' ? 'var(--red)' : (a.severite === 'warn' ? 'var(--gold)' : 'var(--muted)');
+    html += '<div style="background:var(--bg2);border:1px solid var(--bd);border-left:3px solid ' + color + ';padding:10px;border-radius:6px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:6px;">';
+    html += '<div style="font-weight:600;font-size:12px;">' + a.emoji + ' ' + a.titre + '</div>';
+    html += '<div style="font-size:9px;font-family:JetBrains Mono,monospace;color:' + color + ';text-transform:uppercase;font-weight:600;">' + a.severite + '</div>';
+    html += '</div>';
+    html += '<div style="font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:4px;">' + a.message + '</div>';
+    html += '<div style="font-size:11px;color:var(--gold);font-style:italic;">→ ' + a.action + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+window.renderAnomaliesCard = renderAnomaliesCard;
+
+// ══════════════════════════════════════════════════════════════
+// 12. ACADÉMIE PATRIMONIALE (mini-cours interactifs)
+// ══════════════════════════════════════════════════════════════
+
+var ACADEMIE_COURS = [
+  {
+    id: 'pea-vs-cto',
+    titre: 'PEA vs CTO : que choisir ?',
+    duree: 5, niveau: 'Débutant', emoji: '📊',
+    description: 'Comprendre la différence fiscale et stratégique entre PEA et CTO.',
+    sections: [
+      { titre: 'Le PEA : enveloppe fiscale française', contenu: 'Le PEA (Plan Épargne en Actions) est limité à 150 000 € de versements et aux actions européennes. Après 5 ans, les retraits sont exonérés d\'IR (seuls les prélèvements sociaux 17,2% s\'appliquent). C\'est l\'enveloppe la plus avantageuse fiscalement pour la bourse en France.' },
+      { titre: 'Le CTO : flexibilité totale', contenu: 'Le Compte-Titres Ordinaire (CTO) permet d\'investir partout dans le monde, sans plafond. Mais les plus-values sont taxées au PFU 30% (12,8% IR + 17,2% PS) dès le premier euro. Aucun avantage fiscal après détention.' },
+      { titre: 'Quand utiliser quoi ?', contenu: 'Règle simple : remplir d\'abord le PEA (jusqu\'à 150 k€), ensuite ouvrir un CTO pour ce qui ne rentre pas (actions US, REIT, ETF émergents non éligibles PEA). Pour Maxime à 29 ans, le PEA est prioritaire.' },
+      { titre: 'Quiz rapide', contenu: 'Q : Vous achetez 10 k€ d\'Apple. PEA ou CTO ?\nR : CTO uniquement (Apple est US, non éligible PEA).\n\nQ : Vous achetez 10 k€ de l\'ETF CW8 (MSCI World) ?\nR : PEA - cet ETF synthétique est éligible malgré sa composition mondiale.' }
+    ]
+  },
+  {
+    id: 'av-transmission',
+    titre: 'Assurance vie : l\'arme de transmission',
+    duree: 7, niveau: 'Intermédiaire', emoji: '💎',
+    description: 'Comment l\'AV permet de transmettre 152 500 € par bénéficiaire en franchise.',
+    sections: [
+      { titre: 'L\'abattement de 152 500 €', contenu: 'Pour les versements effectués avant 70 ans, chaque bénéficiaire désigné reçoit jusqu\'à 152 500 € en franchise totale d\'impôts. Au-delà, taxation à 20% jusqu\'à 700 k€, puis 31,25%. Cet avantage hors succession est unique.' },
+      { titre: 'La clause bénéficiaire', contenu: 'C\'est elle qui détermine qui reçoit l\'argent. Vous pouvez nommer plusieurs bénéficiaires (conjoint, enfants, neveux), avec des parts différentes. Bien rédigée, elle peut transmettre à des bénéficiaires hors famille avec une fiscalité avantageuse.' },
+      { titre: 'Versements après 70 ans', contenu: 'Après 70 ans, abattement global de 30 500 € (tous bénéficiaires confondus) sur les versements. Au-delà, intégration à la succession. Mais les intérêts générés restent exonérés !' },
+      { titre: 'Action concrète', contenu: 'Maxime : ouvrez votre AV jeune (29 ans) pour démarrer le compteur 8 ans (abattement annuel 4 600 €). Désignez votre conjoint et enfant en bénéficiaires. Versez régulièrement, même 50€/mois, pour optimiser la transmission.' }
+    ]
+  },
+  {
+    id: 'lmnp-reel-vs-micro',
+    titre: 'LMNP : régime réel ou micro-BIC ?',
+    duree: 8, niveau: 'Intermédiaire', emoji: '🏠',
+    description: 'Optimiser la fiscalité de votre location meublée.',
+    sections: [
+      { titre: 'Le micro-BIC : simplicité', contenu: 'Régime par défaut sous 77 700 €/an de loyers. Abattement forfaitaire de 50% (30% pour meublé de tourisme non classé depuis 2024). Déclaration ultra-simple : pas de comptabilité.' },
+      { titre: 'Le réel : optimisation maximale', contenu: 'Vous déduisez TOUS les frais réels : intérêts d\'emprunt, taxe foncière, assurance, charges copro, frais de gestion. ET surtout l\'amortissement du bien (3-4%/an du prix hors terrain) et du mobilier (10%/an). Souvent : 0 € d\'impôt pendant 10-15 ans.' },
+      { titre: 'Quel régime choisir ?', contenu: 'Si vos charges réelles + amortissement > 50% des loyers : régime réel. Sinon : micro. Pour un T2 acheté 80k€ avec 6k€ de loyer : amortissement seul = 2 400 €/an + intérêts d\'emprunt + charges = facilement >3000 €. Réel gagnant.' },
+      { titre: 'Réforme 2025', contenu: 'Loi de finances 2025 : pour les biens vendus après 2025, l\'amortissement déduit en LMNP réel sera réintégré dans le calcul de la plus-value (sauf résidences services). Impact à anticiper si revente prévue.' }
+    ]
+  },
+  {
+    id: 'tmi-pfu',
+    titre: 'TMI vs PFU : optimiser ses revenus du capital',
+    duree: 6, niveau: 'Intermédiaire', emoji: '💰',
+    description: 'Comprendre quand opter pour le barème vs prélèvement forfaitaire.',
+    sections: [
+      { titre: 'Le PFU à 30%', contenu: 'Par défaut, dividendes, intérêts et plus-values sont taxés au PFU 30% = 12,8% IR + 17,2% PS. Simple, plat, indépendant de votre TMI.' },
+      { titre: 'L\'option barème', contenu: 'Vous pouvez opter pour l\'imposition au barème (TMI) au lieu du PFU. Intéressant si TMI ≤ 11% : sur dividendes, vous bénéficiez d\'un abattement de 40% qui ramène le taux effectif à 6,6% IR + 17,2% PS = 23,8% au lieu de 30%.' },
+      { titre: 'L\'option est globale', contenu: 'Attention : si vous optez pour le barème, c\'est pour TOUS vos revenus du capital de l\'année. Dividendes, intérêts, plus-values : tout passe au barème. Pas de cherry-picking.' },
+      { titre: 'Cas Maxime', contenu: 'Salaire 30 k€ + conjoint(e) → TMI probable 11%. Si vous touchez beaucoup de dividendes hors PEA, l\'option barème peut être gagnante. À recalculer chaque année avec un simulateur.' }
+    ]
+  },
+  {
+    id: 'donation-100k',
+    titre: 'Donation 100 k€ : transmettre de son vivant',
+    duree: 5, niveau: 'Avancé', emoji: '🎁',
+    description: 'Optimiser la transmission patrimoniale par donation.',
+    sections: [
+      { titre: 'L\'abattement 100 000 €', contenu: 'Chaque parent peut donner 100 000 € à chaque enfant tous les 15 ans, en franchise totale de droits. Pour un couple avec 2 enfants : 400 000 € transmissibles tous les 15 ans.' },
+      { titre: 'La donation-partage', contenu: 'Acte notarié qui fige la valeur des biens donnés au jour de la donation. Évite les conflits successoraux ultérieurs. Recommandé dès que la donation dépasse 30-50 k€.' },
+      { titre: 'Démembrement : nue-propriété', contenu: 'Donnez la nue-propriété en gardant l\'usufruit. Vous continuez à percevoir les loyers/dividendes. Au décès, le nu-propriétaire récupère la pleine propriété sans droits supplémentaires. Décote 30-50% selon âge.' },
+      { titre: 'Maxime à 29 ans', contenu: 'Trop tôt pour donner massivement. Mais pensez-y dès que vos parents/grands-parents y réfléchissent : ils peuvent vous transmettre 31 865 € (don familial de somme d\'argent) tous les 15 ans, en plus des 100 k€.' }
+    ]
+  },
+  {
+    id: 'declaration-revenus',
+    titre: 'Bien remplir sa déclaration de revenus',
+    duree: 10, niveau: 'Débutant', emoji: '📝',
+    description: 'Les cases à connaître pour ne rien oublier.',
+    sections: [
+      { titre: 'Salaires et traitements (cases 1AJ-1BJ)', contenu: 'Pré-remplis par l\'employeur. Vérifiez les montants par rapport à vos bulletins de décembre. Frais réels (case 1AK) si > 10% forfaitaire (trajets longs, télétravail).' },
+      { titre: 'LMNP réel (cases 5NA-5NZ)', contenu: 'Bénéfice ou déficit BIC à reporter depuis votre liasse fiscale 2031. Le déficit s\'impute sur les BIC futurs pendant 10 ans (pas sur revenu global).' },
+      { titre: 'PEA/CTO (cases 2OP, 2DC, 3VG)', contenu: '2OP si vous optez pour le barème. 2DC pour les dividendes. 3VG pour les plus-values CTO. Le PEA en cours n\'est PAS à déclarer (pas de retrait).' },
+      { titre: 'Versements PER (case 6NS-6NX)', contenu: 'Déductible du revenu imposable jusqu\'au plafond (10% des revenus pro avec mini 4 637 € et maxi 37 094 € en 2024). Économie d\'impôt = versement × TMI.' },
+      { titre: 'Crédits d\'impôt utiles', contenu: 'Garde d\'enfant à domicile (50% jusqu\'à 12 k€/enfant), travaux (CITE/MaPrimeRénov), dons aux associations (66-75%), emploi à domicile (50%). Ne pas les oublier !' }
+    ]
+  }
+];
+
+function ouvrirAcademie() {
+  var modal = document.createElement('div');
+  modal.className = 'ov';
+  modal.style.display = 'flex';
+  var S = window._pState ? window._pState() : null;
+  if (S && !S.coursValides) S.coursValides = [];
+  var coursValides = (S && S.coursValides) || [];
+
+  var html = '<div class="modal" style="max-width:680px;max-height:92vh;overflow-y:auto;">';
+  html += '<h2>📚 Académie patrimoniale</h2>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Mini-cours interactifs adaptés à votre situation. Progression : ' + coursValides.length + '/' + ACADEMIE_COURS.length + '</div>';
+
+  // Barre de progression
+  var pct = (coursValides.length / ACADEMIE_COURS.length) * 100;
+  html += '<div style="background:var(--bg2);height:8px;border-radius:4px;margin-bottom:18px;overflow:hidden;">';
+  html += '<div style="background:var(--gold);height:100%;width:' + pct + '%;transition:width 0.3s;"></div>';
+  html += '</div>';
+
+  html += '<div style="display:grid;gap:10px;">';
+  ACADEMIE_COURS.forEach(function(c){
+    var fait = coursValides.indexOf(c.id) >= 0;
+    html += '<div style="background:var(--bg2);border:1px solid ' + (fait ? 'var(--green)' : 'var(--bd)') + ';padding:12px;border-radius:6px;cursor:pointer;" onclick="ouvrirCours(\'' + c.id + '\')">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">';
+    html += '<div style="flex:1;min-width:200px;">';
+    html += '<div style="font-weight:600;font-size:13px;font-family:Playfair Display,serif;margin-bottom:3px;">' + c.emoji + ' ' + c.titre + (fait?' ✓':'') + '</div>';
+    html += '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">' + c.description + '</div>';
+    html += '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;">⏱ ' + c.duree + ' min · 🎯 ' + c.niveau + '</div>';
+    html += '</div>';
+    html += '<button class="btn sm" style="flex-shrink:0;">' + (fait ? 'Revoir' : 'Commencer') + '</button>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+  html += '<div class="brow" style="margin-top:16px;justify-content:flex-end;">';
+  html += '<button class="btn" id="btn-ac-close">Fermer</button></div>';
+  html += '</div>';
+
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if(e.target === modal) document.body.removeChild(modal); });
+  document.getElementById('btn-ac-close').onclick = function(){ document.body.removeChild(modal); };
+}
+window.ouvrirAcademie = ouvrirAcademie;
+
+function ouvrirCours(coursId) {
+  var c = ACADEMIE_COURS.find(function(x){return x.id === coursId;});
+  if (!c) return;
+  var modal = document.createElement('div');
+  modal.className = 'ov';
+  modal.style.display = 'flex';
+
+  var html = '<div class="modal" style="max-width:680px;max-height:92vh;overflow-y:auto;">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
+  html += '<h2 style="margin:0;">' + c.emoji + ' ' + c.titre + '</h2>';
+  html += '<button class="btn gh sm" id="btn-cours-close">✕</button>';
+  html += '</div>';
+  html += '<div style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-bottom:14px;">⏱ ' + c.duree + ' min · 🎯 ' + c.niveau + '</div>';
+
+  c.sections.forEach(function(s, i){
+    html += '<div style="background:var(--bg2);border-left:3px solid var(--gold);padding:14px;border-radius:6px;margin-bottom:12px;">';
+    html += '<div style="font-family:Playfair Display,serif;font-size:14px;color:var(--gold);margin-bottom:8px;">' + (i+1) + '. ' + s.titre + '</div>';
+    html += '<div style="font-size:12px;line-height:1.6;white-space:pre-wrap;">' + s.contenu + '</div>';
+    html += '</div>';
+  });
+
+  html += '<div style="background:rgba(212,175,55,0.05);border:1px solid var(--gold);padding:12px;border-radius:6px;margin-bottom:14px;">';
+  html += '<div style="font-family:Playfair Display,serif;font-size:13px;color:var(--gold);margin-bottom:6px;">💬 Discuter avec Pierre</div>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Une question sur ce cours ? Pierre peut développer un point ou l\'appliquer à votre situation.</div>';
+  html += '<button class="btn sm" id="btn-cours-pierre">🤖 Poser une question à Pierre</button>';
+  html += '</div>';
+
+  html += '<div class="brow" style="justify-content:space-between;">';
+  html += '<button class="btn dn sm" id="btn-cours-cancel">Fermer</button>';
+  html += '<button class="btn" id="btn-cours-valider">✅ J\'ai compris ce cours</button>';
+  html += '</div></div>';
+
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if(e.target === modal) document.body.removeChild(modal); });
+  document.getElementById('btn-cours-close').onclick = function(){ document.body.removeChild(modal); };
+  document.getElementById('btn-cours-cancel').onclick = function(){ document.body.removeChild(modal); };
+  document.getElementById('btn-cours-valider').onclick = function() {
+    var S = window._pState();
+    if (!S.coursValides) S.coursValides = [];
+    if (S.coursValides.indexOf(c.id) < 0) S.coursValides.push(c.id);
+    if (window._saveState) window._saveState();
+    if (window._toast) window._toast('✅ Cours validé : ' + c.titre);
+    document.body.removeChild(modal);
+    ouvrirAcademie();
+  };
+  document.getElementById('btn-cours-pierre').onclick = function() {
+    document.body.removeChild(modal);
+    if (window.demanderIA) {
+      window.demanderIA('Je viens de lire votre cours "' + c.titre + '". Pouvez-vous me l\'appliquer concrètement à ma situation, en chiffrant les impacts ?');
+    } else if (window._toast) {
+      window._toast('Pierre indisponible. Configurez votre clé API.');
+    }
+  };
+}
+window.ouvrirCours = ouvrirCours;
+
+// ══════════════════════════════════════════════════════════════
+// 13. EXPORT PDF RAPPORT PATRIMONIAL (HTML imprimable)
+// ══════════════════════════════════════════════════════════════
+
+function exportPdfRapport() {
+  var S = window._pState ? window._pState() : null;
+  if (!S) return;
+  var calc = window._cAll ? window._cAll() : null;
+  if (!calc) { if (window._toast) window._toast('Erreur calcul'); return; }
+
+  var date = new Date().toLocaleDateString('fr-FR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  var profil = S.profil || {};
+  var prenom = profil.prenom || 'Maxime';
+
+  // Calculs
+  var positions = S.positions || [];
+  var pea = positions.filter(function(p){return p.envelope==='PEA';});
+  var av = positions.filter(function(p){return p.envelope==='AV';});
+  var peg = positions.filter(function(p){return p.envelope==='PEG';});
+  var totalPEA = pea.reduce(function(s,p){return s + ((p.qty||0)*(p.cours||p.pru||0));}, 0);
+  var totalAV = av.reduce(function(s,p){return s + ((p.qty||0)*(p.cours||p.pru||0));}, 0);
+  var totalPEG = peg.reduce(function(s,p){return s + ((p.qty||0)*(p.cours||p.pru||0));}, 0);
+  var totalLiv = (S.livrets||[]).reduce(function(s,l){return s + (l.balance||0);}, 0);
+  var totalImmoBrut = (S.immo||[]).reduce(function(s,b){return s + (b.estim||b.bought||0);}, 0);
+  var totalDettes = (S.immo||[]).reduce(function(s,b){return s + (b.creditCRD||0);}, 0);
+
+  var posRows = positions.map(function(p){
+    var val = (p.qty||0)*(p.cours||p.pru||0);
+    var plus = ((p.cours||p.pru||0) - (p.pru||0)) * (p.qty||0);
+    var pct = p.pru > 0 ? (((p.cours||p.pru) - p.pru)/p.pru * 100) : 0;
+    return '<tr><td>' + (p.envelope||'') + '</td><td>' + (p.name||'') + '</td><td class="r">' + (p.qty||0) + '</td><td class="r">' + (p.pru||0).toFixed(2) + ' €</td><td class="r">' + (p.cours||p.pru||0).toFixed(2) + ' €</td><td class="r">' + Math.round(val).toLocaleString('fr-FR') + ' €</td><td class="r" style="color:' + (plus>=0?'#0a7':'#c33') + '">' + (plus>=0?'+':'') + Math.round(plus).toLocaleString('fr-FR') + ' € (' + (plus>=0?'+':'') + pct.toFixed(1) + '%)</td></tr>';
+  }).join('');
+
+  var immoRows = (S.immo||[]).map(function(b){
+    var charges = (b.tf||0)/12 + (b.charges||0) + (b.assurancePNO||0)/12;
+    var cf = (b.loyerMensuel||0) - charges - (b.creditMensualite||0);
+    return '<tr><td>' + (b.name||'') + '</td><td>' + (b.type||'—') + '</td><td class="r">' + Math.round(b.estim||b.bought||0).toLocaleString('fr-FR') + ' €</td><td class="r">' + Math.round(b.creditCRD||0).toLocaleString('fr-FR') + ' €</td><td class="r">' + (b.loyerMensuel||0) + ' €</td><td class="r" style="color:' + (cf>=0?'#0a7':'#c33') + '">' + (cf>=0?'+':'') + Math.round(cf) + ' €</td></tr>';
+  }).join('');
+
+  var livRows = (S.livrets||[]).map(function(l){
+    return '<tr><td>' + (l.name||'') + '</td><td class="r">' + Math.round(l.balance||0).toLocaleString('fr-FR') + ' €</td><td class="r">' + (l.taux||0).toFixed(2) + '%</td></tr>';
+  }).join('');
+
+  var anos = window.detecterAnomalies ? window.detecterAnomalies() : [];
+  var anosRows = anos.map(function(a){
+    return '<li><strong>' + a.titre + '</strong> — ' + a.message + ' <em>→ ' + a.action + '</em></li>';
+  }).join('');
+
+  var anniv = window.getAnniversairesPatrimoniaux ? window.getAnniversairesPatrimoniaux() : [];
+  var annivRows = anniv.map(function(e){
+    return '<li><strong>' + e.titre + '</strong> (' + e.date.toLocaleDateString('fr-FR') + ') — ' + e.description + '</li>';
+  }).join('');
+
+  var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bilan patrimonial ' + prenom + ' - ' + date + '</title>';
+  html += '<style>';
+  html += 'body{font-family:Georgia,serif;color:#1a1a1a;max-width:800px;margin:30px auto;padding:20px;line-height:1.5;background:#fff;}';
+  html += 'h1{font-size:24px;color:#1a1a1a;border-bottom:2px solid #b8941f;padding-bottom:8px;}';
+  html += 'h2{font-size:17px;color:#1a1a1a;margin-top:28px;border-bottom:1px solid #ddd;padding-bottom:4px;}';
+  html += 'h3{font-size:14px;color:#444;margin-top:18px;}';
+  html += 'table{width:100%;border-collapse:collapse;margin-top:10px;font-size:11px;}';
+  html += 'th{background:#f5f0e0;text-align:left;padding:6px 8px;border:1px solid #ccc;}';
+  html += 'td{padding:5px 8px;border:1px solid #ddd;}';
+  html += 'td.r{text-align:right;font-family:monospace;}';
+  html += '.kpi{display:inline-block;width:23%;background:#f9f7f0;border-left:3px solid #b8941f;padding:10px;margin:5px 1%;text-align:center;vertical-align:top;}';
+  html += '.kpi .lbl{font-size:9px;color:#888;text-transform:uppercase;}';
+  html += '.kpi .val{font-size:18px;font-weight:bold;color:#1a1a1a;margin-top:4px;}';
+  html += '.foot{margin-top:40px;font-size:10px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:15px;}';
+  html += 'ul li{margin-bottom:8px;}';
+  html += '@media print{body{margin:0;padding:15mm;} h1{page-break-after:avoid;} h2{page-break-after:avoid;}}';
+  html += '@page{size:A4;margin:15mm;}';
+  html += '</style></head><body>';
+
+  html += '<h1>Bilan patrimonial — ' + prenom + '</h1>';
+  html += '<div style="color:#666;font-size:11px;">Document généré le ' + date + ' par PatriTracker</div>';
+
+  html += '<h2>Synthèse</h2>';
+  html += '<div>';
+  html += '<div class="kpi"><div class="lbl">Patrimoine brut</div><div class="val">' + Math.round(calc.brut||0).toLocaleString('fr-FR') + ' €</div></div>';
+  html += '<div class="kpi"><div class="lbl">Patrimoine net</div><div class="val">' + Math.round(calc.net||0).toLocaleString('fr-FR') + ' €</div></div>';
+  html += '<div class="kpi"><div class="lbl">Total dettes</div><div class="val">' + Math.round(totalDettes).toLocaleString('fr-FR') + ' €</div></div>';
+  html += '<div class="kpi"><div class="lbl">Liquidités</div><div class="val">' + Math.round(totalLiv).toLocaleString('fr-FR') + ' €</div></div>';
+  html += '</div>';
+
+  html += '<h2>Répartition par enveloppe</h2>';
+  html += '<table>';
+  html += '<tr><th>Enveloppe</th><th>Montant</th><th>%</th></tr>';
+  var totalBrut = (calc.brut||1);
+  function row(label, val) {
+    return '<tr><td>' + label + '</td><td class="r">' + Math.round(val).toLocaleString('fr-FR') + ' €</td><td class="r">' + (val/totalBrut*100).toFixed(1) + '%</td></tr>';
+  }
+  html += row('PEA', totalPEA);
+  html += row('Assurance Vie', totalAV);
+  html += row('PEG SNCF', totalPEG);
+  html += row('Immobilier (brut)', totalImmoBrut);
+  html += row('Livrets', totalLiv);
+  html += '</table>';
+
+  if (positions.length) {
+    html += '<h2>Positions bourse / fonds</h2>';
+    html += '<table><tr><th>Env.</th><th>Nom</th><th>Qté</th><th>PRU</th><th>Cours</th><th>Valeur</th><th>+/- Value</th></tr>' + posRows + '</table>';
+  }
+
+  if ((S.immo||[]).length) {
+    html += '<h2>Patrimoine immobilier</h2>';
+    html += '<table><tr><th>Bien</th><th>Type</th><th>Valeur</th><th>Crédit restant</th><th>Loyer/m</th><th>Cashflow</th></tr>' + immoRows + '</table>';
+  }
+
+  if ((S.livrets||[]).length) {
+    html += '<h2>Livrets et épargne</h2>';
+    html += '<table><tr><th>Livret</th><th>Solde</th><th>Taux</th></tr>' + livRows + '</table>';
+  }
+
+  if (anos.length) {
+    html += '<h2>Points d\'attention détectés</h2>';
+    html += '<ul style="font-size:11px;">' + anosRows + '</ul>';
+  }
+
+  if (anniv.length) {
+    html += '<h2>Échéances patrimoniales</h2>';
+    html += '<ul style="font-size:11px;">' + annivRows + '</ul>';
+  }
+
+  html += '<div class="foot">Document généré par PatriTracker · ' + date + '<br>Pour usage personnel uniquement. Ne constitue pas un conseil financier ou fiscal.</div>';
+  html += '<script>setTimeout(function(){window.print();}, 800);<' + '/script>';
+  html += '</body></html>';
+
+  // Ouvrir dans nouvelle fenêtre
+  var w = window.open('', '_blank');
+  if (!w) {
+    if (window._toast) window._toast('⚠️ Bloqueur popup actif. Autorisez les popups.');
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  if (window._toast) window._toast('📄 Rapport généré. Imprimez en PDF depuis la fenêtre.');
+}
+window.exportPdfRapport = exportPdfRapport;
+
+// ══════════════════════════════════════════════════════════════
+// 14. HEATMAP CALENDRIER MENSUEL (mouvements financiers)
+// ══════════════════════════════════════════════════════════════
+
+function renderHeatmapCalendrier() {
+  var el = document.getElementById('heatmap-calendrier');
+  if (!el) return;
+  var S = window._pState ? window._pState() : null;
+  if (!S) return;
+  var hist = S.history || [];
+
+  // Année en cours
+  var year = new Date().getFullYear();
+  // Agréger par mois : montant net (versements positifs, retraits négatifs)
+  var moisData = {};
+  for (var m = 0; m < 12; m++) {
+    moisData[m] = { versements: 0, retraits: 0, count: 0, ops: [] };
+  }
+  hist.forEach(function(h){
+    if (!h.date) return;
+    var d = new Date(h.date);
+    if (d.getFullYear() !== year) return;
+    var m = d.getMonth();
+    var amt = h.amount || 0;
+    if (h.action === 'achat' || h.action === 'versement' || h.action === 'dépôt') {
+      moisData[m].versements += amt;
+    } else if (h.action === 'vente' || h.action === 'retrait') {
+      moisData[m].retraits += amt;
+    }
+    moisData[m].count += 1;
+    moisData[m].ops.push(h);
+  });
+
+  // Trouver max pour échelle
+  var maxAbs = 0;
+  Object.keys(moisData).forEach(function(k){
+    maxAbs = Math.max(maxAbs, moisData[k].versements, moisData[k].retraits);
+  });
+
+  var moisNoms = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  var html = '<div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Activité ' + year + ' · ' + Object.values(moisData).reduce(function(s,m){return s+m.count;},0) + ' opérations</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;">';
+  moisNoms.forEach(function(nom, i){
+    var d = moisData[i];
+    var net = d.versements - d.retraits;
+    var intensity = maxAbs > 0 ? Math.min(1, Math.abs(net)/maxAbs) : 0;
+    var bg, txtColor;
+    if (d.count === 0) {
+      bg = 'var(--bg2)'; txtColor = 'var(--muted)';
+    } else if (net >= 0) {
+      bg = 'rgba(0, 170, 119, ' + (0.15 + intensity*0.55) + ')';
+      txtColor = '#fff';
+    } else {
+      bg = 'rgba(204, 51, 51, ' + (0.15 + intensity*0.55) + ')';
+      txtColor = '#fff';
+    }
+    html += '<div title="' + d.count + ' opérations" style="background:' + bg + ';border:1px solid var(--bd);padding:8px 6px;border-radius:6px;text-align:center;cursor:pointer;" onclick="showMoisDetail(' + i + ',' + year + ')">';
+    html += '<div style="font-size:10px;color:' + txtColor + ';font-weight:600;">' + nom + '</div>';
+    if (d.count > 0) {
+      html += '<div style="font-size:9px;color:' + txtColor + ';font-family:JetBrains Mono,monospace;margin-top:2px;">' + (net>=0?'+':'') + Math.round(net/1000) + 'k</div>';
+      html += '<div style="font-size:8px;color:' + txtColor + ';opacity:0.8;">' + d.count + ' ops</div>';
+    } else {
+      html += '<div style="font-size:9px;color:' + txtColor + ';">—</div>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<div style="font-size:9px;color:var(--muted);margin-top:8px;font-family:JetBrains Mono,monospace;">';
+  html += '<span style="display:inline-block;width:10px;height:10px;background:rgba(0,170,119,0.5);margin-right:4px;border-radius:2px;vertical-align:middle;"></span> Versements nets';
+  html += ' &nbsp;<span style="display:inline-block;width:10px;height:10px;background:rgba(204,51,51,0.5);margin-right:4px;border-radius:2px;vertical-align:middle;"></span> Retraits nets';
+  html += '</div>';
+  el.innerHTML = html;
+}
+window.renderHeatmapCalendrier = renderHeatmapCalendrier;
+
+function showMoisDetail(monthIdx, year) {
+  var S = window._pState();
+  var hist = (S.history || []).filter(function(h){
+    if (!h.date) return false;
+    var d = new Date(h.date);
+    return d.getFullYear() === year && d.getMonth() === monthIdx;
+  }).sort(function(a,b){ return (a.date||'') < (b.date||'') ? 1 : -1; });
+
+  var moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  var modal = document.createElement('div');
+  modal.className = 'ov';
+  modal.style.display = 'flex';
+
+  var html = '<div class="modal" style="max-width:560px;">';
+  html += '<h2>📅 ' + moisNoms[monthIdx] + ' ' + year + '</h2>';
+  if (!hist.length) {
+    html += '<div class="empty">Aucune opération ce mois.</div>';
+  } else {
+    var totalIn = 0, totalOut = 0;
+    html += '<table class="tbl" style="font-size:11px;"><thead><tr><th>Date</th><th>Catég.</th><th>Action</th><th>Nom</th><th>Montant</th></tr></thead><tbody>';
+    hist.forEach(function(h){
+      var amt = h.amount || 0;
+      var sign = (h.action === 'vente' || h.action === 'retrait') ? -1 : 1;
+      if (sign > 0) totalIn += amt; else totalOut += amt;
+      var col = sign > 0 ? 'var(--green)' : 'var(--red)';
+      html += '<tr>';
+      html += '<td><span class="mono" style="font-size:10px;">' + (h.date||'') + '</span></td>';
+      html += '<td>' + (h.cat||'') + '</td>';
+      html += '<td>' + (h.action||'') + '</td>';
+      html += '<td>' + (h.name||'') + '</td>';
+      html += '<td class="mono" style="color:' + col + ';">' + (sign>0?'+':'-') + Math.round(amt).toLocaleString('fr-FR') + ' €</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    html += '<div style="margin-top:12px;display:flex;justify-content:space-between;font-size:11px;font-family:JetBrains Mono,monospace;">';
+    html += '<span style="color:var(--green);">Entrées : +' + Math.round(totalIn).toLocaleString('fr-FR') + ' €</span>';
+    html += '<span style="color:var(--red);">Sorties : -' + Math.round(totalOut).toLocaleString('fr-FR') + ' €</span>';
+    html += '<span style="color:var(--gold);font-weight:600;">Net : ' + ((totalIn-totalOut)>=0?'+':'') + Math.round(totalIn-totalOut).toLocaleString('fr-FR') + ' €</span>';
+    html += '</div>';
+  }
+  html += '<div class="brow" style="margin-top:14px;justify-content:flex-end;"><button class="btn" id="btn-mois-close">Fermer</button></div>';
+  html += '</div>';
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if(e.target === modal) document.body.removeChild(modal); });
+  document.getElementById('btn-mois-close').onclick = function(){ document.body.removeChild(modal); };
+}
+window.showMoisDetail = showMoisDetail;
+
+// ══════════════════════════════════════════════════════════════
+// DISPATCHER CENTRALISÉ showPage (unique, remplace tous les wrappers)
+// ══════════════════════════════════════════════════════════════
+(function(){
+  var _origShowPage = window.showPage;
+  if (!_origShowPage) return;
+  window.showPage = function(id) {
+    _origShowPage.apply(this, arguments);
+    setTimeout(function() {
+      try {
+        // Dashboard
+        if (id === 'dashboard') {
+          if (window.renderScorePatrimonial) renderScorePatrimonial();
+          if (window.renderAnniversairesCard) renderAnniversairesCard();
+          if (window.renderAnomaliesCard) renderAnomaliesCard();
+        }
+        // Historique
+        if (id === 'history') {
+          if (window.renderSnapshots) renderSnapshots();
+          if (window.renderHeatmapCalendrier) renderHeatmapCalendrier();
+        }
+        // Retraite
+        if (id === 'retraite') {
+          if (window.updateProjectionInteractive) updateProjectionInteractive();
+        }
+        // Opportunités
+        if (id === 'opportunites') {
+          if (window.renderWatchlist) renderWatchlist();
+        }
+      } catch(e) {
+        console.warn('[showPage dispatcher]', id, e);
+      }
+    }, 220);
+  };
 })();
 </script>
 
 </body>
 </html>
-  
-<!-- Accordéon Roulement PEG → PEA (pg-strategie) -->
-  
