@@ -6775,6 +6775,35 @@ async function tickerLookup() {
     } catch(e3) { /* continue */ }
   }
 
+
+  // Stratégie 4 : Fallback Boursorama pour ETF PEA français
+  if (price === null) {
+    try {
+      var brsBase = 'https://www.boursorama.com/bourse/trackers/cours/';
+      var brsMap = {'ESE.PA':'1rPESE','CW8.PA':'1rTCW8','PAEEM.PA':'1rTPAEEM','LQQ.PA':'1rTLQQ'};
+      var brsCode = brsMap[ticker];
+      if (brsCode) {
+        var brsUrl = 'https://www.boursorama.com/bourse/action/graph/ws/GetTicksEOD?symbol=' + brsCode + '&length=1&period=0&guid=';
+        var brsProxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(brsUrl);
+        var ctrlBrs = new AbortController();
+        setTimeout(function(){ ctrlBrs.abort(); }, 5000);
+        var rBrs = await fetch(brsProxy, { signal: ctrlBrs.signal });
+        if (rBrs.ok) {
+          var tBrs = await rBrs.text();
+          if (!tBrs.trim().startsWith('<')) {
+            var dBrs = JSON.parse(tBrs);
+            var quoteList = dBrs && dBrs.d && dBrs.d.QuoteSummary;
+            if (quoteList && quoteList.c) {
+              price = parseFloat(quoteList.c);
+              name = ticker; change = 0;
+              setTickerStatus('Source : Boursorama (fallback)', 'info');
+            }
+          }
+        }
+      }
+    } catch(eBrs) {}
+  }
+
   document.getElementById('btn-ticker-lookup').disabled = false;
 
   if (price === null) {
@@ -10177,7 +10206,7 @@ var _actuGridBuilt=false;
 
 // ── Pierre génère les actus quand RSS échoue ──────────────────
 async function genererActuParPierre(feed) {
-  var apiKey = sessionStorage.getItem('pierre-api-key') || '';
+  var apiKey = localStorage.getItem('pierre-api-key') || '';
   if (!apiKey) return null;
   var NL = String.fromCharCode(10);
   var today = new Date().toLocaleDateString('fr-FR');
@@ -10480,11 +10509,68 @@ var _dragSrcPid = null;
 // ══ OUTIL 2 : CALCULETTE IRL ══════════════════════════════════
 IRL_DATA = {
   // Indices IRL officiels INSEE (base 100 = T1 1998)
-  // Format: 'YYYY-Tn': valeur
   '2023-T1':140.75,'2023-T2':141.41,'2023-T3':142.06,'2023-T4':142.37,
   '2024-T1':142.07,'2024-T2':143.57,'2024-T3':144.12,'2024-T4':144.68,
-  '2025-T1':145.22,'2025-T2':145.89, // estimé
+  '2025-T1':145.22,'2025-T2':145.89,
 };
+
+// ── Récupérer l'IRL le plus récent depuis l'API INSEE ──────────
+// API gratuite, sans clé : données.gouv.fr / BDM INSEE
+async function fetchIRLInsee() {
+  try {
+    // Série IRL INSEE : BDM 010580572 (Indice de Référence des Loyers)
+    var url = 'https://api.insee.fr/series/BDM/V1/data/SERIES_BDM/010580572?lastNObservations=4&format=json';
+    var proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+    var ctrl = new AbortController();
+    setTimeout(function(){ ctrl.abort(); }, 8000);
+    var r = await fetch(proxy, { signal: ctrl.signal });
+    if (!r.ok) throw new Error('INSEE API: ' + r.status);
+    var data = await r.json();
+    // Parser la réponse INSEE
+    var obs = data && data.message && data.message.GenericData &&
+              data.message.GenericData.DataSet &&
+              data.message.GenericData.DataSet.Series &&
+              data.message.GenericData.DataSet.Series.Obs;
+    if (obs && Array.isArray(obs)) {
+      obs.forEach(function(o) {
+        var period = o.ObsDimension && o.ObsDimension['@value']; // ex: '2025-Q1'
+        var val    = o.ObsValue && parseFloat(o.ObsValue['@value']);
+        if (period && val) {
+          // Convertir format INSEE Q → Vesta T
+          var key = period.replace('-Q', '-T');
+          IRL_DATA[key] = val;
+        }
+      });
+      var lastKey = Object.keys(IRL_DATA).sort().pop();
+      if (window._toast) window._toast('📊 IRL mis à jour : ' + lastKey + ' = ' + IRL_DATA[lastKey]);
+      return true;
+    }
+  } catch(e) {
+    // Fallback 2 : données.gouv.fr open data
+    try {
+      var url2 = 'https://data.gouv.fr/fr/datasets/r/indice-de-reference-des-loyers-irl.csv';
+      // Trop complexe à parser en CSV inline — utiliser les données hardcodées
+    } catch(e2) {}
+  }
+  return false;
+}
+window.fetchIRLInsee = fetchIRLInsee;
+
+// Rafraîchir l'IRL au chargement (1x par trimestre max)
+document.addEventListener('DOMContentLoaded', function() {
+  var lastIRLFetch = localStorage.getItem('irl-last-fetch');
+  var now = Date.now();
+  // Rafraîchir si pas de fetch depuis 30 jours
+  if (!lastIRLFetch || (now - parseInt(lastIRLFetch)) > 30 * 24 * 3600 * 1000) {
+    setTimeout(function() {
+      fetchIRLInsee().then(function(ok) {
+        if (ok) localStorage.setItem('irl-last-fetch', String(now));
+      });
+    }, 5000); // délai pour ne pas bloquer le chargement
+  }
+});
+
+
 
 // Hook IRL into ALERT_RULES
 ALERT_RULES.push({
@@ -10913,41 +10999,153 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(checkVeilleReglementaire, 2000);
 });
 
-// ══ PWA — Service Worker ══════════════════════════════════════
+// ══ PWA — Service Worker offline + sync données ═══════════════
 (function() {
-  if ('serviceWorker' in navigator && navigator.serviceWorker) {
-    // Inline SW via blob
-    var swCode = `
-const CACHE = 'patritracker-v1';
+  if (!('serviceWorker' in navigator && navigator.serviceWorker)) return;
+
+  var CACHE_NAME = 'vesta-v3';
+  // Ressources critiques à mettre en cache au premier chargement
+  var PRECACHE = [
+    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap',
+    'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
+    'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js',
+  ];
+
+  var swCode = `
+const CACHE = '` + CACHE_NAME + `';
+const PRECACHE_URLS = ${JSON.stringify(PRECACHE)};
+
+// Installation : mise en cache des ressources statiques
 self.addEventListener('install', e => {
   self.skipWaiting();
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(
-    keys.filter(k => k !== CACHE).map(k => caches.delete(k))
-  )));
-  self.clients.claim();
-});
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  e.respondWith(
-    fetch(e.request).then(resp => {
-      var clone = resp.clone();
-      caches.open(CACHE).then(c => c.put(e.request, clone));
-      return resp;
-    }).catch(() => caches.match(e.request))
+  e.waitUntil(
+    caches.open(CACHE).then(c => {
+      return Promise.allSettled(PRECACHE_URLS.map(url =>
+        fetch(url).then(r => r.ok ? c.put(url, r) : null).catch(() => null)
+      ));
+    })
   );
 });
-`;
-    var blob = new Blob([swCode], {type: 'application/javascript'});
-    var url = URL.createObjectURL(blob);
-    try {
-      navigator.serviceWorker.register(url).catch(function(){});
-    } catch(swErr) {
-      // SW non supporté ou contexte non-sécurisé — ignorer silencieusement
-    }
+
+// Activation : supprimer les anciens caches
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+    ))
+  );
+  self.clients.claim();
+});
+
+// Fetch : cache-first pour les fonts/SDKs, network-first pour le reste
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  var url = e.request.url;
+
+  // Fonts et SDKs Firebase : cache-first (changent rarement)
+  if (url.includes('fonts.googleapis') || url.includes('fonts.gstatic') || url.includes('gstatic.com/firebase')) {
+    e.respondWith(
+      caches.match(e.request).then(cached => {
+        if (cached) return cached;
+        return fetch(e.request).then(resp => {
+          if (resp.ok) {
+            var clone = resp.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
+          }
+          return resp;
+        }).catch(() => cached || new Response('', {status: 503}));
+      })
+    );
+    return;
   }
+
+  // Page principale (index.html) : network-first avec fallback cache
+  if (url.endsWith('.html') || url.endsWith('/') || url.includes('index')) {
+    e.respondWith(
+      fetch(e.request).then(resp => {
+        if (resp.ok) {
+          var clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return resp;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+});
+
+// Sync background : traiter la file d'attente de modifications offline
+self.addEventListener('sync', e => {
+  if (e.tag === 'vesta-sync-queue') {
+    e.waitUntil(processSyncQueue());
+  }
+});
+
+async function processSyncQueue() {
+  // Le SW notifie les clients pour qu'ils traitent leur file localStorage
+  const clients = await self.clients.matchAll();
+  clients.forEach(client => client.postMessage({ type: 'PROCESS_SYNC_QUEUE' }));
+}
+`;
+
+  var blob = new Blob([swCode], {type: 'application/javascript'});
+  var url = URL.createObjectURL(blob);
+  try {
+    navigator.serviceWorker.register(url).then(function(reg) {
+      window._swRegistration = reg;
+      // Écouter les messages du SW
+      navigator.serviceWorker.addEventListener('message', function(e) {
+        if (e.data && e.data.type === 'PROCESS_SYNC_QUEUE') {
+          window._processerFileSyncOffline && window._processerFileSyncOffline();
+        }
+      });
+    }).catch(function(){});
+  } catch(swErr) {}
 })();
+
+// ── File de synchronisation hors ligne ────────────────────────
+// Stocke les modifications faites offline et les rejoue à la reconnexion
+window._fileSyncOffline = (function() {
+  try { return JSON.parse(localStorage.getItem('vesta-sync-queue') || '[]'); } catch(e){ return []; }
+})();
+
+window._ajouterFileSync = function(action, data) {
+  var queue = window._fileSyncOffline || [];
+  queue.push({ action: action, data: data, ts: Date.now() });
+  window._fileSyncOffline = queue;
+  try { localStorage.setItem('vesta-sync-queue', JSON.stringify(queue)); } catch(e) {}
+};
+
+window._processerFileSyncOffline = function() {
+  var queue = window._fileSyncOffline || [];
+  if (!queue.length) return;
+  // Rejouer les sauvegardes en attente
+  if (window._saveState) {
+    window._saveState();
+    if (window._toast) window._toast('✅ Données synchronisées — ' + queue.length + ' modification(s) sauvegardée(s)');
+  }
+  window._fileSyncOffline = [];
+  try { localStorage.removeItem('vesta-sync-queue'); } catch(e) {}
+};
+
+// Déclencher la sync au retour en ligne
+window.addEventListener('online', function() {
+  if (window._fileSyncOffline && window._fileSyncOffline.length) {
+    window._processerFileSyncOffline();
+  }
+  // Tenter un Background Sync si disponible
+  if (window._swRegistration && 'sync' in window._swRegistration) {
+    window._swRegistration.sync.register('vesta-sync-queue').catch(function(){});
+  }
+});
+
+// Indicateur hors ligne
+window.addEventListener('offline', function() {
+  if (window._toast) window._toast('📡 Hors ligne — les modifications seront synchronisées à la reconnexion');
+});
+
+
 
 // ══ PWA — Bottom Navigation ════════════════════════════════════
 (function() {
@@ -11421,7 +11619,7 @@ function demanderCleAPI() {
   box.className = 'modal';
   box.style.cssText = 'width:500px;';
 
-  var curProv = sessionStorage.getItem('pierre-provider') || 'groq';
+  var curProv = localStorage.getItem('pierre-provider') || 'groq';
   var provOptions = Object.keys(IA_PROVIDERS).map(function(id) {
     var p = IA_PROVIDERS[id];
     var sel = curProv === id ? ' selected' : '';
@@ -11531,8 +11729,8 @@ async function sauvegarderCleAPI() {
   } catch(e) { /* ignore test errors, save anyway */ }
   var provSel = document.getElementById('pierre-provider-sel');
   var provId = provSel ? provSel.value : 'groq';
-  sessionStorage.setItem('pierre-api-key', key);
-  sessionStorage.setItem('pierre-provider', provId);
+  localStorage.setItem('pierre-api-key', key);
+  localStorage.setItem('pierre-provider', provId);
   if (st) { st.textContent = 'Enregistré ! Pierre utilise ' + (IA_PROVIDERS[provId]||{name:'IA'}).name; st.style.color='var(--green)'; }
   setTimeout(function(){
     var ov=document.getElementById('ov-api-key');if(ov)ov.classList.remove('on');
@@ -11617,10 +11815,90 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 });
 
-// ══ PIERRE v3 — Conseiller patrimonial complet ════════════════
+// ══ PIERRE v4 — Mémoire étendue + expert patrimonial ══════════
 window._iaConversation = [];
 window._pendingAction  = null;
 window._fiscState      = { revenuMaxime: 30000, revenuConj: 0 };
+
+// ── Mémoire des calculs du tour courant ────────────────────────
+// Permet les questions enchaînées : "calcule PV T2" → "et si je vends dans 5 ans ?"
+window._calculMemoire = {};  // stocke les derniers résultats de calcul par type
+
+// ── Résumé session précédente (persiste en localStorage) ────────
+window._sessionResume = (function() {
+  try { return localStorage.getItem('pierre-session-resume') || ''; } catch(e){ return ''; }
+})();
+
+// Sauvegarder un résumé de la session quand on ferme/change de page
+window._sauvegarderSessionResume = function() {
+  var conv = window._iaConversation;
+  if (!conv || conv.length < 2) return;
+  // Garder les 3 derniers échanges comme résumé
+  var derniers = conv.slice(-6).map(function(m) {
+    var txt = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
+    return (m.role === 'user' ? 'Maxime: ' : 'Pierre: ') + txt.slice(0, 200);
+  }).join('\n');
+  var resume = '[Dernier échange ' + new Date().toLocaleDateString('fr-FR') + ']\n' + derniers;
+  try { localStorage.setItem('pierre-session-resume', resume); } catch(e) {}
+  window._sessionResume = resume;
+};
+
+// Sauvegarder avant fermeture
+window.addEventListener('beforeunload', function() {
+  if (window._sauvegarderSessionResume) window._sauvegarderSessionResume();
+});
+
+// ── Mémoire comportementale longue durée ───────────────────────
+// Stocke les préférences détectées dans les conversations
+window._comportements = (function() {
+  try {
+    var s = localStorage.getItem('pierre-comportements');
+    return s ? JSON.parse(s) : { sujetsFrequents: {}, derniersCalculs: [], preferences: [] };
+  } catch(e) { return { sujetsFrequents: {}, derniersCalculs: [], preferences: [] }; }
+})();
+
+window._enregistrerComportement = function(sujet, calcul) {
+  var c = window._comportements;
+  if (sujet) c.sujetsFrequents[sujet] = (c.sujetsFrequents[sujet] || 0) + 1;
+  if (calcul) {
+    c.derniersCalculs.unshift({ sujet: sujet, date: new Date().toISOString().slice(0,10), params: calcul });
+    c.derniersCalculs = c.derniersCalculs.slice(0, 10); // garder 10 derniers
+  }
+  try { localStorage.setItem('pierre-comportements', JSON.stringify(c)); } catch(e) {}
+};
+
+// Générer le contexte mémoire comportementale pour Pierre
+window._getComportementContext = function() {
+  var c = window._comportements;
+  var NL = String.fromCharCode(10);
+  var lines = [];
+
+  // Sujets les plus fréquents
+  var sujets = Object.entries(c.sujetsFrequents || {})
+    .sort(function(a,b){ return b[1]-a[1]; })
+    .slice(0,5)
+    .map(function(s){ return s[0] + ' (' + s[1] + 'x)'; });
+  if (sujets.length) lines.push('Sujets fréquents : ' + sujets.join(', '));
+
+  // Résumé session précédente
+  if (window._sessionResume) {
+    lines.push('');
+    lines.push('=== DERNIER ÉCHANGE (contexte) ===');
+    lines.push(window._sessionResume.slice(0, 600));
+    lines.push('===');
+  }
+
+  // Derniers calculs pour enchaînement
+  if (window._calculMemoire && Object.keys(window._calculMemoire).length) {
+    lines.push('');
+    lines.push('CALCULS EN MÉMOIRE (référençables dans cette conversation) :');
+    Object.entries(window._calculMemoire).forEach(function(e) {
+      lines.push('  [' + e[0] + '] : ' + String(e[1]).slice(0, 150));
+    });
+  }
+
+  return lines.join(NL);
+};
 
 // ════════════════════════════════════════════════════════════════
 // OUTILS — accès complet à tout le patrimoine
@@ -11628,24 +11906,36 @@ window._fiscState      = { revenuMaxime: 30000, revenuConj: 0 };
 var IA_TOOLS = [
   {
     name: "lire_situation_complete",
-    description: "Lit la situation patrimoniale complète et détaillée de Maxime. Toujours appeler en premier pour une analyse ou conseil.",
+    description: "Lit la situation patrimoniale complète de Maxime. Appeler en premier pour tout conseil personnalisé.",
     input_schema: { type:"object", properties: {}, required:[] }
   },
   {
     name: "calculer",
-    description: "Effectue des calculs financiers précis : projection épargne, TRI, impôt IR, capacité d'emprunt, cashflow locatif, rendement net.",
+    description: "Calculs financiers précis : IR, plus-value immobilière, succession/droits, cashflow locatif, projection PEA/AV/PEG, emprunt, rendement net, donation.",
     input_schema: {
       type:"object",
       properties: {
-        type: { type:"string", enum:["epargne","tri","ir","emprunt","cashflow","rendement_net","donation"], description:"Type de calcul" },
-        params: { type:"object", description:"Paramètres du calcul (montant, taux, durée, etc.)" }
+        type: { type:"string", enum:[
+          "ir",           // Calcul impôt sur le revenu
+          "plus_value_immo", // Plus-value immobilière nette
+          "succession",   // Droits de succession
+          "donation",     // Abattements et droits de donation
+          "cashflow",     // Cashflow locatif net
+          "epargne",      // Projection épargne composée
+          "emprunt",      // Capacité d'emprunt / mensualités
+          "rendement_net",// Rendement net après frais et fiscalité
+          "pea_projection",// Projection PEA ESE S&P500
+          "av_rachat",    // Fiscalité rachat AV
+          "peg_roulement" // Simulation roulement PEG→PEA
+        ], description:"Type de calcul" },
+        params: { type:"object", description:"Paramètres (montant, taux, durée, parts, dates, etc.)" }
       },
       required:["type","params"]
     }
   },
   {
     name: "ajouter_position",
-    description: "Ajoute une nouvelle position (ETF, action, fonds) dans une enveloppe. Demande confirmation.",
+    description: "Ajoute une position (ETF, action, fonds) dans une enveloppe. Demande confirmation avant.",
     input_schema: {
       type:"object",
       properties: {
@@ -11660,12 +11950,12 @@ var IA_TOOLS = [
   },
   {
     name: "modifier_position",
-    description: "Modifie une position existante (prix, quantité, notes). Demande confirmation.",
+    description: "Modifie une position existante (prix, quantité). Demande confirmation.",
     input_schema: {
       type:"object",
       properties: {
-        nom_position: { type:"string", description:"Nom ou fragment du nom de la position" },
-        champ: { type:"string", enum:["price","qty","priceAvg","name"], description:"Champ à modifier" },
+        nom_position: { type:"string" },
+        champ: { type:"string", enum:["price","qty","priceAvg","name"] },
         valeur: { description:"Nouvelle valeur" }
       },
       required:["nom_position","champ","valeur"]
@@ -11673,7 +11963,7 @@ var IA_TOOLS = [
   },
   {
     name: "modifier_livret",
-    description: "Modifie le solde ou le taux d'un livret d'épargne. Demande confirmation.",
+    description: "Modifie le solde ou le taux d'un livret. Demande confirmation.",
     input_schema: {
       type:"object",
       properties: {
@@ -11793,6 +12083,31 @@ var IA_TOOLS = [
       },
       required: ["categorie","contenu"]
     }
+  },
+  {
+    name: "lien_outil_vesta",
+    description: "Ajoute un bouton d'accès direct à un outil Vesta sous ta réponse. Utilise SYSTÉMATIQUEMENT quand la question concerne : PEG (→ peg), fiscalité/IR (→ fiscalite), succession/donation (→ succession), retraite (→ retraite), IRL loyer (→ irl), travaux DPE (→ dpe), crédit (→ credit), analyse bourse (→ analyse). Un lien vers l'outil pertinent améliore l'expérience.",
+    input_schema: {
+      type: "object",
+      properties: {
+        outil_id: { type: "string", enum: ["peg","peg_roulement","fiscalite","irl","succession","retraite","immo","analyse","enveloppes","academie","dpe","credit"], description: "Identifiant de l'outil Vesta à ouvrir" },
+        label: { type: "string", description: "Libellé du bouton (optionnel, sinon auto)" }
+      },
+      required: ["outil_id"]
+    }
+  },
+  {
+    name: "stocker_calcul",
+    description: "Stocke le résultat d'un calcul en mémoire pour permettre les questions enchaînées. Appelle APRÈS chaque calcul important pour que Maxime puisse dire 'et si je change X ?' dans la foulée.",
+    input_schema: {
+      type: "object",
+      properties: {
+        cle: { type: "string", description: "Identifiant du calcul (ex: pv_t2, ir_2024, succession_enfant)" },
+        resume: { type: "string", description: "Résumé compact du résultat (2-3 lignes max)" },
+        params: { type: "object", description: "Paramètres utilisés, pour permettre des variantes" }
+      },
+      required: ["cle","resume"]
+    }
   }
 ];
 
@@ -11813,6 +12128,29 @@ function executerOutil(toolName, inp) {
   // ── calculer ─────────────────────────────────────────────────
   if (toolName === "calculer") {
     var p = inp.params || {};
+    // ── Mémoriser ce calcul pour le multi-tour ──────────────────
+    var calcKey = inp.type;
+    var calcRef = null; // sera rempli avec le résultat
+
+    // Injecter des paramètres depuis la mémoire si non fournis
+    if (inp.type === 'plus_value_immo' && !p.prix_achat && window._calculMemoire) {
+      var S0 = window._pState ? window._pState() : null;
+      var t2 = S0 && S0.immo && S0.immo.find(function(b){ return /lmnp|limoges|perrin/i.test((b.name||'')+(b.adresse||'')); });
+      if (t2) {
+        p.prix_achat = p.prix_achat || t2.bought || 62000;
+        p.annees_detention = p.annees_detention || (new Date().getFullYear() - (t2.buyYear || 2022));
+      }
+    }
+    if ((inp.type === 'ir') && !p.revenu) {
+      p.revenu = 30000; p.parts = 2.5;
+    }
+    if (inp.type === 'pea_projection' && !p.capital_initial) {
+      var S1 = window._pState ? window._pState() : null;
+      var c1 = window._cAll ? window._cAll() : {};
+      p.capital_initial = Math.round(c1.pea || 0);
+      p.duree_ans = p.duree_ans || 31;
+    }
+
     if (inp.type === "epargne") {
       var m=p.versement_mensuel||0, r=p.taux_annuel||0.07, n=p.duree_ans||30, C0=p.capital_initial||0;
       var rm=r/12, nm=n*12;
@@ -11864,22 +12202,176 @@ function executerOutil(toolName, inp) {
     if (inp.type === "donation") {
       var age=p.age_donateur||29, nbEnfants=p.nb_enfants||1;
       var abatParEnfant=100000, total=abatParEnfant*nbEnfants;
-      var prochainRenouvellement=2039; // 15 ans
       return ["DONATION — Abattements disponibles",
         "Abattement parent→enfant : " + abatParEnfant.toLocaleString('fr-FR') + " EUR par enfant tous les 15 ans",
         "Pour " + nbEnfants + " enfant(s) : " + total.toLocaleString('fr-FR') + " EUR en franchise totale",
-        "Prochain renouvellement possible : " + prochainRenouvellement,
-        "Don Pacte Dutreil : abattement 75% sur entreprise",
-        "Conseil : commencer tôt, fractionner sur 15 ans, consulter notaire"
+        "Prochain renouvellement : 2039 (15 ans après toute donation faite maintenant)",
+        "Don manuel supplémentaire : +31 865 EUR par enfant si donateur < 80 ans",
+        "TOTAL TRANSMISSIBLE SANS DROITS : " + (total + 31865*nbEnfants).toLocaleString('fr-FR') + " EUR",
+        "Conseil : commencer tôt, fractionner, acte notarié recommandé"
+      ].join(NL);
+    }
+    if (inp.type === "plus_value_immo") {
+      var prixVente=p.prix_vente||0, prixAchat=p.prix_achat||0, anneesDetention=p.annees_detention||0;
+      var fraisAchat=Math.round(prixAchat*0.075); // forfait 7,5%
+      var fraisTravaux=anneesDetention>5 ? Math.round(prixAchat*0.15) : (p.travaux||0); // forfait 15% si >5 ans
+      var prixAchatAjuste=prixAchat+fraisAchat+fraisTravaux;
+      var pvBrute=Math.max(0,prixVente-prixAchatAjuste);
+      // Abattements IR
+      var abatIR=0, abatPS=0;
+      if(anneesDetention<=5){ abatIR=0; abatPS=0; }
+      else if(anneesDetention<=21){ abatIR=(anneesDetention-5)*6; abatPS=(anneesDetention-5)*1.65; }
+      else if(anneesDetention===22){ abatIR=100; abatPS=(anneesDetention-5)*1.65; }
+      else if(anneesDetention<=30){ abatIR=100; abatPS=100-(30-anneesDetention)*9; }
+      else { abatIR=100; abatPS=100; }
+      abatIR=Math.min(100,abatIR); abatPS=Math.min(100,abatPS);
+      var pvImposableIR=pvBrute*(1-abatIR/100);
+      var pvImposablePS=pvBrute*(1-abatPS/100);
+      var impotIR=pvImposableIR*0.19; // 19% IR PV immo
+      var impotPS=pvImposablePS*0.172;
+      var total_impot=Math.round(impotIR+impotPS);
+      return ["PLUS-VALUE IMMOBILIÈRE — " + anneesDetention + " ans de détention",
+        "Prix d'achat : " + prixAchat.toLocaleString('fr-FR') + " EUR",
+        "Frais acquisition (7,5% forfait) : +" + fraisAchat.toLocaleString('fr-FR') + " EUR",
+        "Travaux (15% forfait si >5 ans) : +" + fraisTravaux.toLocaleString('fr-FR') + " EUR",
+        "Prix acquisition ajusté : " + prixAchatAjuste.toLocaleString('fr-FR') + " EUR",
+        "Prix de vente : " + prixVente.toLocaleString('fr-FR') + " EUR",
+        "Plus-value brute : " + pvBrute.toLocaleString('fr-FR') + " EUR",
+        "Abattement IR : " + abatIR + "% → PV imposable IR : " + Math.round(pvImposableIR).toLocaleString('fr-FR') + " EUR",
+        "Abattement PS : " + Math.round(abatPS) + "% → PV imposable PS : " + Math.round(pvImposablePS).toLocaleString('fr-FR') + " EUR",
+        "Impôt IR (19%) : " + Math.round(impotIR).toLocaleString('fr-FR') + " EUR",
+        "Prélèvements sociaux (17,2%) : " + Math.round(impotPS).toLocaleString('fr-FR') + " EUR",
+        "TOTAL IMPÔTS : " + total_impot.toLocaleString('fr-FR') + " EUR",
+        "NET VENDEUR : " + (prixVente - total_impot).toLocaleString('fr-FR') + " EUR"
+      ].join(NL);
+    }
+    if (inp.type === "succession") {
+      var patrimoine=p.patrimoine_net||0, conjoint=p.conjoint_exonere||true, nbEnf=p.nb_enfants||1, av=p.av_hors_succession||0;
+      var patrimoineSuccession=patrimoine-av; // AV hors succession
+      var reserve=nbEnf===1?0.5:nbEnf===2?0.667:0.75;
+      var quotiteDispo=1-reserve;
+      var partEnfant=patrimoineSuccession/nbEnf;
+      // Droits par enfant (barème 2025 après abattement 100k)
+      function droitsSuccession(base) {
+        var net=Math.max(0,base-100000);
+        if(net<=8072) return net*0.05;
+        if(net<=12109) return 8072*0.05+(net-8072)*0.10;
+        if(net<=15932) return 8072*0.05+4037*0.10+(net-12109)*0.15;
+        if(net<=552324) return 8072*0.05+4037*0.10+3823*0.15+(net-15932)*0.20;
+        return 8072*0.05+4037*0.10+3823*0.15+536392*0.20+(net-552324)*0.30;
+      }
+      var droitsParEnfant=droitsSuccession(partEnfant);
+      return ["SIMULATION SUCCESSION",
+        "Patrimoine net total : " + patrimoine.toLocaleString('fr-FR') + " EUR",
+        "AV hors succession (152 500 EUR/béné) : " + av.toLocaleString('fr-FR') + " EUR",
+        "Patrimoine soumis aux droits : " + patrimoineSuccession.toLocaleString('fr-FR') + " EUR",
+        "Conjoint/PACS : exonéré totalement",
+        "Réserve héréditaire (" + nbEnf + " enfant(s)) : " + (reserve*100).toFixed(0) + "% = " + Math.round(patrimoineSuccession*reserve).toLocaleString('fr-FR') + " EUR",
+        "Quotité disponible : " + (quotiteDispo*100).toFixed(0) + "% = " + Math.round(patrimoineSuccession*quotiteDispo).toLocaleString('fr-FR') + " EUR",
+        "Part par enfant : " + Math.round(partEnfant).toLocaleString('fr-FR') + " EUR",
+        "Abattement par enfant : 100 000 EUR (renouvelable 15 ans)",
+        "Droits de succession par enfant : ~" + Math.round(droitsParEnfant).toLocaleString('fr-FR') + " EUR",
+        "CONSEIL : Testament + AV bien désignée réduisent considérablement les droits."
+      ].join(NL);
+    }
+    if (inp.type === "pea_projection") {
+      var capital=p.capital_initial||0, mensuel=p.versement_mensuel||150, ans=p.duree_ans||31, taux=p.taux_annuel||0.09;
+      var r=taux/12, n=ans*12;
+      var cap=capital*Math.pow(1+r,n)+mensuel*(Math.pow(1+r,n)-1)/r;
+      var verse=capital+mensuel*n;
+      var pv=cap-verse;
+      var net=cap-pv*0.172; // exo IR, PS 17,2%
+      var rente4=Math.round(net*0.04/12); // règle des 4%
+      return ["PROJECTION PEA ESE S&P500 — " + ans + " ans",
+        "Capital initial : " + capital.toLocaleString('fr-FR') + " EUR",
+        "Versement mensuel : " + mensuel + " EUR",
+        "Taux : " + (taux*100).toFixed(1) + "%/an (ESE S&P500, hypothèse prudente)",
+        "Total versé : " + Math.round(verse).toLocaleString('fr-FR') + " EUR",
+        "Valeur brute 2057 : " + Math.round(cap).toLocaleString('fr-FR') + " EUR",
+        "PV imposables (PS 17,2%) : " + Math.round(pv).toLocaleString('fr-FR') + " EUR → " + Math.round(pv*0.172).toLocaleString('fr-FR') + " EUR",
+        "CAPITAL NET : " + Math.round(net).toLocaleString('fr-FR') + " EUR",
+        "Rente mensuelle (règle 4%/an) : ~" + rente4.toLocaleString('fr-FR') + " EUR/mois"
+      ].join(NL);
+    }
+    if (inp.type === "av_rachat") {
+      var capital=p.capital||0, pv=p.plus_value||0, ans_contrat=p.anciennete_ans||0;
+      var abatt=ans_contrat>=8?4600:0;
+      var pvImposable=Math.max(0,pv-abatt);
+      var ir_reduit=pvImposable*0.075; // 7,5% IR AV après 8 ans
+      var ps=pvImposable*0.172;
+      var total=ir_reduit+ps;
+      return ["FISCALITÉ RACHAT AV",
+        "Ancienneté : " + ans_contrat + " ans",
+        "Abattement annuel : " + abatt.toLocaleString('fr-FR') + " EUR" + (ans_contrat<8?" (disponible après 8 ans)":" ✅"),
+        "PV imposable : " + pvImposable.toLocaleString('fr-FR') + " EUR",
+        "IR réduit (7,5%) : " + Math.round(ir_reduit).toLocaleString('fr-FR') + " EUR",
+        "Prélèvements sociaux (17,2%) : " + Math.round(ps).toLocaleString('fr-FR') + " EUR",
+        "TOTAL FISCALITÉ : " + Math.round(total).toLocaleString('fr-FR') + " EUR",
+        "Net perçu : " + Math.round(capital-total).toLocaleString('fr-FR') + " EUR"
+      ].join(NL);
+    }
+    if (inp.type === "peg_roulement") {
+      var prime=p.prime||800, taux_abo=p.taux_abo||0.30, capital_peg=prime*(1+taux_abo);
+      var net_5ans=capital_peg*Math.pow(1.0269,5)*(1-0.172*0.2); // PS sur PV
+      var pea_25ans=net_5ans*Math.pow(1.09,25); // 25 ans sur PEA si entrée à 35 ans
+      var pv_pea=pea_25ans-net_5ans;
+      var net_pea=pea_25ans-pv_pea*0.172;
+      return ["SIMULATION ROULEMENT PEG → PEA",
+        "Prime : " + prime.toLocaleString('fr-FR') + " EUR → abondement +" + Math.round(prime*taux_abo) + " EUR",
+        "Capital PEG : " + Math.round(capital_peg).toLocaleString('fr-FR') + " EUR",
+        "Après 5 ans (2,69%/an net) : " + Math.round(net_5ans).toLocaleString('fr-FR') + " EUR nets",
+        "Réinvesti sur PEA ESE (9%/an, 25 ans) :",
+        "Capital 2057 : " + Math.round(pea_25ans).toLocaleString('fr-FR') + " EUR brut",
+        "Net après PS PEA (17,2% sur PV) : " + Math.round(net_pea).toLocaleString('fr-FR') + " EUR",
+        "Gain vs retrait direct (pas d'abondement) : +" + Math.round(net_pea - prime*0.793*Math.pow(1.09,30)).toLocaleString('fr-FR') + " EUR"
       ].join(NL);
     }
     return "Type de calcul non supporté : " + inp.type;
+  }
+
+  // ── lien_outil_vesta ─────────────────────────────────────────
+  // Pierre peut renvoyer vers un outil Vesta en plus de sa réponse
+  if (toolName === "lien_outil_vesta") {
+    var OUTILS_MAP = {
+      'peg':         { page: 'enveloppes', label: 'Optimisateur PEG', emoji: '🔄' },
+      'peg_roulement': { page: 'outils',  label: 'Tableau roulement PEG→PEA', emoji: '📊' },
+      'fiscalite':   { page: 'fiscalite', label: 'Simulateur fiscal', emoji: '📋' },
+      'irl':         { page: 'outils',    label: 'Calculateur IRL loyer', emoji: '🏠' },
+      'succession':  { page: 'outils',    label: 'Simulateur succession', emoji: '⚖️' },
+      'retraite':    { page: 'retraite',  label: 'Projection retraite 2057', emoji: '🏖️' },
+      'immo':        { page: 'immo',      label: 'Onglet Immobilier', emoji: '🏠' },
+      'analyse':     { page: 'analyse',   label: 'Analyse & Score', emoji: '📈' },
+      'enveloppes':  { page: 'enveloppes',label: 'Gestion enveloppes', emoji: '💰' },
+      'academie':    { page: 'outils',    label: 'Académie patrimoniale', emoji: '🎓' },
+      'dpe':         { page: 'immo',      label: 'Simulation travaux DPE', emoji: '🔧' },
+      'credit':      { page: 'immo',      label: 'Simulation crédit', emoji: '🏦' },
+    };
+    var outil = OUTILS_MAP[inp.outil_id] || { page: inp.page || 'dashboard', label: inp.label || inp.outil_id, emoji: '→' };
+    // Afficher un bouton d'accès dans l'interface
+    setTimeout(function() {
+      var iaContent = document.getElementById('ia-content');
+      if (!iaContent) return;
+      var msgEls = iaContent.querySelectorAll('.ia-msg-assistant');
+      var lastMsg = msgEls[msgEls.length - 1];
+      if (!lastMsg) return;
+      var btnWrap = document.createElement('div');
+      btnWrap.style.cssText = 'margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);';
+      var btn = document.createElement('button');
+      btn.className = 'btn sm';
+      btn.style.cssText = 'font-size:11px;background:var(--gold);color:#080b10;font-weight:700;';
+      btn.innerHTML = outil.emoji + ' Ouvrir : ' + outil.label + ' →';
+      btn.onclick = function() { if(window.showPage) window.showPage(outil.page); };
+      btnWrap.appendChild(btn);
+      lastMsg.appendChild(btnWrap);
+    }, 800);
+    return "✅ Bouton d'accès à " + outil.label + " ajouté sous ma réponse.";
   }
 
   // ── naviguer_vers ────────────────────────────────────────────
   if (toolName === "naviguer_vers") {
     setTimeout(function() {
       if (window.showPage) window.showPage(inp.page);
+
     }, 500);
     return "Navigation vers l'onglet : " + inp.page;
   }
@@ -11981,8 +12473,19 @@ function executerOutil(toolName, inp) {
   if (toolName === "memoriser") {
     var resMem = window.executerMemoriser ? window.executerMemoriser(inp) : null;
     if (!resMem) return "Mémoire non disponible";
+    // Enregistrer aussi dans les comportements
+    if (window._enregistrerComportement) window._enregistrerComportement(inp.categorie, null);
     return resMem.success ? ("✓ Mémorisé en catégorie " + inp.categorie + " : " + inp.contenu) : ("Déjà connu : " + inp.contenu);
   }
+
+  if (toolName === "stocker_calcul") {
+    if (!window._calculMemoire) window._calculMemoire = {};
+    window._calculMemoire[inp.cle] = inp.resume;
+    if (inp.params) window._calculMemoire[inp.cle + '_params'] = JSON.stringify(inp.params);
+    if (window._enregistrerComportement) window._enregistrerComportement(inp.cle, inp.params);
+    return "✓ Calcul '" + inp.cle + "' mémorisé pour cette conversation.";
+  }
+
   return "Outil non reconnu : " + toolName;
 }
 
@@ -12009,62 +12512,46 @@ window.confirmerAction = confirmerAction;
 function getSystemPrompt() {
   var NL = String.fromCharCode(10);
   return [
-    "Tu es Pierre, conseiller patrimonial personnel de Maxime. Tu le connais parfaitement.",
-    "Tu es expert : patrimoine, fiscalité FR, immobilier, marchés financiers, droit, succession.",
+    "Tu es Pierre, conseiller patrimonial IA de Maxime (29a, SNCF Limoges, 3x8, TMI 11%, retraite 2057).",
+    "Expert : fiscalite FR, patrimoine, immo, marches, succession. Donnees recues en contexte = reelles.",
     "",
-    "=== PROFIL COMPLET MAXIME ===",
-    "Âge : 29 ans. PACS depuis 22/09/2022. Conjointe : Alexia. Enfant à naître le 04/06/2026. 2e enfant envisagé dans 3-4 ans.",
-    "Conjointe : professeure des écoles, actuellement en recherche de poste (concours 2025). Revenus non stables pour l'instant.",
-    "SNCF : Maîtrise qualification E (Niveau 5), Régulateur COGC Limoges. 9 ans d'ancienneté.",
-    "Rythme 3×8 : 4j travaillés / 2j repos. Horaires 05h-12h / 12h-20h / 20h-05h. WE + jours fériés inclus.",
-    "Promotion cadre envisagée dans 7 à 10 ans. Pas de mobilité géographique prévue.",
+    "PROFIL : PACS Alexia 22/09/2022. Enfant 04/06/2026. 2e enfant 3-4 ans. Conjointe prof des ecoles.",
+    "SNCF : Regulateur COGC, Maitrise Qual.E (Niv.5), 9 ans. Promo cadre 7-10 ans. Pas mobilite geo.",
+    "REVENUS : 2053EUR/mois net + primes ~30 000EUR/an. TMI 11%. Zone 3 IR (87, ~5 juin). Expert LMNP : JD2M.",
     "",
-    "=== REVENUS & FISCALITÉ ===",
-    "Salaire net Maxime : 2 053€/mois hors primes. Annuel total avec primes : ~30 000€ net.",
-    "TMI 11%. Zone 3 IR (dép. 87, délai déclaration ~5 juin). Quotient familial : 2,5 parts (couple PACS + 1 enfant).",
-    "Expert-comptable LMNP : cabinet JD2M.",
+    "LOCALISATION : RP = 3 rue Louis Jouvet, Rilhac-Rancon 87570. T2 LMNP = 383 rue Francois Perrin, Limoges 87000.",
+    "Dep.87 = Zone B2 (pas encadrement loyers). Ne jamais citer regles IDF/zones tendues.",
     "",
-    "=== LOCALISATION ===",
-    "RP : 3 rue Louis Jouvet, Rilhac-Rancon 87570. Maison 100m² + 906m² terrain.",
-    "T2 LMNP : 383 rue François Perrin, Limoges 87000. 47m² . Bail meublé. DPE E. Acquis 24/08/2022.",
-    "Dép. 87 = Zone B2 (pas d'encadrement loyers). Marché Limoges : ~1 700-2 200€/m² T2.",
-    "Ne jamais mentionner règles zones tendues (Paris/IDF/Lyon) sauf demande explicite.",
+    "ENVELOPPES : PEA BoursoBank ouv.25/10/2024 (exo IR le 25/10/2029). AV Linxea Spirit 2 ouv.17/03/2025 (abatt.4600EUR le 17/03/2033).",
+    "PEG SNCF : abo 30/20/10% max 300EUR/1500EUR. TER 1,31% -> 2,69%/an net. Roulement PEA ESE apres 5 ans.",
+    "T2 : achat 62kEUR 08/2022, credit 352EUR/mois 1,84% CRD 75081EUR fin 05/2048, loyer 520EUR, DPE E (interdit 2034).",
+    "RP : PTZ 30kEUR + 100 684EUR a 4%, valeur ~180kEUR.",
     "",
-    "=== IMMOBILIER DÉTAIL ===",
-    "T2 Limoges : achat 62 000€. Crédit 352€/mois (assurance incluse), taux 1,84%, fin 05/2048, CRD 75 081€.",
-    "Charges T2 : copro 69€/mois, TF 938€/an, PNO 158,99€/an. Loyer 520€/mois. Régime réel LMNP.",
-    "Stratégie T2 : conserver jusqu'à retraite (rente), vente si opportunité majeure. Travaux DPE prévus avant 2034.",
-    "RP Rilhac-Rancon : achat 167 684€, valeur estimée 180 000€. Quote-part Maxime 50% (co-emprunteur Alexia).",
-    "Crédit RP : PTZ 30 000€ à 0% + prêt lisseur 100 684€ à 4%. Amortissement réel à partir d'août 2026.",
+    "OBJECTIFS : Retraite 60 ans (2057). SNCF estimee 2300EUR net. Cible passifs 500-1000EUR/mois.",
+    "Profil dynamique/offensif. ETF ESE S&P500 prioritaire (9%/an). Stockpicking si opportunite.",
     "",
-    "=== ENVELOPPES FINANCIÈRES ===",
-    "PEA BoursoBank : ouvert le 25/10/2024. Stratégie : ETF actions diversifiés. Cible 80% patrimoine financier.",
-    "AV Linxea Spirit 2 : ouverte le 17/03/2025. Frais gestion 2%, UC 0,5%. Cible 20% patrimoine financier (transmission).",
-    "PEG SNCF : abondement SNCF actif. Roulement vers PEA prévu dès déblocage (5 ans).",
-    "Abondement PEG SNCF : 30% sur tranche 0-500€ / 20% sur 500-1000€ / 10% sur 1000-1500€. Max 300€ pour 1500€ versés.",
-    "Optimal PEG : verser 1 500€/an → abondement 300€ (rendement garanti 20%). Débloquer après 5 ans → arbitrer vers PEA ESE.",
+    "CALENDRIER : Avr=PEG prime+retrait. Mai=liasse JD2M+declaration IR zone3. Juil=IRL T2. Nov=TF. Dec=PER.",
+    "AGENDA DU MOIS : voir section AGENDA dans donnees recues - priorite absolue pour repondre a questions mensuelles.",
     "",
-    "=== OBJECTIFS RETRAITE (cible ~60 ans, horizon 2057) ===",
-    "Retraite SNCF estimée : 2 300€ net/mois (régime spécial SNCF). Complément cible : 500-1 000€/mois passifs (T2 + PEA/AV).",
-    "Complément investissements cible : 500-1 000€/mois de revenus passifs.",
-    "Profil risque : dynamique/offensif adapté à l'horizon 30 ans (volatilité mesurée acceptable).",
-    "Préférence : ETF prioritaire. PEA = ESE (BNP Easy S&P500) principal. Stockpicking si opportunité. CTO/crypto si opportunité.",
-    "Immobilier : conserver T2, possible résidence secondaire ou locatif supplémentaire à terme.",
+    "REGLES : Calcule avant d estimater. Propose sans modifier sans accord. Explique termes techniques.",
+    "Direct, chiffre, actionnable. Vouvoie Maxime. Max 350 mots sauf question complexe.",
     "",
-    "=== PROFIL APPRENTISSAGE ===",
-    "Niveau intermédiaire en finance (bases solides). Patrimoine/fiscalité/succession : débutant.",
-    "Préfère explications développées mais concises. Veut progresser sur tous les sujets.",
-    "Priorités d'apprentissage : fiscalité LMNP, optimisation PEA/AV, succession/donation, retraite SNCF.",
+    "FORMAT RÉPONSES CALCUL : Toujours utiliser un tableau structuré pour les résultats chiffrés.",
+    "Exemple format : | Élément | Montant | Fiscalité | Net |",
+    "Après chaque calcul : appeler stocker_calcul pour mémoriser et permettre les questions enchaînées.",
+    "Si Maxime dit 'et si...' ou 'et dans X ans ?' : utiliser le calcul en mémoire (_calculMemoire) comme base.",
     "",
-    "=== RÈGLES PIERRE ===",
-    "Lis lire_situation_complete avant d'analyser. Calcule avant d'estimer.",
-    "Adapte le vocabulaire : explique les termes techniques. Propose sans jamais modifier sans accord.",
-    "Sois direct, chiffré, actionnable. Vouvoie Maxime. Max 400 mots. Termine par action ou question.",
+    "LIENS OUTILS VESTA : Appeler lien_outil_vesta SYSTÉMATIQUEMENT quand la réponse concerne :",
+    "PEG/prime → outil_id='peg' | IR/fiscal → 'fiscalite' | Succession/donation → 'succession'",
+    "Retraite → 'retraite' | Loyer/IRL → 'irl' | DPE/travaux → 'dpe' | Crédit → 'credit' | Bourse → 'analyse'",
+    "Exemple : 'si je lègue 100 000€' → réponse + lien_outil_vesta(outil_id='succession')",
     "",
-    "FISCAL CLÉ : PEA exo IR >5 ans (PS 17,2% restent). AV abatt. 4 600€/an après 8 ans (17/03/2033), 152 500€/bénéf. succession.",
-    "LMNP réel : amortissements ~2-3%/an bien + mobilier 10-20%/an. BIC souvent nul. PEG : exo IR, PS dus.",
-    "Plus-value immo : exo IR 22 ans (2044 pour T2), totale 30 ans (2052). DPE E interdit location 2034.",
-    "IR tranches 2025 : 0/11/30/41/45%. PER : déductible 10% revenus. PFU 30% CTO. Option barème si TMI<12,8%."
+    "ACTIONS EN CHAÎNE : Pour 'Optimise mon IR' ou questions complexes, enchaîner :",
+    "1) lire_situation_complete → 2) calculer le point précis → 3) donner 2-3 actions concrètes numérotées → 4) lien_outil_vesta",
+    "",
+    "FISCAL : PEA exo IR >5 ans (PS 17,2%). AV abatt.4600EUR/an >8 ans. PFU 30% CTO. LMNP reel : amort+BIC nul.",
+    "PEG : exo IR, PS 9,7% sortie. PV immo : exo IR 22 ans (2044), totale 30 ans (2052).",
+    "Donation 100kEUR/parent/enfant/15 ans. PER : deductible 10% revenus. Bareme si TMI<12,8%."
   ].join(NL);
 }
 
@@ -12076,8 +12563,68 @@ function getPatrimoineContext() {
   if (!S) return "Données non disponibles.";
   var c  = window._cAll ? window._cAll() : {};
   var NL = String.fromCharCode(10);
+  var now = new Date();
+  var mois = now.getMonth() + 1; // 1-12
+  var annee = now.getFullYear();
+  var jourMois = now.getDate();
+  var nomMois = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'][mois-1];
+
+  // ── AGENDA DU MOIS — calculé dynamiquement ────────────────────
+  var agenda = [];
+
+  // Mai et juin : déclaration IR Zone 3
+  if (mois === 5) {
+    agenda.push("📋 MAI = DÉCLARATION IR : Date limite Zone 3 (dép. 87) ~5 juin. Vérifier que JD2M a déposé la liasse 2031 LMNP. Déclarer sur impots.gouv.fr avec revenus 2024.");
+    agenda.push("📋 Liasse BIC 2031 LMNP T2 Limoges : normalement déposée par JD2M en mai. Vérifier et demander les éléments de déclaration.");
+  }
+  if (mois === 6 && jourMois <= 5) {
+    agenda.push("🚨 URGENT : Date limite déclaration IR Zone 3 = ~5 juin. Déclarer immédiatement sur impots.gouv.fr si pas encore fait.");
+  }
+
+  // Avril : PEG
+  if (mois === 4) {
+    agenda.push("🔄 AVRIL = MOIS PEG : Saisir la prime reçue de la SNCF dans l'Optimisateur PEG (onglet Enveloppes). Verser pour déclencher l'abondement SNCF (30/20/10%).");
+    var pegDispo = (S.pegRoulement||[]).filter(function(r){ return r.disponible <= annee && r.statut !== 'retire'; });
+    if (pegDispo.length) {
+      agenda.push("🏆 RETRAIT PEG DISPONIBLE : Versement " + pegDispo[0].annee + " peut être retiré et transféré sur PEA ESE immédiatement.");
+    }
+    var pegNonSaisi = !(S.pegRoulement||[]).some(function(r){ return r.annee === annee && r.verse > 0; });
+    if (pegNonSaisi) agenda.push("📥 Prime " + annee + " non encore saisie dans Vesta.");
+  }
+
+  // Juillet : IRL
+  if (mois === 7) {
+    agenda.push("📊 JUILLET : IRL T2 publié → vérifier si révision loyer T2 Limoges possible (bail meublé 1 an). Calcul : loyer actuel × (nouvel IRL / IRL référence).");
+  }
+
+  // Octobre/novembre : taxe foncière
+  if (mois === 10) {
+    agenda.push("🏠 OCTOBRE : Taxe foncière T2 Limoges (938€/an) et RP Rilhac-Rancon à payer en ligne avant le 20 novembre.");
+  }
+  if (mois === 11) {
+    agenda.push("🚨 NOVEMBRE : Date limite paiement taxe foncière T2 Limoges + RP = 20 novembre. Payer sur impots.gouv.fr si pas encore fait.");
+  }
+
+  // Décembre : PER, PEA
+  if (mois === 12) {
+    agenda.push("💰 DÉCEMBRE : Dernier délai versements PER déductibles 2024. Vérifier plafond PEA (150 000€). Bilan annuel avant clôture.");
+  }
+
+  // Tous les mois : vérifier PEG retrait disponible
+  var pegDispoGeneral = (S.pegRoulement||[]).filter(function(r){ return r.disponible <= annee && r.statut !== 'retire'; });
+  if (pegDispoGeneral.length && mois !== 4) {
+    agenda.push("🏆 PEG RETRAIT EN ATTENTE : Versement " + pegDispoGeneral[0].annee + " disponible → à transférer sur PEA ESE dès que possible.");
+  }
+
+  // Toujours : naissance prochaine
+  var naissanceDate = new Date('2026-06-04');
+  var joursNaissance = Math.ceil((naissanceDate - now) / (1000*60*60*24));
+  if (joursNaissance > 0 && joursNaissance < 90) {
+    agenda.push("👶 NAISSANCE IMMINENTE dans " + joursNaissance + " jours (04/06/2026) : prévoir déclaration naissance, mise à jour clause bénéficiaire AV, quotient familial.");
+  }
+
   var lines = [
-    "DATE : " + new Date().toLocaleDateString('fr-FR'),
+    "DATE : " + jourMois + " " + nomMois + " " + annee + " (mois=" + mois + ")",
     "LOCALISATION : T2 LMNP 383 rue François Perrin, Limoges 87000 | RP 3 rue Louis Jouvet, Rilhac-Rancon 87570 | Zone 3 IR | TMI 11%",
     "PROFIL : Maxime 29 ans, SNCF Régulateur COGC, 3x8, 9 ans ancienneté. PACS Alexia. Enfant 04/06/2026. TMI 11%.",
     "PATRIMOINE NET : " + Math.round(c.total||0).toLocaleString('fr-FR') + " EUR | BRUT : " + Math.round(c.brut||0).toLocaleString('fr-FR') + " EUR | DETTES : " + Math.round(c.dettes||0).toLocaleString('fr-FR') + " EUR",
@@ -12086,6 +12633,15 @@ function getPatrimoineContext() {
     "Charges T2 : copro 69€/mois + TF 938€/an + PNO 159€/an | Régime réel LMNP, expert JD2M",
     "Salaire : ~30 000 EUR/an | Foyer : 2,5 parts | T2 LMNP Limoges 87000 loyer ~520 EUR/mois | RP Rilhac-Rancon 87570 | Zone 3 IR"
   ];
+
+  // ── AGENDA DU MOIS (priorité haute pour Pierre) ───────────────
+  if (agenda.length > 0) {
+    lines.push("");
+    lines.push("=== AGENDA " + nomMois.toUpperCase() + " " + annee + " — ACTIONS À FAIRE ===");
+    agenda.forEach(function(a){ lines.push(a); });
+    lines.push("===");
+    lines.push("");
+  }
 
   // Positions — format compact
   if (S.positions && S.positions.length) {
@@ -12182,8 +12738,8 @@ var IA_PROVIDERS = {
 };
 
 function getActiveProvider() {
-  var provId = sessionStorage.getItem('pierre-provider') || 'groq';
-  var apiKey  = sessionStorage.getItem('pierre-api-key') || '';
+  var provId = localStorage.getItem('pierre-provider') || 'groq';
+  var apiKey  = localStorage.getItem('pierre-api-key') || '';
   return { provider: IA_PROVIDERS[provId] || IA_PROVIDERS.groq, key: apiKey, id: provId };
 }
 
@@ -12191,12 +12747,18 @@ async function callClaudeIA(userMsg, isFirst) {
   var active = getActiveProvider();
   if (!active.key) {
     demanderCleAPI();
-    return "Clé API requise. Cliquez sur le bouton IA pour configurer Pierre.";
+    return "Cle API requise. Configurez Pierre via le bouton IA.";
   }
 
+  // Detection question simple -> contexte minimal
+  var msgLow = (typeof userMsg === 'string' ? userMsg : '').toLowerCase();
+  var isSimpleQ = /^(bonjour|salut|merci|ok|oui|non|explique|definis|c.est quoi|qu.est|aide|comment|pourquoi|difference|kesako)/.test(msgLow) && msgLow.length < 80;
+  var needsData = /pea|av\b|peg|t2|limoges|loyer|credit|patrimoine|retraite|fiscalit|lmnp|immo\b|impot|taxe|prime|abond|versement|ce mois|en mai|en juin|en juillet|en aout|en sept|en oct|en nov|en dec|en jan|en fev|en mars|en avr/.test(msgLow);
+
   var messages = [];
+  // Historique tronque a 6 messages (3 echanges) pour economiser tokens
   if (!isFirst && window._iaConversation.length > 0) {
-    window._iaConversation.slice(-12).forEach(function(m) { messages.push(m); });
+    window._iaConversation.slice(-6).forEach(function(m) { messages.push(m); });
   }
   messages.push({role:'user', content: userMsg});
 
@@ -12225,10 +12787,18 @@ async function callClaudeIA(userMsg, isFirst) {
       var TPM_LIMITS = { groq: 6000, openrouter: 4000, gemini: 8000, anthropic: 16000 };
       var provId = active.id || 'groq';
       var maxCtxTokens = (TPM_LIMITS[provId] || 6000) - 1500; // réserver 1500 pour la réponse
-      var sysPrompt = getSystemPrompt();
+      var sysPrompt = window.getAgentSystemPrompt ? window.getAgentSystemPrompt(window._currentAgent || 'pierre') : getSystemPrompt();
       var memCtx = window.getMemoirePromptContext ? window.getMemoirePromptContext() : '';
-      var patriCtx = window.getContexteAdapte ? window.getContexteAdapte(maxCtxTokens - estimerTokens(sysPrompt) - estimerTokens(memCtx) - 200) : '';
-      var fullSystem = sysPrompt + memCtx + (patriCtx ? ('\n\n=== SITUATION ===\n' + patriCtx) : '');
+      var comportCtx = window._getComportementContext ? window._getComportementContext() : '';
+      var patriBudget = isSimpleQ && !needsData
+        ? 0
+        : needsData
+          ? maxCtxTokens - estimerTokens(sysPrompt) - estimerTokens(memCtx) - estimerTokens(comportCtx) - 200
+          : Math.min(1500, maxCtxTokens - estimerTokens(sysPrompt) - estimerTokens(memCtx) - 200);
+      var patriCtx = patriBudget > 0 && window.getContexteAdapte ? window.getContexteAdapte(patriBudget) : '';
+      var fullSystem = sysPrompt + memCtx
+        + (comportCtx ? '\n\n' + comportCtx : '')
+        + (patriCtx ? ('\n\n=== SITUATION ===\n' + patriCtx) : '');
 
       // Tronquer l'historique de conversation si trop long
       var histFiltered = msgs.filter(function(m){ return typeof m.content === 'string' || Array.isArray(m.content); });
@@ -12310,7 +12880,7 @@ async function callClaudeIA(userMsg, isFirst) {
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           contents: gemMsgs,
-          systemInstruction: { parts:[{text: getSystemPrompt()}] },
+          systemInstruction: { parts:[{text: getSystemPrompt() + (patriCtx ? ('\n\n=== SITUATION ===\n' + patriCtx) : '')}] },
           generationConfig: { maxOutputTokens:1500 }
         })
       });
@@ -12324,7 +12894,7 @@ async function callClaudeIA(userMsg, isFirst) {
       var r3 = await fetch(prov.url, {
         method:'POST',
         headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
-        body: JSON.stringify({ model:prov.model, max_tokens:1200, system:getSystemPrompt() + (window.getMemoirePromptContext ? window.getMemoirePromptContext() : ''), tools:IA_TOOLS, messages:msgs })
+        body: JSON.stringify({ model:prov.model, max_tokens:1200, system:getSystemPrompt() + (window.getMemoirePromptContext ? window.getMemoirePromptContext() : '') + (patriCtx ? ('\n\n=== SITUATION ===\n' + patriCtx) : ''), tools:IA_TOOLS, messages:msgs })
       });
       return await r3.json();
     }
@@ -12558,6 +13128,9 @@ async function envoyerMessageIA() {
   var ctx = window.getContexteAdapte ? window.getContexteAdapte(ctxBudget) : (window.getPatrimoineContext ? window.getPatrimoineContext() : '');
   var NL  = String.fromCharCode(10);
   var fullMsg = msg + NL + NL + '[Donnees actuelles]' + NL + ctx;
+
+  // Auto-détection de l'agent selon le contenu du message
+  if (window.detecterEtChangerAgent) window.detecterEtChangerAgent(msg);
 
   window._iaConversation.push({role:'user', content: msg});
   var el = document.getElementById('ia-content');
@@ -14239,7 +14812,7 @@ async function rechercherOpportunites() {
     + '</div>';
   btn.disabled = true;
 
-  var apiKey = sessionStorage.getItem('pierre-api-key') || '';
+  var apiKey = localStorage.getItem('pierre-api-key') || '';
   if (!apiKey) {
     content.innerHTML = '<div style="padding:20px;color:var(--red);">Clé API Pierre requise. Configurez via le bouton IA.</div>';
     btn.disabled = false;
@@ -14599,7 +15172,7 @@ function updateLearnButton() {
 
 async function pierreExplique(action, contexte) {
   if (sessionStorage.getItem('pierre-learn-mode') !== '1') return;
-  var apiKey = sessionStorage.getItem('pierre-api-key');
+  var apiKey = localStorage.getItem('pierre-api-key');
   if (!apiKey) return;
 
   var NL = String.fromCharCode(10);
@@ -14675,22 +15248,164 @@ function changerAgent(agentId) {
 window.changerAgent = changerAgent;
 
 function getAgentSystemPrompt(agentId) {
-  var a = window._pierreAgents[agentId] || window._pierreAgents.pierre;
-  var basePrompt = window.getSystemPrompt ? window.getSystemPrompt() : '';
-  var memoireCtx = window.getMemoirePromptContext ? window.getMemoirePromptContext() : '';
-  var NL = String.fromCharCode(10);
+  var a   = window._pierreAgents[agentId] || window._pierreAgents.pierre;
+  var NL  = String.fromCharCode(10);
+  var base = window.getSystemPrompt ? window.getSystemPrompt() : '';
+  var mem  = window.getMemoirePromptContext ? window.getMemoirePromptContext() : '';
+
+  // ── Prompts experts spécialisés par agent ──────────────────────
+  var EXPERT_PROMPTS = {
+
+    pierre: [
+      "Tu es Pierre, conseiller patrimonial senior de Maxime. Généraliste expert, tu coordonnes tous les domaines.",
+      "Tu analyses la situation globale et orientes vers le bon expert si nécessaire.",
+      "Approche : vision 360° (fiscal + immo + marchés + succession + protection).",
+      "Quand une question touche un domaine pointu, précise que Maître Dubois (succession), Sophie Bercy (fiscal) ou Marc Stratège (marchés) peuvent approfondir.",
+    ].join(NL),
+
+    notaire: [
+      "Tu es Maître Dubois, notaire spécialisé en droit patrimonial, famille et succession.",
+      "",
+      "=== DROIT SUCCESSORAL (maîtrise absolue) ===",
+      "RÉSERVE HÉRÉDITAIRE : 1 enfant = 1/2 ; 2 enfants = 2/3 ; 3+ = 3/4. Quotité disponible = reste.",
+      "PACS sans testament = 0 héritage légal. Testament olographe = solution minimale (manuscrit, daté, signé). Recommander acte notarié.",
+      "DONATION : Abattement 100 000€/parent/enfant tous les 15 ans. Entre époux/partenaires PACS : 80 724€. Petits-enfants : 31 865€. Don manuel : 31 865€ supplémentaires si < 80 ans donateur.",
+      "DONATION-PARTAGE : fige les valeurs à la date de donation (pas de rapport à succession). Recommandée pour protéger enfants.",
+      "USUFRUIT/NUE-PROPRIÉTÉ : démembrement selon barème fiscal (art. 669 CGI). À 29 ans usufruitier = 90% usufruit, 10% NP. Intérêt : transmission NP avec moins de droits, récupération pleine prop. au décès.",
+      "ASSURANCE VIE : hors succession jusqu'à 152 500€/bénéficiaire (art. 990-I CGI). Clause bénéficiaire à rédiger précisément (nommément). Versements après 70 ans : abattement global 30 500€ (art. 757-B CGI).",
+      "PACS vs MARIAGE : PACS = séparation de biens par défaut, pas d'héritage légal sans testament, exonération droits de succession comme mariage depuis 2007.",
+      "DROITS DE SUCCESSION : barème progressif. Entre époux/PACS = exonération totale. Enfants : 5% jusqu'à 8 072€, 10% jusqu'à 12 109€, 15% jusqu'à 15 932€, 20% jusqu'à 552 324€, puis 30%, 40%, 45%.",
+      "IFI : seuil 1 300 000€ de patrimoine immobilier net. Taux 0,5% à 1,25% sur la fraction imposable.",
+      "",
+      "=== PROCÉDURES ===",
+      "Testament : olographe (gratuit, risqué) ou notarié (100-200€, recommandé). Registre FCDDV.",
+      "Mandat de protection future : anticiper incapacité. Désigner mandataire de confiance.",
+      "Pour Maxime : PRIORITÉ = testament croisé avec Alexia + clause bénéficiaire AV après naissance enfant.",
+    ].join(NL),
+
+    fiscaliste: [
+      "Tu es Sophie Bercy, fiscaliste spécialisée en optimisation fiscale des particuliers et de l'immobilier.",
+      "",
+      "=== BARÈME IR 2025 (revenus 2024) ===",
+      "0% jusqu'à 11 294€ / 11% de 11 294 à 28 797€ / 30% de 28 797 à 82 341€ / 41% de 82 341 à 177 106€ / 45% au-delà.",
+      "Quotient familial : 1 part seul, 2 parts couple, +0,5 par enfant. Maxime : 2,5 parts (couple PACS + 1 enfant).",
+      "Plafond QF : 1 759€/demi-part supplémentaire (plafonnement du gain).",
+      "",
+      "=== PFU / FLAT TAX ===",
+      "PFU 30% = 12,8% IR + 17,2% PS. Sur dividendes, PV mobilières, intérêts.",
+      "Option barème sur option globale : avantageuse si TMI ≤ 11% (+ abattement 40% dividendes).",
+      "Pour Maxime (TMI 11%) : option barème sur dividendes SOUVENT avantageuse. Calcul : dividende × (1-40%) × 11% + 17,2% = ~23,8% vs PFU 30%. Gain : ~6 points.",
+      "",
+      "=== PLUS-VALUES MOBILIÈRES ===",
+      "PEA > 5 ans : exo IR, 17,2% PS sur PV. < 5 ans : PFU 30%.",
+      "CTO : PFU 30% dès le premier euro. Pas d'abattement pour durée de détention (supprimé 2018).",
+      "Pertes mobilières : imputables sur gains mêmes nature pendant 10 ans.",
+      "",
+      "=== PLUS-VALUES IMMOBILIÈRES ===",
+      "Exo RP : totale (cession résidence principale). Applicable si RP au jour de cession.",
+      "Abattements pour durée de détention (hors RP) : IR = 0% jusqu'5 ans, 6% de 6 à 21 ans (exo totale à 22 ans). PS = 0% jusqu'5 ans, 1,65% de 6 à 21 ans, 1,60% à 22 ans, 9% de 23 à 30 ans (exo totale à 30 ans).",
+      "T2 Limoges acquis 08/2022 : exo IR en 2044, exo totale 2052.",
+      "PV imposable = prix cession - prix acquisition ajusté (frais acquisition forfaitaires 7,5%, travaux forfaitaires si > 5 ans 15%).",
+      "",
+      "=== LMNP RÉEL ===",
+      "Amortissement composant : gros-oeuvre 40-50 ans, façade 20-30 ans, toiture 15-25 ans, équipements 5-10 ans, mobilier 5-7 ans.",
+      "Charges déductibles : intérêts emprunt, TF, charges copro, assurance PNO, expert-comptable, frais de gestion.",
+      "BIC = loyers - charges - amortissements. Si déficit : reportable 10 ans sur BIC LMNP uniquement (pas sur revenus globaux).",
+      "CFE : cotisation foncière des entreprises. Due dès activité LMNP réel.",
+      "Taxe sur les loyers meublés : non applicable si loyer < 23€/m²/mois et T2 Limoges < ce seuil.",
+      "",
+      "=== OPTIMISATIONS CLÉ MAXIME ===",
+      "TMI 11% → option barème dividendes (gain ~6pts vs PFU). Vérifier chaque année.",
+      "PEA exo IR le 25/10/2029 : planifier premiers retraits après cette date.",
+      "AV Linxea : abattement 4 600€/an à partir du 17/03/2033. Optimiser rachats après cette date.",
+      "Déclaration Zone 3 : délai ~5 juin. Revenus à déclarer : salaires + loyers BIC (si positif).",
+      "PER : déductible 10% des revenus nets (max 32 909€). Pour 30 000€ revenus = déduction max ~3 000€, économie 330€ (TMI 11%). Intérêt limité avec TMI bas.",
+    ].join(NL),
+
+    marche: [
+      "Tu es Marc Stratège, analyste financier spécialisé ETF, actions et allocation de portefeuille.",
+      "",
+      "=== ANALYSE FONDAMENTALE ===",
+      "Ratios clés : P/E (cours/bénéfice, normal 15-25x), PEG (P/E / croissance, < 1 sous-évalué), P/B (cours/fonds propres), EV/EBITDA, FCF yield.",
+      "Dividende : rendement brut = dividende/cours. Payout ratio = dividendes/bénéfices. Croissance du dividende = priorité sur rendement élevé.",
+      "Qualité bilan : dette/EBITDA < 3x, ratio courant > 1,5, ROE > 15%, ROC > 10%.",
+      "",
+      "=== ETF — PHILOSOPHIE ===",
+      "ESE (BNP Easy S&P500) : frais 0,15%/an, TER 0,15%. Éligible PEA. Perf historique 30 ans S&P500 : ~10%/an brut.",
+      "CW8 (Amundi MSCI World) : frais 0,38%/an. Diversification mondiale 1 600 entreprises. Éligible PEA.",
+      "Différence ESE vs CW8 : ESE = 100% US, CW8 = 70% US + 30% monde. Long terme ESE > CW8 historiquement mais concentration géo.",
+      "Stratégie DCA (Dollar Cost Averaging) : investir régulièrement (mensuel) indépendamment du cours. Lisse le risque point d'entrée.",
+      "Rééquilibrage annuel : maintenir allocation cible (80% PEA / 20% AV pour Maxime). Vendre ce qui a surperformé, acheter sous-pondéré.",
+      "",
+      "=== ANALYSE TECHNIQUE (bases) ===",
+      "Support/résistance : zones où le cours rebondit/bloque. Cassure = signal.",
+      "Moyennes mobiles : MM20 (court terme), MM50 (moyen), MM200 (long). Croisement MM50 > MM200 = signal haussier.",
+      "RSI : > 70 = surachat (attention), < 30 = survente (opportunité).",
+      "MACD : croisement signal line = signal achat/vente.",
+      "",
+      "=== STRATÉGIE MAXIME ===",
+      "PEA prioritaire jusqu'à 150k€. Puis CTO pour ce qui ne rentre pas (actions US directes, REITs mondiaux).",
+      "80% ESE S&P500 + 20% AV MSCI World = allocation actuelle. Objectif : 500k€ en 2057 pour rente 4%.",
+      "Stockpicking : max 10% du portefeuille sur convictions. Critères : ROE > 15%, dette faible, secteur défensif ou croissance.",
+      "Volatilité : normale sur ETF (-30% possible en crise). Horizon 30 ans = ne pas vendre en baisse.",
+    ].join(NL),
+
+    coach: [
+      "Tu es Coach Léa, coach en finances personnelles et discipline d'épargne.",
+      "Tu aides Maxime à prendre de bonnes habitudes, automatiser ses investissements et rester motivé.",
+      "",
+      "=== PRINCIPES ===",
+      "Épargne automatique : virement automatique dès réception du salaire (S+1). Ne pas laisser l'argent sur compte courant.",
+      "Règle 50/30/20 : 50% besoins, 30% désirs, 20% épargne. Pour Maxime : adapter au 3x8 (revenus variables).",
+      "Fonds d'urgence : 3-6 mois de dépenses sur Livret A. Avant tout investissement.",
+      "Cash-flow T2 : tracker mensuellement (loyer - crédit - charges). Signal d'alerte si < 0.",
+    ].join(NL),
+  };
+
+  // Détecter automatiquement le bon expert selon la question reçue
+  function detecterExpert(msg) {
+    if (!msg) return agentId;
+    var m = (msg + '').toLowerCase();
+    if (/succession|héritage|testament|donation|notaire|démembrement|usufruit|nue-propriét|clause bénéficiaire|pacs.*décès|décès|hérit|legs/.test(m)) return 'notaire';
+    if (/imposition|ir\b|impôt|tmi|tranche|pfu|flat tax|lmnp|bic\b|amortissement|plus.value|déductible|déclar|taxe foncière|cfe\b|per\b/.test(m)) return 'fiscaliste';
+    if (/bourse|action|etf|cours|dividende|p\/e|per\b.*bourse|analyse|marché|s&p|cw8|ese\b|volatil|rsi|macd|rendement.*bourse|portefeuille/.test(m)) return 'marche';
+    if (/budget|épargne|automatiser|habitude|motivation|discipline|objectif|économiser/.test(m)) return 'coach';
+    return agentId; // garder l'agent actuel
+  }
+
+  // Choisir le prompt selon l'agent (auto-détection si message dispo)
+  var chosenAgent = agentId;
+  var expertPrompt = EXPERT_PROMPTS[chosenAgent] || EXPERT_PROMPTS.pierre;
+
   return [
-    "Tu es " + a.nom + ", " + a.role + ". Spécialité : " + a.specialite + ".",
-    "Tu réponds avec l'expertise de ton domaine, en restant factuel et chiffré.",
-    "Tu vouvoies Maxime. Tu es direct, précis, actionnable.",
+    expertPrompt,
     "",
-    "MÉMORISATION : Si Maxime te confie un fait personnel important (situation familiale, projet, préférence, refus), utilise l'outil 'memoriser' pour t'en souvenir lors des prochaines conversations.",
-    "",
-    basePrompt,
-    memoireCtx
-  ].join(NL);
+    base,
+    mem
+  ].filter(Boolean).join(NL);
 }
 window.getAgentSystemPrompt = getAgentSystemPrompt;
+
+// Auto-détection agent selon la question
+function detecterEtChangerAgent(msg) {
+  if (!msg) return;
+  var m = msg.toLowerCase();
+  var detected = 'pierre';
+  if (/succession|héritage|testament|donation|notaire|démembrement|usufruit|clause bénéficiaire|décès|hérit|legs/.test(m)) detected = 'notaire';
+  else if (/imposition|impôt|tmi|tranche|pfu|flat tax|lmnp|bic\b|amortissement|plus.value|déductible|déclaration ir|taxe foncière|per\b/.test(m)) detected = 'fiscaliste';
+  else if (/bourse|etf\b|action\b|dividende|p\/e|analyse technique|s&p|cw8|ese\b|portefeuille bourse|volatil/.test(m)) detected = 'marche';
+  
+  if (detected !== 'pierre' && window._currentAgent !== detected) {
+    var prev = window._currentAgent || 'pierre';
+    window._currentAgent = detected;
+    var agentsMap = window._pierreAgents || {};
+    var agentInfo = agentsMap[detected];
+    if (agentInfo && window._toast) {
+      window._toast(agentInfo.emoji + ' ' + agentInfo.nom + ' prend le relais pour cette question');
+    }
+  }
+}
+window.detecterEtChangerAgent = detecterEtChangerAgent;
 
 // ══════════════════════════════════════════════════════════════
 // 6. SNAPSHOTS HISTORIQUE — sauvegarde/restauration COMPLÈTE
