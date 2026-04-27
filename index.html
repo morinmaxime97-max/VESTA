@@ -12821,136 +12821,99 @@ async function callClaudeIA(userMsg, isFirst) {
     var prov = active.provider;
     var key  = active.key;
 
+    // ── Contexte commun TOUS providers ──────────────────────
+    var TPM = { groq:6000, openrouter:4000, gemini:8000, anthropic:16000 };
+    var maxCtx = (TPM[active.id||'groq'] || 6000) - 1500;
+    var sysP   = window.getAgentSystemPrompt
+      ? window.getAgentSystemPrompt(window._currentAgent||'pierre')
+      : (window.getSystemPrompt ? window.getSystemPrompt() : '');
+    var memP   = window.getMemoirePromptContext ? window.getMemoirePromptContext() : '';
+    var budget = (isSimpleQ && !needsData) ? 0
+      : needsData ? maxCtx - estimerTokens(sysP) - estimerTokens(memP) - 200
+      : Math.min(1500, maxCtx - estimerTokens(sysP) - estimerTokens(memP) - 200);
+    var patriCtx = budget > 0 && window.getContexteAdapte ? window.getContexteAdapte(budget) : '';
+    var fullSys  = sysP + memP + (patriCtx ? ('\n\n=== SITUATION ===\n' + patriCtx) : '');
+
+    // ── OpenAI format (Groq, OpenRouter) ─────────────────────
     if (prov.format === 'openai') {
-      // ── Groq / OpenRouter avec function calling ──────────────
-      // Convertir IA_TOOLS (format Anthropic) → OpenAI functions
-      var oaFunctions = (withTools !== false ? IA_TOOLS : []).map(function(t) {
-        var schema = t.input_schema || { type:'object', properties:{} };
-        var params = { type: schema.type || 'object', properties: schema.properties || {} };
-        if (schema.required && schema.required.length > 0) params.required = schema.required;
-        return {
-          type: 'function',
-          function: {
-            name: t.name,
-            description: t.description.slice(0, 150), // trim descriptions
-            parameters: params
-          }
-        };
+      var oaTools = (withTools !== false ? IA_TOOLS : []).map(function(t) {
+        var sc = t.input_schema || { type:'object', properties:{} };
+        var pr = { type: sc.type||'object', properties: sc.properties||{} };
+        if (sc.required && sc.required.length) pr.required = sc.required;
+        return { type:'function', function:{ name:t.name, description:(t.description||'').slice(0,150), parameters:pr } };
       });
 
-      // Limites tokens selon provider
-      var TPM_LIMITS = { groq: 6000, openrouter: 4000, gemini: 8000, anthropic: 16000 };
-      var provId = active.id || 'groq';
-      var maxCtxTokens = (TPM_LIMITS[provId] || 6000) - 1500; // réserver 1500 pour la réponse
-      var sysPrompt = window.getAgentSystemPrompt ? window.getAgentSystemPrompt(window._currentAgent || 'pierre') : getSystemPrompt();
-      var memCtx = window.getMemoirePromptContext ? window.getMemoirePromptContext() : '';
-      var comportCtx = window._getComportementContext ? window._getComportementContext() : '';
-      var patriBudget = isSimpleQ && !needsData
-        ? 0
-        : needsData
-          ? maxCtxTokens - estimerTokens(sysPrompt) - estimerTokens(memCtx) - estimerTokens(comportCtx) - 200
-          : Math.min(1500, maxCtxTokens - estimerTokens(sysPrompt) - estimerTokens(memCtx) - 200);
-      var patriCtx = patriBudget > 0 && window.getContexteAdapte ? window.getContexteAdapte(patriBudget) : '';
-      var fullSystem = sysPrompt + memCtx
-        + (comportCtx ? '\n\n' + comportCtx : '')
-        + (patriCtx ? ('\n\n=== SITUATION ===\n' + patriCtx) : '');
-
-      // Tronquer l'historique de conversation si trop long
-      var histFiltered = msgs.filter(function(m){ return typeof m.content === 'string' || Array.isArray(m.content); });
-      // Garder seulement les 6 derniers messages si dépassement
-      var histTokens = histFiltered.reduce(function(s,m){ return s + estimerTokens(typeof m.content === 'string' ? m.content : JSON.stringify(m.content)); }, 0);
-      if (histTokens > 2000) histFiltered = histFiltered.slice(-4);
+      var hist = msgs.filter(function(m){ return typeof m.content==='string'||Array.isArray(m.content); });
+      var htok = hist.reduce(function(s,m){ return s+estimerTokens(typeof m.content==='string'?m.content:JSON.stringify(m.content)); },0);
+      if (htok > 2000) hist = hist.slice(-4);
 
       var body = {
-        model: prov.model,
-        max_tokens: 1200,
-        messages: [{role:'system', content: fullSystem}]
-          .concat(histFiltered.map(function(m) {
-            var c = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
-            return {role: m.role, content: c};
-          }))
+        model: prov.model, max_tokens: 1200,
+        messages: [{role:'system', content:fullSys}].concat(hist.map(function(m){
+          return { role:m.role, content:typeof m.content==='string'?m.content:JSON.stringify(m.content) };
+        }))
       };
-      if (oaFunctions.length > 0) {
-        body.tools = oaFunctions;
-        body.tool_choice = 'auto';
-      }
+      if (oaTools.length) { body.tools = oaTools; body.tool_choice = 'auto'; }
 
-      var r = await fetch(prov.url, {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+key },
-        body: JSON.stringify(body)
-      });
+      var r = await fetch(prov.url, { method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+        body:JSON.stringify(body) });
 
-      // Gestion rate limit 429 — retry après délai
       if (r.status === 429) {
-        var retryAfter = parseInt(r.headers.get('retry-after') || '10', 10);
-        retryAfter = Math.min(retryAfter, 30); // max 30s
-        if (window._toast) window._toast('⏳ Rate limit Groq — nouvelle tentative dans ' + retryAfter + 's…');
-        await new Promise(function(res){ setTimeout(res, retryAfter * 1000); });
-        // Retry sans tools pour réduire les tokens
-        body.tools = undefined;
-        body.tool_choice = undefined;
-        r = await fetch(prov.url, {
-          method: 'POST',
-          headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+key },
-          body: JSON.stringify(body)
-        });
+        var wait = Math.min(parseInt(r.headers.get('retry-after')||'10',10), 30);
+        if (window._toast) window._toast('⏳ Limite — retry dans '+wait+'s…');
+        await new Promise(function(res){ setTimeout(res, wait*1000); });
+        delete body.tools; delete body.tool_choice;
+        r = await fetch(prov.url, { method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+          body:JSON.stringify(body) });
       }
 
-      var data = await r.json();
-      if (data.error) return { error: data.error };
+      var d = await r.json();
+      if (d.error) return { error: d.error };
+      var ch = d.choices && d.choices[0];
+      var mg = ch && ch.message;
+      if (!mg) return { content:[{type:'text',text:''}], stop_reason:'end_turn' };
 
-      var choice = data.choices && data.choices[0];
-      var msg = choice && choice.message;
-      if (!msg) return { content:[{type:'text',text:''}], stop_reason:'end_turn' };
-
-      // Handle tool_calls → convert to Anthropic format
-      if (msg.tool_calls && msg.tool_calls.length > 0) {
-        var anthContent = [];
-        if (msg.content) anthContent.push({type:'text', text:msg.content});
-        msg.tool_calls.forEach(function(tc) {
-          try {
-            anthContent.push({
-              type: 'tool_use',
-              id: tc.id || ('call_' + Math.random().toString(36).slice(2)),
-              name: tc.function.name,
-              input: JSON.parse(tc.function.arguments || '{}')
-            });
-          } catch(e) {}
+      if (mg.tool_calls && mg.tool_calls.length) {
+        var ac = [];
+        if (mg.content) ac.push({type:'text', text:mg.content});
+        mg.tool_calls.forEach(function(tc){
+          try { ac.push({ type:'tool_use', id:tc.id||('c'+Math.random().toString(36).slice(2)),
+            name:tc.function.name, input:JSON.parse(tc.function.arguments||'{}') }); } catch(e){}
         });
-        return { content: anthContent, stop_reason: 'tool_use', _oaMsgs: msgs, _oaMsg: msg };
+        return { content:ac, stop_reason:'tool_use', _oaMsgs:msgs, _oaMsg:mg };
       }
+      return { content:[{type:'text',text:mg.content||''}],
+        stop_reason: ch.finish_reason==='stop'?'end_turn':ch.finish_reason };
 
-      return {
-        content: [{type:'text', text: msg.content || ''}],
-        stop_reason: choice.finish_reason === 'stop' ? 'end_turn' : choice.finish_reason
-      };
-
+    // ── Gemini — PAS de tools, contexte injecté dans message ──
     } else if (prov.format === 'gemini') {
-      var gemMsgs = msgs.filter(function(m){ return typeof m.content === 'string'; }).map(function(m) {
-        return { role: m.role === 'assistant' ? 'model' : 'user', parts: [{text: m.content}] };
-      });
-      var r2 = await fetch(prov.url+'?key='+key, {
-        method:'POST',
+      var gMsgs = msgs.filter(function(m){ return typeof m.content==='string'; })
+        .map(function(m){ return { role:m.role==='assistant'?'model':'user', parts:[{text:m.content}] }; });
+      // Injecter patriCtx dans le dernier message user
+      if (patriCtx && gMsgs.length) {
+        var gl = gMsgs[gMsgs.length-1];
+        if (gl.role==='user') gl.parts[0].text += '\n\n[DONNÉES PATRIMOINE]\n' + patriCtx;
+      }
+      var r2 = await fetch(prov.url+'?key='+key, { method:'POST',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          contents: gemMsgs,
-          systemInstruction: { parts:[{text: getSystemPrompt() + (patriCtx ? ('\n\n=== SITUATION ===\n' + patriCtx) : '')}] },
-          generationConfig: { maxOutputTokens:1500 }
-        })
-      });
-      var gdata = await r2.json();
-      if (gdata.error) return { error: gdata.error };
-      var gtext = (gdata.candidates&&gdata.candidates[0]&&gdata.candidates[0].content&&gdata.candidates[0].content.parts&&gdata.candidates[0].content.parts[0]&&gdata.candidates[0].content.parts[0].text)||'';
-      return { content:[{type:'text',text:gtext}], stop_reason:'end_turn' };
+        body:JSON.stringify({ contents:gMsgs,
+          systemInstruction:{ parts:[{text:fullSys}] },
+          generationConfig:{ maxOutputTokens:1500 } }) });
+      var g2 = await r2.json();
+      if (g2.error) return { error: g2.error };
+      var gt = (g2.candidates&&g2.candidates[0]&&g2.candidates[0].content&&
+                g2.candidates[0].content.parts&&g2.candidates[0].content.parts[0]&&
+                g2.candidates[0].content.parts[0].text)||'';
+      return { content:[{type:'text',text:gt}], stop_reason:'end_turn' };
 
+    // ── Anthropic — tools natifs ────────────────────────────
     } else {
-      // Anthropic — full tool support
-      var r3 = await fetch(prov.url, {
-        method:'POST',
+      var r3 = await fetch(prov.url, { method:'POST',
         headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
-        body: JSON.stringify({ model:prov.model, max_tokens:1200, system:getSystemPrompt() + (window.getMemoirePromptContext ? window.getMemoirePromptContext() : '') + (patriCtx ? ('\n\n=== SITUATION ===\n' + patriCtx) : ''), tools:IA_TOOLS, messages:msgs })
-      });
+        body:JSON.stringify({ model:prov.model, max_tokens:1200, system:fullSys,
+          tools:IA_TOOLS, messages:msgs }) });
       return await r3.json();
     }
   };
