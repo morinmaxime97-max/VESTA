@@ -664,7 +664,7 @@ body {
         <div class="leg" id="leg-donut"></div>
       </div>
     </div>
-    <div class="card"><div class="chd">Performance par enveloppe</div><div id="perf-bars"></div></div>
+
   </div>
   <div class="card mb"><div class="chd">Positions <button class="btn sm" id="btn-add-pos">+ Ajouter</button></div><div id="top-pos"></div></div>
 
@@ -11350,13 +11350,28 @@ function updateTokenIndicator(usedTokens, limitTokens) {
   var pct = Math.min(100, Math.round((usedTokens / limitTokens) * 100));
   var color = pct < 60 ? 'var(--green)' : pct < 85 ? 'var(--gold)' : 'var(--red)';
   el.innerHTML = '<div style="display:flex;align-items:center;gap:6px;font-size:9px;font-family:JetBrains Mono,monospace;color:var(--muted);">'
-    + '<div style="flex:1;height:3px;background:var(--bd);border-radius:2px;overflow:hidden;">'
-    + '<div style="height:100%;width:' + pct + '%;background:' + color + ';transition:width .3s;"></div>'
+    + '<div style="flex:1;height:4px;background:var(--bd);border-radius:2px;overflow:hidden;">'
+    + '<div style="height:100%;width:' + pct + '%;background:' + color + ';transition:width .4s;border-radius:2px;"></div>'
     + '</div>'
-    + '<span style="color:' + color + ';flex-shrink:0;">' + usedTokens.toLocaleString('fr-FR') + '/' + limitTokens.toLocaleString('fr-FR') + ' tok</span>'
+    + '<span style="color:' + color + ';flex-shrink:0;min-width:80px;text-align:right;">' + usedTokens.toLocaleString('fr-FR') + ' / ' + limitTokens.toLocaleString('fr-FR') + ' tok (' + pct + '%)</span>'
     + '</div>';
 }
 window.updateTokenIndicator = updateTokenIndicator;
+
+// Recalculer et afficher la barre de tokens à tout moment
+function refreshTokenBar() {
+  var active = window.getActiveProvider ? window.getActiveProvider() : null;
+  var TPM = { groq: 12000, openrouter: 8000, gemini: 32000, anthropic: 40000 };
+  var lim = active ? (TPM[active.id] || 12000) : 12000;
+  var sp = window.getSystemPrompt ? window.getSystemPrompt() : '';
+  var mem = window.getMemoirePromptContext ? window.getMemoirePromptContext() : '';
+  var est = window.estimerTokens ? window.estimerTokens(sp + mem) : 0;
+  est += (window._iaConversation || []).reduce(function(s, m) {
+    return s + (window.estimerTokens ? window.estimerTokens(typeof m.content === 'string' ? m.content : JSON.stringify(m.content)) : 0);
+  }, 0);
+  if (window.updateTokenIndicator) window.updateTokenIndicator(est, lim);
+}
+window.refreshTokenBar = refreshTokenBar;
 
 // ══ RACCOURCIS CLAVIER ═══════════════════════════════════════
 (function() {
@@ -12720,8 +12735,8 @@ var IA_PROVIDERS = {
   },
   gemini: {
     name: 'Google Gemini Flash (Gratuit)',
-    url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
-    model: 'gemini-1.5-flash',
+    url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+    model: 'gemini-2.0-flash',
     key_prefix: 'AI',
     free: true,
     format: 'gemini'
@@ -13267,6 +13282,8 @@ async function envoyerMessageIA() {
   // Si rate limit, la réponse brute est stockée (pas de HTML inline)
   window._iaConversation.push({role:'assistant', content: response || ''});
   renderIAConversation(el);
+  // Mettre à jour la barre de tokens APRÈS avoir ajouté la réponse
+  setTimeout(function(){ if (window.refreshTokenBar) window.refreshTokenBar(); }, 100);
 
   // Ajouter bouton config si rate limit
   if (response && (response.includes('Limite Groq') || response.includes('Rate limit') || response.includes('⏳'))) {
