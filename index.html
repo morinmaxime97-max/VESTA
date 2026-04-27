@@ -9,9 +9,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="PatriTracker">
+<meta name="apple-mobile-web-app-title" content="Vesta">
 <meta name="theme-color" content="#080b10">
-<title>PatriTracker — Maxime</title>
+<title>Vesta — Maxime</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 /* Tooltip natif amélioré */
@@ -91,8 +91,8 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
 /* Import Inter via Google Fonts (chargement conditionnel) */
 
 header{padding:16px 30px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:50;background:var(--bg);}
-.logo{font-family:'Playfair Display',serif;font-size:21px;color:var(--gold);}
-.logo em{font-style:italic;color:var(--text);}
+.logo{font-family:'Playfair Display',serif;font-size:22px;color:var(--gold);letter-spacing:4px;text-transform:uppercase;font-weight:700;font-style:normal;}
+.logo em{font-style:normal;color:var(--gold);letter-spacing:4px;}
 .hdr-right{display:flex;align-items:center;gap:14px;}
 .hdr-total b{display:block;font-family:'JetBrains Mono',monospace;font-size:16px;}
 .hdr-total span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
@@ -335,6 +335,7 @@ main{padding:24px 30px;max-width:1600px;}
 /* Safe areas for notch/home indicator */
 body {
   padding-bottom: env(safe-area-inset-bottom);
+  overscroll-behavior-y: contain; /* Empêche le pull-to-refresh iOS/Android */
 }
 
 /* Bottom navigation bar — mobile only */
@@ -539,6 +540,7 @@ body {
 @media(max-width:768px){
   nav{display:none!important;}
   header{padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));}
+  #mobile-back-btn{display:none;} /* montré/masqué par JS */
   #pwa-bottom-nav{display:flex!important;position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--s1);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:0;}
   #pwa-bottom-nav::-webkit-scrollbar{display:none;}
   .pwa-nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:60px;padding:8px 6px 6px;background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:9px;color:var(--muted);transition:color .15s;flex-shrink:0;}
@@ -568,7 +570,9 @@ body {
 </head>
 <body>
 <header>
-  <div class="logo">Patri<em>Tracker</em> <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-weight:400;">· Maxime</span></div>
+  <button id="mobile-back-btn" onclick="window.history.back()" style="display:none;background:none;border:none;color:var(--gold);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0;" aria-label="Retour">←</button>
+  <div class="logo" id="header-logo">VESTA <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:1px;text-transform:none;">· Maxime</span></div>
+  <div id="header-page-title" style="display:none;font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--text);flex:1;text-align:center;"></div>
   <div class="hdr-right">
     <div class="theme-picker" title="Changer de thème">
       <button class="theme-btn t-dark  active" data-theme=""       title="Sombre"></button>
@@ -577,7 +581,7 @@ body {
     </div>
     <div class="hdr-total" style="cursor:pointer;" id="hdr-total-wrap" title="Double-clic pour révéler · Clic pour basculer net/brut">
       <b id="hdr-total" style="filter:blur(8px);transition:filter .3s;user-select:none;">— €</b>
-      <span id="hdr-total-lbl" style="filter:blur(4px);transition:filter .3s;">PatriTracker</span>
+      <span id="hdr-total-lbl" style="filter:blur(4px);transition:filter .3s;">Vesta</span>
     </div>
     <div class="live"></div>
   </div>
@@ -617,6 +621,13 @@ body {
 <div id="pg-dashboard" class="pg on">
   <!-- Bandeau alertes stratégie -->
   <div class="alert-banner" id="alert-banner"></div>
+
+  <!-- Prochaine action du jour -->
+  <div id="next-action-banner" style="display:none;background:linear-gradient(135deg,rgba(212,175,83,0.08),rgba(91,141,238,0.06));border:1px solid var(--gold)44;border-radius:10px;padding:10px 14px;margin-bottom:12px;">
+    <div style="font-size:9px;color:var(--gold);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">⚡ PROCHAINE ACTION</div>
+    <div id="next-action-text" style="font-size:13px;font-weight:600;color:var(--text);"></div>
+    <div id="next-action-sub" style="font-size:11px;color:var(--muted);margin-top:3px;"></div>
+  </div>
 
   <div class="krow k4" style="margin-bottom:8px;">
     <div class="kpi" style="border-left:3px solid var(--green);">
@@ -682,6 +693,28 @@ body {
       <button class="btn gh sm" onclick="renderAnniversairesCard()" style="font-size:11px;">&#8635; Actualiser</button>
     </div>
     <div id="anniversaires-card" style="min-height:60px;"><div class="empty">Cliquez sur "Actualiser" pour voir vos prochaines échéances.</div></div>
+  </div>
+
+  <!-- PEG SNCF — prochaine action -->
+  <div class="card mb" style="border-left:3px solid var(--peg);" id="card-peg-dashboard">
+    <div class="chd" style="justify-content:space-between;">
+      <span>🔄 PEG SNCF <span class="chd-sub">Roulement &amp; prochaine action</span></span>
+      <button class="btn gh sm" onclick="showPage('enveloppes')" style="font-size:11px;">Gérer →</button>
+    </div>
+    <div id="peg-dashboard-content"><div class="empty" style="font-size:11px;">Chargement...</div></div>
+  </div>
+
+  <!-- T2 Limoges — cashflow mensuel -->
+  <div class="card mb" style="border-left:3px solid var(--immo);" id="card-t2-cashflow">
+    <div class="chd" style="justify-content:space-between;">
+      <span>🏠 T2 Limoges <span class="chd-sub">383 rue François Perrin · LMNP</span></span>
+      <div class="brow">
+        <button class="btn gh sm" onclick="afficherSimulVenteT2()" style="font-size:10px;">💰 Simul. vente</button>
+        <button class="btn gh sm" onclick="exporterReleveLMNP()" style="font-size:10px;">📄 Export JD2M</button>
+        <button class="btn gh sm" onclick="showPage('immo')" style="font-size:11px;">Détails →</button>
+      </div>
+    </div>
+    <div id="t2-cashflow-content"><div class="empty" style="font-size:11px;">Chargement...</div></div>
   </div>
 
   <!-- Pierre — Conseil IA du jour -->
@@ -854,7 +887,7 @@ body {
           <div id="peg-update-status" style="font-size:10px;color:var(--green);font-family:'JetBrains Mono',monospace;margin-top:4px;min-height:14px;"></div>
           <div style="font-size:10px;color:var(--dim);margin-top:8px;font-family:'JetBrains Mono',monospace;line-height:1.5;">
             💡 ISIN : QS0002905659 · Amundi Actions Euro Mid Cap ESR 723 (C) · TER 1,31%/an · Risque 4/7 · Rdt intermédiaire 8 ans : 4,0%/an<br>
-            Min. 400€/an pour déclencher l'abondement SNCF (+100€) — versement avril uniquement
+            1 500€/an pour abondement max +300€ (tranches 30/20/10%). Minimum 500€ pour déclencher.
           </div>
         </div>
       </div>
@@ -865,15 +898,15 @@ body {
     <!-- Accordéon Roulement PEG → PEA -->
     <div style="background:var(--s2);border-radius:8px;border:1px solid var(--bd);margin-top:12px;overflow:hidden;">
       <button onclick="toggleAccordion('acc-peg-roulement-env')" style="width:100%;text-align:left;background:transparent;border:none;padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:11px;font-weight:700;color:var(--gold);">🔄 Roulement PEG → PEA — Saisie versement &amp; Calendrier</span>
+        <span style="font-size:11px;font-weight:700;color:var(--gold);">🔄 Optimiseur PEG — Prime, abondement &amp; comparatif</span>
         <span id="acc-peg-roulement-env-icon" style="font-size:11px;color:var(--gold);font-family:'JetBrains Mono',monospace;flex-shrink:0;">▸ Voir</span>
       </button>
       <div id="acc-peg-roulement-env-body" style="display:none;padding:12px 14px;border-top:1px solid var(--bd);">
         <div style="background:var(--s3);border-radius:8px;padding:12px 14px;margin-bottom:12px;border:1px solid var(--bd);">
           <div style="font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">
-            📥 Enregistrer le versement de cette année
+            📥 Saisir la prime et le montant à verser
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:10px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:10px;">
             <div>
               <label style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Année</label>
               <input type="number" id="peg-roul-annee" value="2026" min="2026" max="2060" step="1"
@@ -881,20 +914,34 @@ body {
                 oninput="calcPEGVersement()">
             </div>
             <div>
-              <label style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Prime brute reçue (€)</label>
-              <input type="number" id="peg-roul-prime" placeholder="819.91" step="0.01" min="0"
+              <label style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Prime reçue (€) <span style="color:var(--green);">↑ 800€ en 2026</span></label>
+              <input type="number" id="peg-roul-prime" value="800" step="0.01" min="0"
                 style="width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;"
                 oninput="calcPEGVersement()">
             </div>
             <div>
               <label style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Montant versé sur PEG (€)</label>
-              <input type="number" id="peg-roul-verse" placeholder="393.42" step="0.01" min="0"
+              <input type="number" id="peg-roul-verse" value="800" step="1" min="0"
                 style="width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:12px;border-color:var(--gold);"
                 oninput="calcPEGVersement()">
             </div>
           </div>
-          <div id="peg-roul-calcul" style="display:none;background:var(--s2);border-radius:6px;padding:10px 12px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.8;"></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <!-- Menu horizon de placement -->
+          <div style="margin-bottom:12px;">
+            <div class="fg" style="margin:0;">
+              <label style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Horizon de comparaison (années sur PEG + PEA)</label>
+              <select id="peg-horizon" onchange="calcPEGVersement()" style="font-size:12px;font-family:'JetBrains Mono',monospace;">
+                <option value="5">5 ans — minimum PEG obligatoire</option>
+                <option value="10">10 ans — PEG 5 ans + PEA 5 ans</option>
+                <option value="15">15 ans — PEG 5 ans + PEA 10 ans</option>
+                <option value="20">20 ans — PEG 5 ans + PEA 15 ans</option>
+                <option value="25">25 ans — PEG 5 ans + PEA 20 ans</option>
+                <option value="31" selected>31 ans — horizon retraite 2057</option>
+              </select>
+            </div>
+          </div>
+          <div id="peg-roul-calcul" style="display:none;"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
             <button onclick="savePEGVersement()" class="btn sm" style="background:var(--gold);color:#080b10;font-weight:700;">✓ Enregistrer dans le tableau</button>
             <button onclick="calcPEGVersement()" class="btn gh sm">🔄 Recalculer</button>
           </div>
@@ -948,12 +995,25 @@ body {
 </div>
 
 <div id="pg-fiscalite" class="pg">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
     <div>
       <h1 style="font-family:'Playfair Display',serif;font-size:20px;">Fiscalité du patrimoine</h1>
-      <p style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:2px;">Cliquez un onglet pour déplier · Barème IR auto-actualisé · PFU · PS · LMNP</p>
+      <p style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:2px;">Haute-Vienne (87) · Zone 3 IR · TMI 11% · LMNP réel JD2M</p>
     </div>
     <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;background:var(--s2);padding:6px 10px;border-radius:6px;">⚠ Indicatif — non un conseil fiscal réglementé</div>
+  </div>
+
+  <!-- Résumé fiscal personnalisé -->
+  <div id="fiscal-resume-card" style="background:var(--s2);border:1px solid var(--gold)33;border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+    <div style="font-size:10px;color:var(--gold);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">
+      📊 Résumé fiscal — Maxime · Haute-Vienne 87 · <span id="fiscal-annee-label">2025</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;" id="fiscal-resume-kpis">
+      <!-- Rempli par renderFiscalite() -->
+    </div>
+    <div style="margin-top:10px;font-size:10px;color:var(--muted);border-top:1px solid var(--bd);padding-top:8px;" id="fiscal-resume-notes">
+      <!-- Notes personnalisées -->
+    </div>
   </div>
 
   <!-- ══ CALENDRIER FISCAL ══ -->
@@ -1312,9 +1372,9 @@ body {
     <div class="ri"><label>Mois/an investis PEA</label><select id="r-months-pea"><option value="12">12 mois/an</option><option value="9" selected>9 mois/an</option><option value="6">6 mois/an</option><option value="3">3 mois/an</option></select></div>
     <div class="ri"><label>Versement AV (€/mois)</label><input type="number" id="r-contrib-av" value="150"></div>
     <div class="ri"><label>Mois/an investis AV</label><select id="r-months-av"><option value="12">12 mois/an</option><option value="9">9 mois/an</option><option value="6">6 mois/an</option><option value="3" selected>3 mois/an</option></select></div>
-    <div class="ri"><label>PEG versement annuel (€)</label><input type="number" id="r-contrib-peg" value="400"></div>
-    <div class="ri"><label>Rendement PEA/AV (%/an)</label><input type="number" id="r-ret-rate" value="7" step="0.5"></div>
-    <div class="ri"><label>Rendement PEG (%/an)</label><input type="number" id="r-ret-peg" value="6" step="0.5"></div>
+    <div class="ri"><label>PEG versement annuel (€) <span style="color:var(--green);font-size:9px;">prime SNCF</span></label><input type="number" id="r-contrib-peg" value="800"></div>
+    <div class="ri"><label>Rendement PEA ESE S&P500 (%/an)</label><input type="number" id="r-ret-rate" value="9" step="0.5"></div>
+    <div class="ri"><label>Rendement PEG Mid-Cap ESR (%/an) <span style="color:var(--muted);font-size:9px;">TER 1,31%</span></label><input type="number" id="r-ret-peg" value="2.69" step="0.1"></div>
     <div class="ri"><label>Rendement Fonds euros AV (%/an)</label><input type="number" id="r-ret-fe" value="3.5" step="0.1"></div>
     <div class="ri"><label>Inflation estimée (%/an)</label><input type="number" id="r-inf" value="2" step="0.1"></div>
     <div class="ri"><label>Retraite SNCF nette (€/mois)</label><input type="number" id="r-sncf" value="2300"></div>
@@ -1322,6 +1382,12 @@ body {
   </div>
 
   <div class="g3 mb" id="milestones"></div>
+
+  <!-- Jauge progression retraite -->
+  <div class="card mb" id="card-progression-retraite" style="border-left:3px solid var(--green);">
+    <div class="chd">🎯 Progression vers l'objectif retraite 2057</div>
+    <div id="progression-retraite-content" style="min-height:80px;"></div>
+  </div>
 
   <!-- Revenus projetés à la retraite -->
   <div class="card mb">
@@ -1430,19 +1496,39 @@ body {
     <p style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:4px;">Cliquez un outil pour le déplier · Tous les calculs sont indicatifs</p>
 
   <!-- ══ LECTURE INTELLIGENTE DE RELEVÉS ══ -->
-  <div class="card mb" style="border-left:3px solid #9b72cf;margin-top:14px;margin-bottom:14px;">
-    <div class="chd"><span>🔍 Lecture intelligente de documents</span></div>
-    <div style="font-size:12px;line-height:1.6;color:var(--text);margin-bottom:12px;">
-      Pierre peut analyser vos documents officiels et mettre à jour vos données automatiquement :
-      <span style="color:var(--muted);">avis d'imposition, taxe foncière, relevés bancaires, fiches de paie, fonds Amundi PEG, relevé Linxea AV.</span>
+  <div class="accordion-item" style="border:1px solid #9b72cf44;border-radius:10px;margin-bottom:14px;overflow:hidden;">
+    <button onclick="toggleAccordion('acc-lecture-pdf')" style="width:100%;text-align:left;background:var(--s2);border:none;padding:13px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+      <div style="flex:1;">
+        <div style="font-family:'Outfit',sans-serif;font-weight:600;font-size:14px;color:var(--text);margin-bottom:2px;">📄 Lecture intelligente de documents</div>
+        <div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Avis IR · Taxe foncière · Relevé PEA/AV · Fiche de paie</div>
+      </div>
+      <span id="acc-lecture-pdf-icon" style="font-size:12px;color:var(--gold);font-family:'JetBrains Mono',monospace;flex-shrink:0;">▸ Ouvrir</span>
+    </button>
+    <div id="acc-lecture-pdf-body" style="display:none;padding:14px 16px 16px;background:var(--bg);">
+      <div style="font-size:12px;line-height:1.6;color:var(--muted);margin-bottom:14px;">
+        Pierre analyse votre document et extrait automatiquement les données importantes. Types supportés :
+        <strong style="color:var(--text);">avis d'imposition, taxe foncière, relevé bancaire, relevé PEA/AV, fiche de paie.</strong>
+      </div>
+      <div class="fg"><label>Type de document</label>
+        <select id="pdf-type-outils" style="font-size:12px;">
+          <option value="avis_imposition">Avis d'imposition (IR)</option>
+          <option value="taxe_fonciere">Taxe foncière</option>
+          <option value="releve_bancaire">Relevé bancaire</option>
+          <option value="releve_pea">Relevé PEA / CTO</option>
+          <option value="releve_av">Relevé Assurance Vie</option>
+          <option value="fiche_paie">Fiche de paie</option>
+          <option value="autre">Autre (Pierre détecte)</option>
+        </select>
+      </div>
+      <div class="fg"><label>Fichier PDF</label>
+        <input type="file" id="pdf-file-outils" accept="application/pdf" style="font-size:12px;">
+      </div>
+      <div id="pdf-status-outils" style="font-size:10px;font-family:'JetBrains Mono',monospace;min-height:18px;margin-bottom:8px;"></div>
+      <div id="pdf-result-outils" style="margin-bottom:10px;"></div>
+      <div class="brow">
+        <button class="btn" id="pdf-analyze-outils">🔍 Analyser avec Pierre</button>
+      </div>
     </div>
-    <div id="import-zone" style="border:2px dashed var(--bd);border-radius:12px;padding:24px;text-align:center;background:var(--s2);transition:.2s;cursor:pointer;" onclick="document.getElementById('file-import').click();" ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='var(--s3)'" ondragleave="this.style.borderColor='var(--bd)';this.style.background='var(--s2)'" ondrop="event.preventDefault();handleDocDrop(event);this.style.borderColor='var(--bd)';this.style.background='var(--s2)'">
-      <div style="font-size:32px;margin-bottom:8px;">📂</div>
-      <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Glissez un document ici ou cliquez pour parcourir</div>
-      <div style="font-size:11px;color:var(--muted);">PDF · CSV · TXT · Image (jusqu'à 5 Mo)</div>
-      <input type="file" id="file-import" accept=".pdf,.csv,.txt,.png,.jpg,.jpeg" style="display:none;" onchange="handleDocFile(this.files[0])">
-    </div>
-    <div id="import-result" style="margin-top:14px;font-size:11px;line-height:1.6;"></div>
   </div>
 
 <div style="background:var(--s2);border-radius:10px;border:1px solid var(--bd);margin-bottom:14px;overflow:hidden;">
@@ -1937,8 +2023,7 @@ body {
     </div>
   </div>
 
-  <!-- Plan de versements mensuel -->
-  <div class="accordion-item" style="border:1px solid var(--bd);border-radius:10px;margin-bottom:12px;overflow:hidden;">
+  <!-- Plan de versements mensuel -->\n  <div class="accordion-item" style="border:1px solid var(--bd);border-radius:10px;margin-bottom:12px;overflow:hidden;">
     <button onclick="toggleAccordion('acc-st-plan')" style="width:100%;text-align:left;background:var(--s2);border:none;padding:13px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;">
       <div style="flex:1;">
         <div style="font-family:'Outfit',sans-serif;font-weight:600;font-size:14px;color:var(--text);margin-bottom:2px;">📅 Plan de versements mensuel</div>
@@ -1951,9 +2036,23 @@ body {
     <div id="acc-st-plan-body" style="display:none;padding:14px 16px;border-top:1px solid var(--bd);">
       <div class="month-plan" id="month-plan"></div>
       <div style="margin-top:12px;padding:10px 14px;background:var(--s2);border-radius:8px;font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;line-height:1.6;">
-        💡 Récap : PEA 9 mois (ESE SP500×6 + PAEEM EM×3) · AV 3 mois (MSCI World) · PEG 500€/avr (+ abondement SNCF 150€)
+        💡 Récap : PEA 9 mois (ESE SP500×6 + PAEEM EM×3) · AV 3 mois (MSCI World) · PEG 1 500€/an (+ abondement SNCF max 300€)
         <br>En avril : vérifier aussi le retrait du versement PEG N-5 → PEA ESE
       </div>
+    </div>
+  </div>
+
+  <!-- DCA Tracker mensuel -->
+  <div class="accordion-item" style="border:1px solid var(--bd);border-radius:10px;margin-bottom:12px;overflow:hidden;">
+    <button onclick="toggleAccordion('acc-dca-tracker')" style="width:100%;text-align:left;background:var(--s2);border:none;padding:13px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+      <div style="flex:1;">
+        <div style="font-family:'Outfit',sans-serif;font-weight:600;font-size:14px;color:var(--text);margin-bottom:2px;">📊 Suivi DCA — Versements réels vs objectifs</div>
+        <div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Cochez chaque versement effectué · Progression annuelle</div>
+      </div>
+      <span id="acc-dca-tracker-icon" style="font-size:12px;color:var(--gold);font-family:'JetBrains Mono',monospace;flex-shrink:0;">▸ Voir</span>
+    </button>
+    <div id="acc-dca-tracker-body" style="display:none;padding:14px 16px;border-top:1px solid var(--bd);">
+      <div id="dca-tracker-content">Chargement...</div>
     </div>
   </div>
 
@@ -1991,7 +2090,7 @@ body {
         <div style="margin-bottom:6px;"><span class="tag t-pea">PEA</span> <b style="color:var(--text);">150 €/mois × 9 mois</b> — BNP S&P500 (jan→sep)</div>
         <div style="margin-bottom:6px;"><span class="tag t-pea">PEA</span> <b style="color:var(--text);">150 €/mois × 3 mois</b> — Amundi Émergents ESG (oct/jan/avr)</div>
         <div style="margin-bottom:6px;"><span class="tag t-av">AV</span> <b style="color:var(--text);">150 €/mois × 3 mois</b> — MSCI World (nov/fév/mai)</div>
-        <div style="margin-bottom:6px;"><span class="tag t-peg">PEG</span> <b style="color:var(--text);">400 €/an minimum</b> — Mid-Cap Euro ESR + 100 € abondement</div>
+        <div style="margin-bottom:6px;"><span class="tag t-peg">PEG</span> <b style="color:var(--text);">1 500 €/an</b> → abondement max 300 € SNCF (tranches 30/20/10%)</div>
         <div style="margin-top:10px;padding:8px;background:var(--s2);border-radius:6px;font-size:10px;font-family:'JetBrains Mono',monospace;">
           Cible 2050 : PEA ~130–155k€ · AV ~24k€ · PEG ~30k€
         </div>
@@ -2173,10 +2272,11 @@ body {
       <div>
         <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Actif</label>
         <select id="bt-asset" style="width:100%;margin-top:6px;font-size:12px;">
-          <option value="^GSPC">S&P 500</option>
-          <option value="CW8.PA">MSCI World</option>
+          <option value="ESE.PA">&#11088; ESE BNP S&amp;P500 PEA (votre ETF)</option>
+          <option value="^GSPC">S&amp;P 500 (USD)</option>
+          <option value="CW8.PA">CW8 MSCI World PEA</option>
           <option value="^FCHI">CAC 40</option>
-          <option value="PAEEM.PA">MSCI Émergents</option>
+          <option value="PAEEM.PA">MSCI Emergents</option>
           <option value="GLD">Or</option>
         </select>
       </div>
@@ -2555,59 +2655,388 @@ body {
 <div id="toast"></div>
 
 <script>
-// ── Calcul versement PEG avec abondement SNCF ─────────────────────
+// ══════════════════════════════════════════════════════════════
+// OUTIL PEG SNCF — Optimiseur prime + comparaison scénarios
+// ══════════════════════════════════════════════════════════════
+
 function calcAboSNCF(verse) {
+  if (verse <= 0) return 0;
   var a = 0;
   if (verse <= 500)       a = verse * 0.30;
-  else if (verse <= 1000) a = 500*0.30 + (verse-500)*0.20;
-  else if (verse <= 1500) a = 500*0.30 + 500*0.20 + (verse-1000)*0.10;
+  else if (verse <= 1000) a = 150 + (verse-500)*0.20;
+  else if (verse <= 1500) a = 150 + 100 + (verse-1000)*0.10;
   else                    a = 300;
   return Math.min(Math.round(a*100)/100, 300);
 }
+window.calcAboSNCF = calcAboSNCF;
+
+// Rendement net après PS sur PV (exo IR, PS 17,2% sur gains)
+function projeterPEG(capital, anneesHorizon) {
+  // Amundi Mid-Cap Euro ESR 723 (QS0002905659)
+  // Perf brute historique 8 ans : ~4%/an · TER 1,31%/an → net ~2,69%/an
+  var PERF_BRUT_PEG = 0.04;
+  var TER_PEG = 0.0131;
+  var rdmt = PERF_BRUT_PEG - TER_PEG; // 2,69% net de frais
+  var cap = capital;
+  for (var i = 0; i < anneesHorizon; i++) cap = cap * (1 + rdmt);
+  var pv = Math.max(0, cap - capital);
+  var capNet = cap - pv * 0.172; // Exo IR (épargne salariale), PS 17,2% sur PV
+  return { brut: Math.round(cap), net: Math.round(capNet), pv: Math.round(pv), rdmt: rdmt };
+}
+
+// Projection PEA (ETF World CW8, 7% brut, exo IR après 5 ans, PS 17,2% sur PV)
+function projeterPEA(capital, anneesHorizon) {
+  // ESE = BNP Easy S&P500 (éligible PEA)
+  // S&P500 perf historique 30 ans : ~10%/an brut · TER ~0,15% · Net ~9,85%
+  // Hypothèse prudente retenue : 9%/an net (tenir compte des cycles)
+  var rdmt = 0.09;
+  var cap = capital;
+  for (var i = 0; i < anneesHorizon; i++) cap = cap * (1 + rdmt);
+  var pv = Math.max(0, cap - capital);
+  // PEA > 5 ans : exo IR, PS 17,2% sur PV uniquement
+  var capNet = anneesHorizon >= 5 ? cap - pv * 0.172 : cap - pv * 0.30;
+  return { brut: Math.round(cap), net: Math.round(capNet), pv: Math.round(pv) };
+}
+
+// Scénario hybride : PEG 5 ans → sortie → réinvestissement sur PEA pendant (horizon-5) ans
+function projeterPEGpuisPEA(capital, horizonTotal) {
+  if (horizonTotal < 5) return projeterPEG(capital, horizonTotal); // pas assez long
+  // Phase 1 : PEG 5 ans
+  var phase1 = projeterPEG(capital, 5);
+  // Phase 2 : le net PEG est réinvesti sur PEA pour (horizon-5) ans
+  var phase2 = projeterPEA(phase1.net, horizonTotal - 5);
+  return {
+    brut: phase2.brut,
+    net: phase2.net,
+    pv: phase1.pv + phase2.pv,
+    phase1Net: phase1.net,
+    label: '5 ans PEG → ' + (horizonTotal-5) + ' ans PEA'
+  };
+}
+
+// Projection AV (fonds euro 3%, frais gestion 2% = 1% net, ou UC 5% brut - 2% - 0,5% = 2,5%)
+function projeterAV(capital, anneesHorizon, type) {
+  var rdmt = type === 'uc' ? 0.025 : 0.01;
+  var cap = capital;
+  for (var i = 0; i < anneesHorizon; i++) cap = cap * (1 + rdmt);
+  var pv = Math.max(0, cap - capital);
+  // AV après 8 ans : abattement 4600€ puis 7,5% IR + 17,2% PS sur excédent
+  var fiscPV = anneesHorizon >= 8 ? Math.max(0, pv - 4600) * (0.075 + 0.172) : pv * 0.30;
+  var capNet = Math.round(cap - fiscPV);
+  return { brut: Math.round(cap), net: capNet, pv: Math.round(pv) };
+}
+
+// Livret A : 2,4%/an net (exonéré IR + PS), plafond 22 950€
+function projeterLivretA(capital, anneesHorizon) {
+  var rdmt = 0.024;
+  var cap = capital;
+  for (var i = 0; i < anneesHorizon; i++) cap = cap * (1 + rdmt);
+  return { brut: Math.round(cap), net: Math.round(cap), pv: Math.round(cap - capital) };
+}
+
 
 function calcPEGVersement() {
-  var prime = parseFloat(document.getElementById('peg-roul-prime')&&document.getElementById('peg-roul-prime').value) || 0;
-  var verse = parseFloat(document.getElementById('peg-roul-verse')&&document.getElementById('peg-roul-verse').value) || 0;
-  var el = document.getElementById('peg-roul-calcul');
+  var prime   = parseFloat(document.getElementById('peg-roul-prime') && document.getElementById('peg-roul-prime').value) || 0;
+  var verse   = parseFloat(document.getElementById('peg-roul-verse') && document.getElementById('peg-roul-verse').value) || 0;
+  var annee   = parseInt(document.getElementById('peg-roul-annee') && document.getElementById('peg-roul-annee').value) || new Date().getFullYear();
+  var horizon = parseInt(document.getElementById('peg-horizon') && document.getElementById('peg-horizon').value) || 5;
+  var el      = document.getElementById('peg-roul-calcul');
   if (!el) return;
+  if (!prime && !verse) { el.style.display = 'none'; return; }
 
-  if (!verse && !prime) { el.style.display='none'; return; }
+  // Limiter le versement à la prime
+  if (verse > prime) {
+    verse = prime;
+    var vi = document.getElementById('peg-roul-verse');
+    if (vi) vi.value = prime;
+  }
 
-  var abo = calcAboSNCF(verse);
-  var total = verse + abo;
-  var retire = prime - verse;
-  var taux_impo = 0.11 + 0.097;
-  var net_retire = retire > 0 ? Math.round(retire * (1 - taux_impo)) : 0;
-  var pct_abo = verse > 0 ? Math.round(abo/verse*100) : 0;
-  var pct_verse_prime = prime > 0 ? Math.round(verse/prime*100) : 0;
-  var dispo = (parseInt(document.getElementById('peg-roul-annee').value)||2026) + 5;
+  var abo    = calcAboSNCF(verse);
+  var total  = verse + abo;           // Capital PEG initial
+  var retire = prime - verse;         // Partie retirée en cash
+  var TMI    = 0.11;
+  // Impôt sur la partie retirée (prime = revenu imposable) : IR 11% + PS 9,7%
+  var taux_retrait = TMI + 0.097;
+  var net_retire = retire > 0 ? Math.round(retire * (1 - taux_retrait)) : 0;
+  var dispo_annee = annee + horizon;
 
-  // Simulation à 5 ans
-  var RDMT = 0.04 - 0.0131;
-  var cap = total;
-  for(var i=0;i<5;i++) cap = cap*(1+RDMT);
-  var pv = Math.max(0, cap-total);
-  var net_sorti = Math.round(cap - pv*0.097);
+  // Scénario A : Tout placer PEG (max abo) — retrait excédent → PEA
+  var verseA  = Math.min(prime, 1500);
+  var aboMax  = calcAboSNCF(verseA);
+  var capitalA = verseA + aboMax;
+  var retireA  = prime - verseA;
+  var netRetireA = retireA > 0 ? Math.round(retireA * (1 - taux_retrait)) : 0;
+  var projA_peg = projeterPEG(capitalA, horizon);
+  var projA_pea = retireA > 0 ? projeterPEA(netRetireA, horizon) : { net: 0 };
+  var totalA  = projA_peg.net + projA_pea.net;
 
-  var html = '<table style="width:100%;border-collapse:collapse;">';
-  var rows = [
-    ['Prime brute', fmtK(prime), '100%', 'var(--text)'],
-    ['Versé sur PEG', fmtK(verse), pct_verse_prime+'% de la prime', 'var(--gold)'],
-    ['Abondement SNCF ('+pct_abo+'%)', '+'+fmtK(abo), 'Tranches 30/20/10%', 'var(--green)'],
-    ['Total placé en PEG', fmtK(total), '', 'var(--peg)'],
-    ['Retiré (imposable)', fmtK(retire), '', 'var(--muted)'],
-    ['Net retiré après impôt (20,7%)', fmtK(net_retire), '', 'var(--muted)'],
-    ['Valeur estimée dans 5 ans ('+dispo+')', '~'+fmtK(net_sorti)+'€ nets', 'puis → PEA ESE', 'var(--blue)'],
+  // Scénario B : Versement saisi — retrait partiel net → PEA immédiatement
+  var projB_peg = projeterPEG(total, horizon);
+  var projB_pea = net_retire > 0 ? projeterPEA(net_retire, horizon) : { net: 0 };
+  var totalB  = projB_peg.net + projB_pea.net;
+
+  // Scénario C : Tout retirer → 100% net sur PEA direct
+  var netCash = Math.round(prime * (1 - taux_retrait));
+  var projC   = projeterPEA(netCash, horizon);
+  var totalC  = projC.net;
+
+  // Scénario D : Tout retirer → AV UC Linxea (frais 2%+0,5%)
+  var projD   = projeterAV(netCash, horizon, 'uc');
+  var totalD  = projD.net;
+
+  // Scénario G : PEG 5 ans → sortie → Livret A pour le reste
+  var totalG = 0;
+  var projG_detail = null;
+  if (horizon > 5) {
+    var projG_peg5  = projeterPEG(total, 5);
+    var projG_livA  = projeterLivretA(projG_peg5.net, horizon - 5);
+    var projG_retire_livA = net_retire > 0 ? projeterLivretA(net_retire, horizon) : { net: 0 };
+    totalG = projG_livA.net + projG_retire_livA.net;
+    projG_detail = { capitalPEG5: projG_peg5.net, capitalLivA: projG_livA.net };
+  }
+
+  // Scénario H : Tout retirer → 100% net sur Livret A direct
+  var projH   = projeterLivretA(netCash, horizon);
+  var totalH  = projH.net;
+
+  // Scénario E : Palier optimal PEG — retrait excédent → PEA
+  var optVerse = Math.min(prime, 1500);
+  var optAbo   = calcAboSNCF(optVerse);
+  var optTotal = optVerse + optAbo;
+  var optRetire = prime - optVerse;
+  var optNetR  = optRetire > 0 ? Math.round(optRetire * (1 - taux_retrait)) : 0;
+  var projE_peg = projeterPEG(optTotal, horizon);
+  var projE_pea = optNetR > 0 ? projeterPEA(optNetR, horizon) : { net: 0 };
+  var totalE  = projE_peg.net + projE_pea.net;
+
+  // Scénario F : PEG 5 ans → sortie → PEA (stratégie Maxime — si horizon > 5 ans)
+  var totalF = 0;
+  var projF_detail = null;
+  if (horizon > 5) {
+    var projF_peg5 = projeterPEG(total, 5);
+    var projF_pea  = projeterPEA(projF_peg5.net, horizon - 5);
+    var projF_retire_pea = net_retire > 0 ? projeterPEA(net_retire, horizon) : { net: 0 };
+    totalF = projF_pea.net + projF_retire_pea.net;
+    projF_detail = { capitalPEG5: projF_peg5.net, capitalPEA: projF_pea.net, retraitPEA: projF_retire_pea.net };
+  }
+
+  // Meilleur scénario
+  var scenarios = [
+    { id:'A', label:'PEG max abo + retrait→PEA', total: totalA },
+    { id:'B', label:'Versement saisi + retrait→PEA', total: totalB },
+    { id:'C', label:'Tout retirer → PEA direct', total: totalC },
+    { id:'D', label:'Tout retirer → AV UC', total: totalD },
+    { id:'E', label:'Palier optimal PEG + retrait→PEA', total: totalE },
   ];
-  rows.forEach(function(r){
-    html += '<tr><td style="color:var(--muted);padding:1px 6px 1px 0;">'+r[0]+'</td>';
-    html += '<td style="color:'+r[3]+';font-weight:700;text-align:right;padding:1px 8px;">'+r[1]+'</td>';
-    html += '<td style="color:var(--dim);font-size:9px;padding:1px 0;">'+r[2]+'</td></tr>';
+  if (horizon > 5) scenarios.push({ id:'F', label:'PEG 5 ans → PEA (stratégie Maxime)', total: totalF });
+  if (horizon > 5) scenarios.push({ id:'G', label:'PEG 5 ans → Livret A', total: totalG });
+  scenarios.push({ id:'H', label:'Tout retirer → Livret A', total: totalH });
+  var best = scenarios.reduce(function(a,b){ return b.total > a.total ? b : a; });
+
+  var html = '';
+
+  // ── Bloc 1 : Résumé versement courant ──
+  html += '<div style="background:var(--s2);border-radius:8px;padding:12px;margin-bottom:14px;">';
+  html += '<div style="font-size:10px;color:var(--gold);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Votre versement</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">';
+
+  function kpiMini(label, val, col) {
+    return '<div style="background:var(--bg);border-radius:6px;padding:8px 10px;">'
+      + '<div style="font-size:9px;color:var(--muted);">' + label + '</div>'
+      + '<div style="font-size:15px;font-weight:700;color:' + col + ';font-family:JetBrains Mono,monospace;">' + val + '</div>'
+      + '</div>';
+  }
+  html += kpiMini('Versé sur PEG', verse.toLocaleString('fr-FR') + ' €', 'var(--gold)');
+  html += kpiMini('Abondement SNCF', '+' + abo.toLocaleString('fr-FR') + ' €', 'var(--green)');
+  html += kpiMini('Capital PEG total', total.toLocaleString('fr-FR') + ' €', 'var(--peg)');
+  html += kpiMini('Retiré en cash (net)', net_retire > 0 ? net_retire.toLocaleString('fr-FR') + ' €' : '—', 'var(--muted)');
+  html += '</div>';
+
+  // Rendement abondement
+  if (verse > 0) {
+    var pct_abo = Math.round(abo / verse * 100);
+    html += '<div style="margin-top:8px;font-size:11px;color:var(--muted);">';
+    html += 'Rendement abondement immédiat : <b style="color:var(--green);">' + pct_abo + '%</b>';
+    html += ' · Capital dispo en <b>' + dispo_annee + '</b>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // ── Bloc 2 : Paliers abondement (référence rapide) ──
+  html += '<div style="background:var(--s2);border-radius:8px;padding:12px;margin-bottom:14px;">';
+  html += '<div style="font-size:10px;color:var(--gold);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Paliers abondement SNCF</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
+  var paliers = [
+    { verse: 500,  abo: 150, rdmt: 30 },
+    { verse: 1000, abo: 250, rdmt: 25 },
+    { verse: 1500, abo: 300, rdmt: 20 },
+  ];
+  paliers.forEach(function(p) {
+    var isActive = (verse >= p.verse - 1 && (p.verse === 1500 || verse < p.verse + 499));
+    var isCurrent = (verse >= p.verse - 1 && verse <= p.verse);
+    html += '<div style="background:' + (verse >= p.verse ? 'var(--green)18' : 'var(--bg)') + ';border:1px solid ' + (verse >= p.verse ? 'var(--green)44' : 'var(--bd)') + ';border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text);">' + p.verse + ' €</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:var(--green);">+' + p.abo + ' €</div>';
+    html += '<div style="font-size:9px;color:var(--muted);">' + p.rdmt + '% garanti</div>';
+    html += '</div>';
   });
-  html += '</table>';
+  html += '</div>';
+  // Barre de progression vers le prochain palier
+  var procPalier = verse < 500 ? 500 : (verse < 1000 ? 1000 : (verse < 1500 ? 1500 : 1500));
+  var pct_prog = verse >= 1500 ? 100 : Math.round(verse / procPalier * 100);
+  var reste = Math.max(0, procPalier - verse);
+  html += '<div style="margin-top:10px;">';
+  html += '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:4px;">';
+  html += '<span>' + (verse >= 1500 ? '✅ Palier maximum atteint !' : 'Prochain palier : ' + procPalier + ' €') + '</span>';
+  html += '<span>' + (verse >= 1500 ? '' : 'Il manque ' + reste + ' €') + '</span>';
+  html += '</div>';
+  html += '<div style="height:6px;background:var(--bd);border-radius:3px;overflow:hidden;">';
+  html += '<div style="height:100%;width:' + pct_prog + '%;background:' + (verse >= 1500 ? 'var(--green)' : 'var(--gold)') + ';transition:width .4s;"></div>';
+  html += '</div></div>';
+  html += '</div>';
+
+  // ── Bloc 3 : Projection à l'horizon ──
+  html += '<div style="background:var(--s2);border-radius:8px;padding:12px;margin-bottom:14px;">';
+  html += '<div style="font-size:10px;color:var(--gold);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">';
+  html += 'Projection à ' + horizon + ' ans (' + dispo_annee + ') — votre versement de ' + verse.toLocaleString('fr-FR') + ' €</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;">';
+
+  function projKpi(label, obj, col, note) {
+    return '<div style="background:var(--bg);border-radius:6px;padding:10px;">'
+      + '<div style="font-size:9px;color:var(--muted);margin-bottom:4px;">' + label + '</div>'
+      + '<div style="font-size:14px;font-weight:700;color:' + col + ';font-family:JetBrains Mono,monospace;">' + obj.net.toLocaleString('fr-FR') + ' €</div>'
+      + '<div style="font-size:9px;color:var(--muted);margin-top:2px;">dont PV ' + obj.pv.toLocaleString('fr-FR') + ' €</div>'
+      + (note ? '<div style="font-size:9px;color:var(--gold);margin-top:2px;">' + note + '</div>' : '')
+      + '</div>';
+  }
+  html += projKpi('PEG Mid-Cap ESR<br>TER 1,31% → 2,69%/an net<br>(capital=' + total.toLocaleString('fr-FR') + '€)', projB_peg, 'var(--peg)', 'Exo IR, PS 17,2%');
+  if (horizon > 5 && projF_detail) {
+    html += projKpi('⭐ PEG 5 ans→PEA<br>(sortie PEG=' + projF_detail.capitalPEG5.toLocaleString('fr-FR') + '€<br>→PEA ' + (horizon-5) + ' ans)', { net: projF_detail.capitalPEA, pv: projF_detail.capitalPEA - projF_detail.capitalPEG5 }, 'var(--gold)', 'Stratégie Maxime');
+  }
+  html += projKpi('Si retiré → PEA<br>(capital=' + netCash.toLocaleString('fr-FR') + '€)', projC, 'var(--blue)', horizon>=5?'Exo IR après 5 ans':'Attention: <5 ans');
+  html += projKpi('Si retiré → AV UC<br>(capital=' + netCash.toLocaleString('fr-FR') + '€)', projD, 'var(--av)', horizon>=8?'Abatt. 4600€/an':'>8 ans pour abatt.');
+  html += '</div>';
+  html += '<div style="margin-top:8px;font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;">';
+  html += 'Hypothèses : PEG 2,69%/an net (4%-TER 1,31%) · PEA ESE S&P500 9%/an · AV UC 2,5%/an · Livret A 2,4%/an exo · TMI 11% · Retrait prime : IR 11%+PS 9,7%.';
+  html += '</div></div>';
+
+  // ── Bloc 4 : Comparatif des 5 scénarios ──
+  html += '<div style="background:var(--s2);border-radius:8px;padding:12px;margin-bottom:14px;">';
+  html += '<div style="font-size:10px;color:var(--gold);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">';
+  html += '⚖️ Comparatif pour ' + horizon + ' ans — Prime de ' + prime.toLocaleString('fr-FR') + ' €</div>';
+
+  var maxTotal = Math.max(totalA, totalB, totalC, totalD, totalE, horizon > 5 ? totalF : 0, horizon > 5 ? totalG : 0, totalH);
+  var scenDisplay = [
+    { label: 'PEG 5 ans puis PEA ESE S&P500 (strategie Maxime)', desc: horizon > 5 ? (verse.toLocaleString('fr-FR') + String.fromCharCode(8364) + ' PEG 5 ans vers PEA ' + (horizon-5) + ' ans + retrait net vers PEA') : 'Non applicable (horizon <= 5 ans)', total: horizon > 5 ? totalF : 0, id:'F' },
+    { label: 'Versement saisi + retrait vers PEA',     desc: verse.toLocaleString('fr-FR') + String.fromCharCode(8364) + ' PEG + ' + abo.toLocaleString('fr-FR') + String.fromCharCode(8364) + ' abo' + (net_retire > 0 ? ', ' + net_retire.toLocaleString('fr-FR') + String.fromCharCode(8364) + ' net vers PEA' : ''), total: totalB, id:'B' },
+    { label: 'Tout retirer vers PEA ESE S&P500',           desc: netCash.toLocaleString('fr-FR') + String.fromCharCode(8364) + ' nets sur PEA ESE S&P500 (9%/an, ' + horizon + ' ans)', total: totalC, id:'C' },
+    { label: 'Tout retirer vers AV UC',                desc: netCash.toLocaleString('fr-FR') + String.fromCharCode(8364) + ' nets sur AV UC (2,5%/an, ' + horizon + ' ans)', total: totalD, id:'D' },
+    { label: 'PEG 5 ans puis Livret A',               desc: horizon > 5 ? (verse.toLocaleString('fr-FR') + String.fromCharCode(8364) + ' PEG 5 ans (' + (projG_detail ? projG_detail.capitalPEG5.toLocaleString('fr-FR') : '?') + String.fromCharCode(8364) + ' sorti) + Livret A ' + (horizon-5) + ' ans') : 'Non applicable', total: horizon > 5 ? totalG : 0, id:'G' },
+    { label: 'Tout retirer vers Livret A',             desc: netCash.toLocaleString('fr-FR') + String.fromCharCode(8364) + ' nets sur Livret A (2,4%/an exo, ' + horizon + ' ans)', total: totalH, id:'H' },
+  ];
+  scenDisplay.sort(function(a,b){ return b.total - a.total; });
+
+  scenDisplay.forEach(function(sc, idx) {
+    var isBest = sc.id === best.id;
+    var barW   = Math.round(sc.total / maxTotal * 100);
+    html += '<div style="margin-bottom:8px;padding:10px;background:' + (isBest ? 'rgba(212,175,83,0.08)' : 'var(--bg)') + ';border:1px solid ' + (isBest ? 'var(--gold)' : 'var(--bd)') + ';border-radius:8px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+    html += '<div style="font-size:12px;font-weight:' + (isBest ? '700' : '500') + ';color:' + (isBest ? 'var(--gold)' : 'var(--text)') + ';">';
+    html += sc.label + (isBest ? ' ← Meilleur' : '') + '</div>';
+    html += '<div style="font-size:14px;font-weight:700;font-family:JetBrains Mono,monospace;color:' + (isBest ? 'var(--gold)' : 'var(--text)') + ';">' + sc.total.toLocaleString('fr-FR') + ' €</div>';
+    html += '</div>';
+    html += '<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">' + sc.desc + '</div>';
+    html += '<div style="height:4px;background:var(--bd);border-radius:2px;overflow:hidden;">';
+    html += '<div style="height:100%;width:' + barW + '%;background:' + (isBest ? 'var(--gold)' : 'var(--muted)') + ';"></div>';
+    html += '</div></div>';
+  });
+
+  html += '<div style="margin-top:10px;font-size:10px;color:var(--muted);">';
+  html += '* Montants estimés nets après fiscalité. Performances passées non garanties.';
+  html += ' · PEG : ' + horizon + ' ans min. · PEA : idéalement >5 ans';
+  html += '</div></div>';
+
+  // ── Bloc 5 : Conseil personnalisé ──
+  var conseil = '';
+  if (best.id === 'C') {
+    conseil = '📈 <b>Sur cet horizon de ' + horizon + ' ans</b>, tout retirer sur PEA ESE S&P500 est gagnant. L\'abondement ne compense pas le différentiel de rendement (9% vs 2,69%) sur une longue période. Valable si prime modeste ou horizon très long.';
+  } else if (best.id === 'D') {
+    conseil = '📈 Sur cet horizon court, l\'AV UC sort devant. Mais attention aux frais Linxea (2%+0,5%) qui pèsent sur le long terme.';
+  } else if (best.id === 'F') {
+    conseil = '⭐ <b>Stratégie optimale confirmée : PEG 5 ans → PEA ESE S&P500</b>. Vous cumulez l\'abondement garanti SNCF + la croissance long terme du S&P500 (~9%/an). À 5 ans pile : sortez le PEG, virez immédiatement sur ESE dans votre PEA BoursoBank.';
+  } else if (best.id === 'G') {
+    conseil = '💰 PEG 5 ans puis Livret A est correct sur horizon court. L\'abondement reste intéressant. Mais sur 15+ ans, le PEA ESE reprend l\'avantage — changez l\'horizon pour vous en convaincre.';
+  } else if (best.id === 'H') {
+    conseil = '⚠️ <b>Tout retirer sur Livret A est la moins bonne option sur le long terme.</b> Le Livret A (2,4% net) ne compense pas la perte de l\'abondement SNCF (20-30% garanti). Utile uniquement si besoin de liquidité immédiate ou épargne de précaution insuffisante.';
+  } else if (best.id === 'A' || best.id === 'E' || best.id === 'B') {
+    conseil = '🏆 <b>Placer sur le PEG est optimal sur ' + horizon + ' ans</b>. L\'abondement SNCF garanti (+' + abo.toLocaleString('fr-FR') + '€) est difficile à battre sur horizon court. Le retrait net part sur PEA ESE.';
+  } else {
+    conseil = '✏️ Votre versement de ' + verse.toLocaleString('fr-FR') + '€ est correct. L\'abondement de ' + abo.toLocaleString('fr-FR') + '€ est un bon rendement garanti.';
+  }
+  html += '<div style="background:rgba(212,175,83,0.06);border:1px solid var(--gold)33;border-radius:8px;padding:12px;font-size:12px;line-height:1.6;">';
+  html += conseil;
+  html += '<br><br><span style="font-size:10px;color:var(--muted);">💡 Changez l\'horizon dans le menu pour voir comment l\'équilibre évolue dans le temps.</span>';
+  html += '</div>';
+
+  // ── Simulation DCA PEG pluriannuelle ───────────────────────
+  html += '<div style="margin-top:14px;background:var(--s2);border-radius:8px;padding:12px;border:1px solid var(--bd);">';
+  html += '<div style="font-size:10px;color:var(--gold);font-family:JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">📅 Simulation DCA PEG — si je verse ' + verse.toLocaleString('fr-FR') + '€/an pendant X ans</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;">';
+  [5, 10, 15, 20, 31].forEach(function(ans) {
+    // Cumuler chaque versement annuel + abondement, chacun croît pendant (total - an) ans en PEG, puis (horizon - total) ans en PEA ESE
+    var capitalTotal = 0;
+    for (var a = 0; a < ans; a++) {
+      var ansRestantsPEG = Math.min(5, ans - a);
+      var capPEG = total * Math.pow(1 + 0.0269, ansRestantsPEG);
+      var pvPEGa = Math.max(0, capPEG - total);
+      var netPEG = capPEG - pvPEGa * 0.097;
+      // PEA après sortie PEG
+      var ansPEA = Math.max(0, ans - a - 5);
+      var capPEA = netPEG * Math.pow(1 + 0.09, ansPEA);
+      var pvPEAa = Math.max(0, capPEA - netPEG);
+      capitalTotal += capPEA - pvPEAa * 0.172;
+    }
+    var totalVerse = verse * ans;
+    var totalAbo   = abo * ans;
+    html += '<div style="background:var(--bg);border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:10px;font-weight:700;color:var(--gold);">' + ans + ' ans</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:var(--green);font-family:JetBrains Mono,monospace;">' + Math.round(capitalTotal/1000) + 'k€</div>';
+    html += '<div style="font-size:9px;color:var(--muted);">' + Math.round(totalVerse/1000) + 'k€ versé<br>+' + Math.round(totalAbo/1000*10)/10 + 'k€ abo</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:6px;">Chaque lot : PEG 2,69%/an 5 ans → PEA ESE 9%/an · Exo IR · PS 17,2% · TMI 11%</div>';
+  html += '</div>';
+
+  // ── Bouton copier résumé ────────────────────────────────────
+  html += '<div style="margin-top:10px;display:flex;gap:8px;">';
+  html += '<button class="btn gh sm" id="btn-copy-peg-result" style="font-size:10px;">📋 Copier résumé</button>';
+  html += '<button class="btn gh sm" onclick="savePEGVersement()" style="font-size:10px;">💾 Enregistrer</button>';
+  html += '</div>';
+
   el.innerHTML = html;
   el.style.display = 'block';
+
+  // Bind bouton copier
+  var btnCopy = el.querySelector('#btn-copy-peg-result');
+  if (btnCopy) btnCopy.onclick = function() {
+    var resume = [
+      'PEG SNCF ' + annee + ' — Prime ' + prime.toLocaleString('fr-FR') + '€',
+      'Versé : ' + verse.toLocaleString('fr-FR') + '€ | Abondement : +' + abo.toLocaleString('fr-FR') + '€ | Capital PEG : ' + total.toLocaleString('fr-FR') + '€',
+      'Disponible en : ' + dispo_annee,
+      'Scénario optimal (' + horizon + ' ans) : ' + best.label + ' → ' + best.total.toLocaleString('fr-FR') + '€',
+    ].join('\n');
+    try {
+      navigator.clipboard.writeText(resume);
+      if (window._toast) window._toast('📋 Résumé copié');
+    } catch(e) {
+      var ta = document.createElement('textarea');
+      ta.value = resume; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      if (window._toast) window._toast('📋 Résumé copié');
+    }
+  };
 }
+window.calcPEGVersement = calcPEGVersement;
 
 function savePEGVersement() {
   var annee = parseInt(document.getElementById('peg-roul-annee')&&document.getElementById('peg-roul-annee').value) || 0;
@@ -2723,147 +3152,178 @@ function renderPEGRoulement() {
   var S = getS();
   var now = new Date();
   var curYear = now.getFullYear();
-  var curMonth = now.getMonth() + 1; // 1-12
+  var curMonth = now.getMonth() + 1;
 
-  // ── Simulation roulement complet 2026→2056 ──────────────────
   var DEBUT = 2026;
-  var FIN   = 2056;  // dernier versement
-  var VERSE = 393.42;  // versement 2026 réel, 500€ les années suivantes
+  var FIN   = 2056;
   var DUREE = 31;
-  var RDMT_PEG = 0.04 - 0.0131;  // 2.69%/an net
-  var RDMT_PEA = 0.085 - 0.0005; // 8.45%/an net
+  var RDMT_PEG = 0.04 - 0.0131; // 2,69%/an net (TER 1,31%)
+  var RDMT_PEA = 0.09; // ESE S&P500 ~9%/an net (10% brut - 0,15% TER, hypothèse prudente)
   var PS = 0.097;
-  var AN_FIN = 2057;  // fin de simulation
+  var AN_FIN = 2057;
 
-  // Calculer la valeur finale de chaque versement
+  // ── Construire la liste des versements ───────────────────────
+  // Priorité : données réelles saisies dans pegRoulement, sinon simulation
   var versements = [];
   for (var y = 0; y < DUREE; y++) {
     var annee = DEBUT + y;
-    var verse = (annee === 2026) ? 393.42 : 500;
-    var abo_calc = verse <= 500 ? verse * 0.30 :
-                   verse <= 1000 ? 500*0.30 + (verse-500)*0.20 :
-                   500*0.30 + 500*0.20 + (verse-1000)*0.10;
-    abo_calc = Math.min(abo_calc, 300);
-    var total = verse + abo_calc;
+    // Chercher données réelles enregistrées
+    var reel = S.pegRoulement.find(function(r){ return r.annee === annee; });
+    var verse, abo, total, statut, note;
+    if (reel && reel.verse) {
+      verse  = reel.verse;
+      abo    = reel.abo || calcAboSNCF(verse);
+      total  = reel.total || (verse + abo);
+      statut = reel.statut || 'place';
+      note   = reel.note || '';
+    } else {
+      // Simulation : 800€ prime → tout versé (stratégie recommandée)
+      // Utiliser le dernier versement connu comme base, sinon 800€
+      var lastReal = S.pegRoulement.filter(function(r){ return r.verse > 0; }).slice(-1)[0];
+      verse  = lastReal ? lastReal.verse : 800;
+      abo    = calcAboSNCF(verse);
+      total  = verse + abo;
+      statut = 'simule';
+      note   = 'simulation';
+    }
+
     var dispo = annee + 5;
-
-    // Croissance en PEG sur 5 ans
+    // Croissance PEG 5 ans
     var cap_peg = total;
-    for (var j=0; j<5; j++) cap_peg = cap_peg * (1 + RDMT_PEG);
-    var pv_peg = Math.max(0, cap_peg - total);
-    var net_sorti = cap_peg - pv_peg * PS;
+    for (var j = 0; j < 5; j++) cap_peg = cap_peg * (1 + RDMT_PEG);
+    var pv_peg  = Math.max(0, cap_peg - total);
+    var net_sorti = Math.round(cap_peg - pv_peg * PS);
 
-    // Années restantes en PEA jusqu'en 2057
+    // Années restantes en PEA
     var ans_pea = AN_FIN - dispo;
-    var val_2057 = ans_pea > 0 ? net_sorti * Math.pow(1+RDMT_PEA, ans_pea) : 0;
+    var pv_pea_tax = 0;
+    var val_2057 = 0;
+    if (ans_pea > 0) {
+      var cap_pea = net_sorti * Math.pow(1 + RDMT_PEA, ans_pea);
+      pv_pea_tax  = Math.max(0, cap_pea - net_sorti) * 0.172;
+      val_2057    = Math.round(cap_pea - pv_pea_tax);
+    }
     var bloque = dispo > AN_FIN;
 
     versements.push({
-      annee: annee, verse: verse, abo: Math.round(abo_calc*100)/100,
-      total: Math.round(total*100)/100, dispo: dispo,
-      net_sorti: Math.round(net_sorti), val_2057: Math.round(val_2057),
-      bloque: bloque, ans_pea: ans_pea
+      annee: annee, verse: verse, abo: Math.round(abo * 100) / 100,
+      total: Math.round(total * 100) / 100, dispo: dispo,
+      net_sorti: net_sorti, val_2057: val_2057,
+      bloque: bloque, ans_pea: Math.max(0, ans_pea),
+      statut: statut, note: note,
+      estReel: !!(reel && reel.verse)
     });
   }
 
-  // KPIs
-  var net_total = versements.reduce(function(s,v){ return s + (v.bloque?0:v.val_2057); }, 0);
-  var total_abo = versements.reduce(function(s,v){ return s + v.abo; }, 0);
-  var bloques = versements.filter(function(v){ return v.bloque; });
-  var val_bloques_brut = bloques.reduce(function(s,v){
-    // valeur à 2057 en PEG (pas encore sorti)
-    var ans = Math.min(5, AN_FIN - v.annee);
-    var cap = v.total;
-    for(var j=0;j<ans;j++) cap=cap*(1+RDMT_PEG);
-    return s+cap;
-  }, 0);
-
-  // Alerte retrait avril
-  var next_retrait = versements.filter(function(v){ return v.dispo >= curYear && !v.bloque; });
-  var retrait_ce_mois = versements.filter(function(v){ return v.dispo === curYear && curMonth <= 4; });
+  var net_total   = versements.reduce(function(s, v){ return s + (v.bloque ? 0 : v.val_2057); }, 0);
+  var total_abo   = versements.reduce(function(s, v){ return s + v.abo; }, 0);
+  var total_verse = versements.reduce(function(s, v){ return s + v.verse; }, 0);
+  var bloques     = versements.filter(function(v){ return v.bloque; });
+  var retrait_ce_mois = versements.filter(function(v){ return v.dispo === curYear && curMonth <= 5; });
+  var next_retrait    = versements.filter(function(v){ return v.dispo > curYear && v.dispo <= curYear + 2 && !v.bloque; });
 
   var html = '';
 
-  // ── KPIs roulement ──────────────────────────────────────────
+  // ── KPIs ────────────────────────────────────────────────────
   html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px;">';
-
   var kpis = [
-    {lbl:'Valeur PEA en 2057', val:fmtK(net_total), col:'var(--green)'},
-    {lbl:'Abondements totaux (31 ans × ~150€)', val:fmtK(total_abo), col:'var(--gold)'},
-    {lbl:'Versements bloqués après 2057', val:bloques.length + ' versements', col:'var(--muted)'},
-    {lbl:'Prochains retraits à planifier', val:next_retrait.length + ' versements', col:'var(--blue)'},
+    { lbl:'Valeur PEA en 2057',           val: fmtK(net_total),              col:'var(--green)' },
+    { lbl:'Abondements totaux SNCF',       val: fmtK(total_abo) + ' EUR',     col:'var(--gold)' },
+    { lbl:'Total versé 31 ans',            val: fmtK(total_verse) + ' EUR',   col:'var(--text)' },
+    { lbl:'Prochains retraits à planifier',val: next_retrait.length + ' versements', col:'var(--blue)' },
   ];
-  kpis.forEach(function(k){
+  kpis.forEach(function(k) {
     html += '<div style="background:var(--s2);border-radius:8px;padding:10px 12px;border:1px solid var(--bd);">';
-    html += '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">'+k.lbl.replace("\n","<br>")+'</div>';
-    html += '<div style="font-size:15px;font-family:\'Playfair Display\',serif;color:'+k.col+';">'+k.val+'</div>';
+    html += '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">' + k.lbl + '</div>';
+    html += '<div style="font-size:15px;font-family:\'Playfair Display\',serif;color:' + k.col + ';">' + k.val + '</div>';
     html += '</div>';
   });
   html += '</div>';
 
-  // ── Alerte retrait urgent ────────────────────────────────────
+  // ── Alerte retrait disponible ────────────────────────────────
   if (retrait_ce_mois.length > 0) {
-    html += '<div style="background:var(--s2);border:2px solid var(--gold);border-radius:8px;padding:12px 14px;margin-bottom:12px;">';
-    html += '<div style="font-size:12px;color:var(--gold);font-weight:700;margin-bottom:6px;">🔔 ACTION REQUISE — Retrait PEG disponible en '+curYear+'</div>';
-    retrait_ce_mois.forEach(function(v){
-      html += '<div style="font-size:11px;color:var(--text);margin-bottom:4px;">▶ Versement '+v.annee+' (+'+v.abo+'€ abo) → <b>'+fmtK(v.net_sorti)+'€ net</b> à transférer en PEA ESE avant fin avril '+v.dispo+'</div>';
+    html += '<div style="background:rgba(212,175,83,0.1);border:2px solid var(--gold);border-radius:8px;padding:12px 14px;margin-bottom:12px;">';
+    html += '<div style="font-size:12px;color:var(--gold);font-weight:700;margin-bottom:6px;">🔔 ACTION REQUISE — Retrait PEG disponible ' + curYear + '</div>';
+    retrait_ce_mois.forEach(function(v) {
+      html += '<div style="font-size:11px;margin-bottom:4px;">Versement <b>' + v.annee + '</b> : ' + fmtK(v.total) + '€ placés → <b style="color:var(--green);">' + fmtK(v.net_sorti) + '€ nets à retirer</b> → réinvestir sur PEA ESE</div>';
     });
-    html += '<div style="font-size:10px;color:var(--muted);margin-top:6px;">→ Se connecter à Amundi ESR → Demande de déblocage → Virer sur PEA Boursobank (ESE)</div>';
+    html += '<button class="btn sm" style="margin-top:8px;" onclick="markPEGRetire(' + retrait_ce_mois[0].annee + ')">✅ Marquer comme retiré → PEA ESE</button>';
     html += '</div>';
   }
 
-  // ── Tableau des versements ───────────────────────────────────
-  html += '<div style="overflow-x:auto;margin-bottom:12px;">';
-  html += '<table class="tbl"><thead><tr>';
-  html += '<th>Année versement</th><th>Versé</th><th>Abo SNCF</th><th>Total PEG</th>';
-  html += '<th>Disponible</th><th>Net sorti PEG</th><th>Ans PEA</th><th>Valeur 2057</th><th>Statut</th>';
+  // ── Tableau roulement avec lignes éditables ──────────────────
+  html += '<div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-family:JetBrains Mono,monospace;">';
+  html += '✏️ Cliquez sur une ligne <span style="color:var(--gold);">dorée</span> pour modifier le versement · Données réelles = <span style="color:var(--green);">●</span> · Simulation = <span style="color:var(--muted);">○</span>';
+  html += '</div>';
+  html += '<div style="overflow-x:auto;">';
+  html += '<table class="tbl" style="font-size:10px;width:100%;min-width:600px;">';
+  html += '<thead><tr>';
+  html += '<th>Année</th><th>Versé €</th><th>Abo SNCF</th><th>Capital PEG</th><th>Dispo</th><th>Net sorti</th><th>Val 2057</th><th>Statut</th>';
   html += '</tr></thead><tbody>';
 
-  versements.forEach(function(v){
-    var isNow     = v.annee === curYear;
-    var isDispo   = v.dispo === curYear || (v.dispo < curYear && !v.bloque);
-    var isFuture  = v.dispo > curYear && !v.bloque;
-    var bg        = isNow ? 'background:var(--s3);' : '';
-    var disp_col  = isDispo ? 'color:var(--gold);font-weight:700;' : (v.bloque ? 'color:var(--muted);' : '');
+  versements.forEach(function(v) {
+    var estPasse  = v.annee < curYear;
+    var estActuel = v.annee === curYear;
+    var estRetire = v.statut === 'retire';
+    var rowBg = estRetire ? 'background:rgba(82,201,122,0.07);' : (estActuel ? 'background:rgba(212,175,83,0.08);' : '');
+    var opacity = v.bloque ? 'opacity:0.45;' : '';
 
-    // Statut
-    var statut;
-    if (v.annee < curYear && v.dispo < curYear) {
-      // Chercher dans pegRoulement si retiré
-      var found = S.pegRoulement.find(function(r){ return r.annee===v.annee; });
-      statut = found && found.statut === 'retire' ? '<span style="color:var(--green);">✅ Retiré→PEA</span>' :
-               found && found.statut === 'place'  ? '<span style="color:var(--blue);">⏳ Placé</span>' :
-               '<span style="color:var(--gold);">⚠ À retirer</span>';
-    } else if (v.annee <= curYear && v.dispo === curYear) {
-      statut = '<span style="color:var(--gold);font-weight:700;">🔔 Disponible '+v.dispo+'</span>';
-    } else if (v.annee === curYear) {
-      statut = '<span style="color:var(--blue);">📥 En cours</span>';
-    } else if (v.bloque) {
-      statut = '<span style="color:var(--dim);">🔒 Dispo '+v.dispo+'</span>';
+    html += '<tr style="' + rowBg + opacity + '" data-annee="' + v.annee + '">';
+    // Année
+    html += '<td><b style="color:' + (estActuel ? 'var(--gold)' : 'var(--text)') + ';">' + v.annee + '</b>';
+    html += (v.estReel ? ' <span style="color:var(--green);font-size:9px;">●</span>' : ' <span style="color:var(--muted);font-size:9px;">○</span>') + '</td>';
+    // Versé — éditable si pas retiré et pas trop loin dans le futur
+    if (!estRetire && (estActuel || v.annee <= curYear + 1 || v.estReel)) {
+      html += '<td><input type="number" value="' + v.verse + '" min="0" max="1500" step="1"'
+        + ' style="width:65px;background:var(--s2);border:1px solid var(--gold)44;border-radius:4px;padding:2px 5px;color:var(--gold);font-family:JetBrains Mono,monospace;font-size:10px;"'
+        + ' onchange="mettreAJourVersementPEG(' + v.annee + ', this.value)"'
+        + ' onfocus="this.style.borderColor=\'var(--gold)\'" onblur="this.style.borderColor=\'var(--gold)44\'"'
+        + '></td>';
     } else {
-      statut = '<span style="color:var(--muted);">⏳ Dispo '+v.dispo+'</span>';
+      html += '<td class="mono">' + fmtK(v.verse) + '</td>';
     }
-
-    html += '<tr style="'+bg+'">';
-    html += '<td><b>'+v.annee+'</b></td>';
-    html += '<td class="mono">'+fmtK(v.verse)+'</td>';
-    html += '<td class="mono" style="color:var(--gold);">+'+fmtK(v.abo)+'</td>';
-    html += '<td class="mono"><b>'+fmtK(v.total)+'</b></td>';
-    html += '<td class="mono" style="'+disp_col+'">'+v.dispo+'</td>';
-    html += '<td class="mono">'+(v.bloque ? '<span style="color:var(--dim);">—</span>' : fmtK(v.net_sorti))+'</td>';
-    html += '<td class="mono" style="color:var(--muted);">'+(v.bloque ? '—' : v.ans_pea)+'</td>';
-    html += '<td class="mono" style="color:'+(v.bloque?'var(--dim)':'var(--green)')+';">'+(v.bloque ? '~'+fmtK(Math.round(v.total*Math.pow(1+RDMT_PEG,Math.min(5,AN_FIN-v.annee))))+'*' : fmtK(v.val_2057))+'</td>';
-    html += '<td>'+statut+'</td>';
+    html += '<td class="mono" style="color:var(--green);">+' + fmtK(v.abo) + '</td>';
+    html += '<td class="mono" style="color:var(--peg);">' + fmtK(v.total) + '</td>';
+    html += '<td class="mono">' + (estRetire ? '<span style="color:var(--green);">retiré ✓</span>' : v.dispo) + '</td>';
+    html += '<td class="mono">' + (v.bloque ? '—' : fmtK(v.net_sorti)) + '</td>';
+    html += '<td class="mono" style="color:' + (v.bloque ? 'var(--muted)' : 'var(--green)') + ';">';
+    html += v.bloque ? 'bloqué' : fmtK(v.val_2057);
+    html += '</td>';
+    html += '<td style="font-size:9px;color:var(--muted);">' + (estRetire ? '✅ retiré' : (v.estReel ? 'réel' : 'sim.')) + '</td>';
     html += '</tr>';
   });
-
   html += '</tbody></table></div>';
-  html += '<div style="font-size:9px;color:var(--muted);">* Valeur en PEG en 2057 (non encore transféré). À retirer dès disponible pour maximiser le PEA.</div>';
-  html += '<div style="font-size:9px;color:var(--muted);margin-top:4px;">Hypothèses : rendement PEG 2,69 %/an net · PEA ESE 8,45 %/an net · PS 9,7 % sur PV à la sortie PEG · PS 17,2 % à la sortie PEA.</div>';
+  html += '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-top:8px;">';
+  html += 'PEG 2,69%/an net (4% brut - TER 1,31%) · PEA ESE S&P500 9%/an net · PS 17,2% sur PV PEG · Exo IR PEA après 5 ans';
+  html += '</div>';
 
   if (el)  el.innerHTML  = html;
   if (el2) el2.innerHTML = html;
 }
+window.renderPEGRoulement = renderPEGRoulement;
+
+// Mise à jour inline d'un versement depuis le tableau
+function mettreAJourVersementPEG(annee, valeur) {
+  var S = getS();
+  if (!S.pegRoulement) S.pegRoulement = [];
+  var verse = Math.min(1500, Math.max(0, parseFloat(valeur) || 0));
+  var abo   = calcAboSNCF(verse);
+  var total = Math.round((verse + abo) * 100) / 100;
+  var found = S.pegRoulement.find(function(r){ return r.annee === annee; });
+  if (found) {
+    found.verse = verse; found.abo = abo; found.total = total; found.statut = 'place';
+  } else {
+    S.pegRoulement.push({ annee: annee, verse: verse, abo: abo, total: total, disponible: annee + 5, statut: 'place' });
+    S.pegRoulement.sort(function(a, b){ return a.annee - b.annee; });
+  }
+  // Sync position PEG
+  var totalPEG = S.pegRoulement.reduce(function(s, r){ return s + (r.total || 0); }, 0);
+  S.positions.forEach(function(p){ if (p.envelope === 'PEG') p.valTotal = Math.round(totalPEG); });
+  saveState();
+  renderPEGRoulement();
+  toast('PEG ' + annee + ' mis à jour — ' + fmtK(verse) + '€ versé + ' + fmtK(abo) + '€ abo = ' + fmtK(total) + '€');
+}
+window.mettreAJourVersementPEG = mettreAJourVersementPEG;
 
 // Marquer un versement PEG comme retiré
 function markPEGRetire(annee) {
@@ -2879,6 +3339,8 @@ function markPEGRetire(annee) {
   renderPEGRoulement();
   toast('✅ Versement '+annee+' marqué retiré → à placer en PEA ESE');
 }
+window.markPEGRetire = markPEGRetire;
+
 
 
 // ── Mise à jour taux fonds euro ─────────────────────────────────────
@@ -3068,7 +3530,19 @@ function toggleAccordion(id) {
     if (id === 'acc-fisc-lmnp')     setTimeout(function(){ if(window._app) window._app.initLMNPInputs(); }, 10);
     if (id === 'acc-vente')         setTimeout(function(){ if(window._app) window._app.renderVenteTool(); }, 10);
     if (id === 'acc-st-plan')       setTimeout(function(){ if(window._app) window._app.renderStrategie(); }, 10);
-    if (id === 'acc-peg-roulement') setTimeout(function(){ if(window._app) window._app.renderPEGRoulement(); }, 10);
+    if (id === 'acc-peg-roulement') setTimeout(function(){ if(window.renderPEGRoulement) window.renderPEGRoulement(); }, 10);
+    if (id === 'acc-peg-roulement-env') setTimeout(function(){
+      // Auto-calcul si prime déjà saisie
+      var p = document.getElementById('peg-roul-prime');
+      var v = document.getElementById('peg-roul-verse');
+      if (p && p.value && parseFloat(p.value) > 0) {
+        if (window.calcPEGVersement) window.calcPEGVersement();
+      }
+    }, 150);
+    if (id === 'acc-lecture-pdf') setTimeout(function(){
+      var btn = document.getElementById('pdf-analyze-outils');
+      if (btn && !btn._bound) { if(window.initOutils) window.initOutils(); }
+    }, 50);
   }
 }
 
@@ -3258,6 +3732,73 @@ function initOutils() {
       opt.textContent = p.name + (p.qty ? ' (' + fmtN(p.qty,3) + ' parts @ ' + fmtN(p.pru,2) + '€ PRU)' : '');
       sel.appendChild(opt);
     });
+  }
+  // Brancher le bouton PDF analyser dans l'accordéon outils
+  var btnPdfOutils = document.getElementById('pdf-analyze-outils');
+  if (btnPdfOutils && !btnPdfOutils._bound) {
+    btnPdfOutils._bound = true;
+    btnPdfOutils.onclick = function() {
+      var fileEl = document.getElementById('pdf-file-outils');
+      var typeEl = document.getElementById('pdf-type-outils');
+      var statusEl = document.getElementById('pdf-status-outils');
+      var resultEl = document.getElementById('pdf-result-outils');
+      if (!fileEl || !fileEl.files || !fileEl.files[0]) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Sélectionnez un fichier PDF</span>';
+        return;
+      }
+      var file = fileEl.files[0];
+      if (file.size > 10 * 1024 * 1024) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Fichier trop gros (max 10 Mo)</span>';
+        return;
+      }
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold);">⏳ Extraction du texte...</span>';
+      if (!window.extraireTextePdf) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Lecteur PDF non disponible</span>';
+        return;
+      }
+      window.extraireTextePdf(file).then(function(texte) {
+        if (!texte || texte.length < 50) {
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">⚠️ PDF vide ou scanné (texte non sélectionnable)</span>';
+          return;
+        }
+        if (texte.length > 12000) texte = texte.slice(0, 12000) + '\n[... tronqué]';
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold);">⏳ Pierre analyse...</span>';
+        if (!window.callClaudeIA) {
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Configurez votre clé API Pierre</span>';
+          return;
+        }
+        var typeDoc = typeEl ? typeEl.value : 'autre';
+        var instructions = {
+          avis_imposition: 'Extrais : revenu_fiscal_reference, nombre_parts, ir_a_payer, tmi (%), annee.',
+          taxe_fonciere: 'Extrais : adresse, montant, base_nette, echeance.',
+          releve_bancaire: 'Extrais : solde_fin, total_debits, total_credits, periode, banque.',
+          releve_pea: 'Extrais : valorisation_totale, liquidites, positions (array {nom,qty,pru,cours,valeur}), plus_value_totale.',
+          releve_av: 'Extrais : valorisation_totale, fonds_euros {montant,taux}, uc (array {nom,valeur}), nom_contrat.',
+          fiche_paie: 'Extrais : salaire_brut, salaire_net, net_imposable, prelevement_source, periode.',
+          autre: 'Identifie le type et extrais toutes les données financières importantes.'
+        };
+        var prompt = 'Document PDF (type: ' + typeDoc + ').\nINSTRUCTIONS: ' + (instructions[typeDoc] || instructions.autre)
+          + '\nRéponds en 2 parties:\n1) Analyse en 3-4 phrases.\n2) JSON entre ```json et ```\n\nCONTENU:\n---\n' + texte + '\n---';
+        window.callClaudeIA([{role:'user', content: prompt}], {maxTokens: 1500, temperature: 0.2})
+          .then(function(rep) {
+            if (statusEl) statusEl.innerHTML = '<span style="color:var(--green);">✅ Analyse terminée</span>';
+            if (resultEl && window.afficherResultatPdf) {
+              var analyseTexte = rep.replace(/```json[\s\S]*?```/g, '').trim();
+              var match = rep.match(/```json\s*([\s\S]*?)\s*```/);
+              var donnees = null;
+              try { if (match) donnees = JSON.parse(match[1]); } catch(e) {}
+              window.afficherResultatPdf(resultEl, rep, donnees, typeDoc);
+            } else if (resultEl) {
+              resultEl.innerHTML = '<div style="font-size:12px;line-height:1.5;white-space:pre-wrap;">' + rep + '</div>';
+            }
+          })
+          .catch(function(err) {
+            if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Erreur: ' + (err.message||err) + '</span>';
+          });
+      }).catch(function(err) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Erreur extraction: ' + (err.message||err) + '</span>';
+      });
+    };
   }
 }
 
@@ -3719,8 +4260,8 @@ function optimiserVersement() {
       env: 'PEG', label: 'Mid-Cap Euro ESR', color: '#f0d060',
       score: c.peg < 400 ? 85 : 30,
       raison: c.peg < 400
-        ? 'Versement minimum 400€/an requis pour déclencher abondement +100€ SNCF'
-        : 'Abondement déjà déclenché cette année (400€ versé en avril)',
+        ? '1 500€/an = abondement maximum 300€ SNCF (500€→+150€, 1000€→+250€, 1500€→+300€)'
+        : 'Abondement déjà déclenché cette année',
       impact2057: fmtN(montant * Math.pow(1.06, 2057-2025), 0) + ' € estimés en 2057 (rendement PEG 6%)',
     },
     {
@@ -5253,8 +5794,8 @@ function _applyPEGUpdate(total, vl, parts) {
       var msg = '✅ PEG mis à jour : ' + fmt(total);
       if (vl && parts) msg += ' (' + fmtN(parts,3) + ' parts × ' + fmt(vl) + ' VL)';
       msg += ' · ' + new Date().toLocaleTimeString('fr-FR');
-      if (total >= 400) msg += ' · Abondement SNCF débloqué ✅';
-      else msg += ' · ⚠ Verser encore ' + fmt(400 - total) + ' pour abondement';
+      if (total >= 500) { var abo_act = calcAboSNCF(total); msg += ' · Abondement SNCF : +' + Math.round(abo_act) + '€ (' + Math.round(abo_act/total*100) + '%)'; }
+      else msg += ' · ⚠ Verser au moins 500€ pour déclencher l\'abondement';
       status.textContent = msg;
       status.style.color = total >= 400 ? 'var(--green)' : 'var(--gold)';
     }
@@ -5688,6 +6229,30 @@ function showPage(id) {
   document.querySelectorAll('.nb').forEach(function(b){if(b.dataset.page===id)b.classList.add('on');});
   try{sessionStorage.setItem('pwa-last-page',id);}catch(e){}
   if(window.syncPwaBtns) window.syncPwaBtns(id);
+  // Pousser l'état dans l'historique du navigateur (bouton retour natif mobile)
+  try {
+    if (!window.history.state || window.history.state.page !== id) {
+      window.history.pushState({page: id}, '', '#' + id);
+    }
+  } catch(e) {}
+  // Header mobile : bouton retour + titre de page
+  var backBtn = document.getElementById('mobile-back-btn');
+  var logoEl = document.getElementById('header-logo');
+  var titleEl = document.getElementById('header-page-title');
+  var isDashboard = (id === 'dashboard');
+  if (backBtn) backBtn.style.display = isDashboard ? 'none' : '';
+  if (logoEl) logoEl.style.display = isDashboard ? '' : 'none';
+  if (titleEl) {
+    var PAGE_LABELS = {
+      dashboard:'Vue d\'ensemble', enveloppes:'Enveloppes', immo:'Immobilier',
+      livrets:'Livrets', charts:'Graphiques', analyse:'Analyse',
+      fiscalite:'Fiscalité', retraite:'Retraite 2057', strategie:'Stratégie',
+      outils:'Outils', opportunites:'Opportunités', actu:'Actualités',
+      history:'Historique'
+    };
+    titleEl.textContent = PAGE_LABELS[id] || id;
+    titleEl.style.display = isDashboard ? 'none' : '';
+  }
   renderAll();
   if(id==='retraite') runProjection();
   if(id==='fiscalite') setTimeout(function(){ if(window.renderCalendrierFiscal) renderCalendrierFiscal(); }, 50);
@@ -6817,7 +7382,7 @@ ALERT_RULES = [
   {
     id:'peg-min',
     check: function(c){
-      if(c.peg<=0) return {lvl:'warn', title:'PEG SNCF non alimenté', desc:'Versement 400 €/an requis pour déclencher 100 € abondement SNCF', action:'Vérifier virement annuel'};
+      if(c.peg<=0) return {lvl:'warn', title:'PEG SNCF non alimenté', desc:'Versement 500€/an min pour déclencher abondement SNCF (max 300€ pour 1500€)', action:'Vérifier virement annuel'};
       return null;
     }
   },
@@ -7580,7 +8145,7 @@ function renderCharts(){
     // Immo + Livrets = France
     if(c.immoNet>0) geoMap['France']=(geoMap['France']||0)+c.immoNet;
     if(c.livT>0)    geoMap['France']=(geoMap['France']||0)+c.livT;
-    var geoColors={'États-Unis / S&P500':'#5b8dee','Monde / MSCI World':'#d4a853','Marchés émergents':'#f0d060','Europe / Mid-Cap':'#e07a5b','Or / Matières premières':'#f0d060','France (Immo)':'#9b72cf','France (Livrets)':'#52c97a','Non classifié':'#5a6478'};
+    var geoColors={'États-Unis / S&P500':'#e07a5b','Monde / MSCI World':'#5b8dee','Marchés émergents':'#f0d060','Europe / Mid-Cap':'#57b5eb','Or / Matières premières':'#c8a96e','France (Immo)':'#9b72cf','France (Livrets)':'#52c97a','France':'#52c97a','PEG SNCF':'#d4a853','Non classifié':'#5a6478'};
     var gi=0;
     Object.keys(geoMap).forEach(function(k){if(geoMap[k]>0)ms.push({label:k,val:geoMap[k],color:geoColors[k]||col(gi++)});});
 
@@ -7687,8 +8252,8 @@ function runProjection(){
   var cpea=parseFloat(document.getElementById('r-contrib-pea').value)||150;
   var cav=parseFloat(document.getElementById('r-contrib-av').value)||150;
   var cpeg=parseFloat(document.getElementById('r-contrib-peg').value)||400;
-  var retRate=parseFloat(document.getElementById('r-ret-rate').value)/100||0.07;
-  var pegRate=parseFloat(document.getElementById('r-ret-peg').value)/100||0.06;
+  var retRate=parseFloat(document.getElementById('r-ret-rate').value)/100||0.09;
+  var pegRate=parseFloat(document.getElementById('r-ret-peg').value)/100||0.0269;
   var inf=parseFloat(document.getElementById('r-inf').value)/100||0.02;
   var sncf=parseFloat(document.getElementById('r-sncf').value)||2300;
   var rent=parseFloat(document.getElementById('r-rent').value)||420;
@@ -7729,14 +8294,53 @@ function runProjection(){
   var atEnd=rows[rows.length-1];
 
   // Revenus à la retraite
-  var peaRente=atEnd.pea*0.04/12,pegRente=atEnd.peg/29/12;
-  var totalRev=sncf+peaRente+pegRente+rent;
-  var revEl=document.getElementById('rev-bars');
+  // Note : le PEG sera intégralement arbitré vers PEA avant la retraite (stratégie roulement)
+  // → le PEG s'ajoute au PEA à la retraite
+  var peaTotal = atEnd.pea + atEnd.peg; // PEG → PEA total consolidé
+  var peaRente = peaTotal * 0.04 / 12;  // règle des 4% (retrait sécurisé annuel)
+  var avRente  = atEnd.av * 0.03 / 12;  // AV : retrait 3%/an (transmission prioritaire)
+  var totalRev = sncf + peaRente + avRente + rent;
+  var targetRev = sncf + 750; // cible : 2300€ SNCF + 750€ passifs (milieu de la fourchette 500-1000€)
+  var revEl = document.getElementById('rev-bars');
   if(revEl){
-    var revs=[{lbl:'Retraite SNCF',v:sncf,c:'#52c97a'},{lbl:'PEA (règle 4%)',v:peaRente,c:'#d4a853'},{lbl:'T2 Limoges',v:rent,c:'#9b72cf'},{lbl:'PEG retrait',v:pegRente,c:'#f0d060'}];
-    var mx2=totalRev;
-    revEl.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--gold);margin-bottom:12px;">TOTAL : '+fmt(totalRev)+' /mois estimé</div>'+revs.map(function(rv){return '<div class="brow2" style="margin-bottom:12px"><div class="blbl" style="width:130px">'+rv.lbl+'</div><div class="btrk" style="height:10px;"><div class="bfil" style="width:'+rv.v/mx2*100+'%;background:'+rv.c+'"></div></div><div style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--text);width:90px;text-align:right">'+fmt(rv.v)+'/mois</div></div>';}).join('');
-    txt('rev-note','· scénario '+scenario+' · retraite à '+retAge+' ans');
+    var revs = [
+      {lbl:'Retraite SNCF', v:sncf, c:'#52c97a', note:'régime spécial'},
+      {lbl:'PEA+PEG (règle 4%)', v:peaRente, c:'#d4a853', note:'ESE S&P500'},
+      {lbl:'AV Linxea (3%/an)', v:avRente, c:'#e07a5b', note:'transmission'},
+      {lbl:'T2 Limoges (loyer)', v:rent, c:'#9b72cf', note:'net charges'},
+    ];
+    var mx2 = Math.max(totalRev, 1);
+    var passifs = peaRente + avRente + rent;
+    var passifOk = passifs >= 500 && passifs <= 1000;
+    var totalOk = totalRev >= (sncf + 500);
+    revEl.innerHTML = ''
+      + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">'
+      + '<div style="background:var(--s2);border-radius:8px;padding:10px 14px;flex:1;min-width:130px;text-align:center;">'
+      + '<div style="font-size:10px;color:var(--muted);">TOTAL/MOIS</div>'
+      + '<div style="font-size:22px;font-weight:700;color:' + (totalOk?'var(--green)':'var(--gold)') + ';font-family:\'Playfair Display\',serif;">' + fmt(totalRev) + '</div>'
+      + '</div>'
+      + '<div style="background:var(--s2);border-radius:8px;padding:10px 14px;flex:1;min-width:130px;text-align:center;">'
+      + '<div style="font-size:10px;color:var(--muted);">REVENUS PASSIFS</div>'
+      + '<div style="font-size:22px;font-weight:700;color:' + (passifOk?'var(--green)':'var(--gold)') + ';font-family:\'Playfair Display\',serif;">' + fmt(passifs) + '</div>'
+      + '<div style="font-size:9px;color:' + (passifOk?'var(--green)':'var(--muted)') + ';">cible 500-1 000€</div>'
+      + '</div>'
+      + '<div style="background:var(--s2);border-radius:8px;padding:10px 14px;flex:1;min-width:130px;text-align:center;">'
+      + '<div style="font-size:10px;color:var(--muted);">CAPITAL PEA+PEG 2057</div>'
+      + '<div style="font-size:16px;font-weight:700;color:var(--gold);font-family:\'Playfair Display\',serif;">' + fmtK(Math.round(peaTotal)) + '</div>'
+      + '</div>'
+      + '</div>'
+      + revs.map(function(rv){
+          return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">'
+            + '<div style="width:130px;font-size:11px;flex-shrink:0;">' + rv.lbl + '<br><span style="font-size:9px;color:var(--muted);">' + rv.note + '</span></div>'
+            + '<div style="flex:1;height:10px;background:var(--bd);border-radius:5px;overflow:hidden;min-width:80px;">'
+            + '<div style="height:100%;width:' + (rv.v/mx2*100) + '%;background:' + rv.c + ';border-radius:5px;"></div></div>'
+            + '<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--text);width:80px;text-align:right;">' + fmt(rv.v) + '/mois</div>'
+            + '</div>';
+        }).join('')
+      + '<div style="font-size:10px;color:var(--muted);margin-top:8px;font-family:JetBrains Mono,monospace;">'
+      + '* PEG intégralement arbitré vers PEA ESE avant retraite · Règle 4% PEA · 3% AV · Loyer net charges'
+      + '</div>';
+    txt('rev-note','· ' + scenario + ' · retraite ' + retAge + ' ans');
   }
 
   htm('milestones',[
@@ -7898,7 +8502,7 @@ MONTHLY_PLAN=[
   {month:'Novembre',  note:'PEA — BNP S&P500',            envs:[{env:'PEA',label:'ESE Amundi SP500',    amount:150,color:'#d4a853'}]},
   {month:'Décembre',  note:'PEA — BNP S&P500',            envs:[{env:'PEA',label:'ESE Amundi SP500',    amount:150,color:'#d4a853'}]},
 ];
-// Récap : PEA 9 mois (ESE SP500×6 + PAEEM EM×3) · AV 3 mois (MSCI World) · PEG 400€/avr (+ abondement SNCF 100€)
+// Récap : PEA 9 mois (ESE SP500×6 + PAEEM EM×3) · AV 3 mois (MSCI World) · PEG 1 500€/an (+ abondement SNCF max 300€)
 // Chaque enveloppe alterne max 2 mois consécutifs — pas de bloc de 3+
 
 function renderStrategie(){
@@ -8060,6 +8664,38 @@ function renderFiscalite() {
   var chargesLMNP= parseFloat(document.getElementById('f-charges-lmnp')?.value) || 0;
   var pvPEA      = parseFloat(document.getElementById('f-pv-pea')?.value) || 0;
   var pvCTO      = parseFloat(document.getElementById('f-pv-cto')?.value) || 0;
+
+  // ── RÉSUMÉ FISCAL PERSONNALISÉ ───────────────────────────────
+  var ir0 = calcIR(revenu, parts);
+  var kpiEl = document.getElementById('fiscal-resume-kpis');
+  var notesEl = document.getElementById('fiscal-resume-notes');
+  if (kpiEl) {
+    function kFisc(lbl, val, col, sub) {
+      return '<div style="background:var(--bg);border-radius:6px;padding:8px 10px;">'
+        + '<div style="font-size:9px;color:var(--muted);">' + lbl + '</div>'
+        + '<div style="font-size:13px;font-weight:700;color:' + (col||'var(--text)') + ';font-family:JetBrains Mono,monospace;">' + val + '</div>'
+        + (sub ? '<div style="font-size:9px;color:var(--muted);">' + sub + '</div>' : '')
+        + '</div>';
+    }
+    var biclPEA    = new Date() >= new Date('2029-10-25') ? '✅ exo IR' : '⏳ ' + Math.ceil((new Date('2029-10-25')-new Date())/(1000*60*60*24*365)*10)/10 + 'ans';
+    var abattAV    = new Date() >= new Date('2033-03-17') ? '✅ abatt. 4 600€' : '⏳ ' + Math.ceil((new Date('2033-03-17')-new Date())/(1000*60*60*24*365)*10)/10 + 'ans';
+    kpiEl.innerHTML = [
+      kFisc('TMI', Math.round(ir0.tmi*100) + '%', ir0.tmi<=0.11?'var(--green)':'var(--gold)', 'Tranche marginale'),
+      kFisc('IR net estimé', fmt(ir0.impotNet), ir0.impotNet>0?'var(--red)':'var(--green)', 'revenu ' + fmt(revenu)),
+      kFisc('Taux effectif', (revenu>0?(ir0.impotNet/revenu*100).toFixed(1):0) + '%', '', '2,5 parts'),
+      kFisc('PEA 5 ans', biclPEA, 'var(--blue)', 'ouvert 25/10/2024'),
+      kFisc('AV 8 ans', abattAV, 'var(--av)', 'ouvert 17/03/2025'),
+      kFisc('Zone IR', 'Zone 3', 'var(--gold)', 'délai ~5 juin'),
+    ].join('');
+  }
+  if (notesEl) {
+    var notes = [];
+    if (ir0.tmi <= 0.11) notes.push('✅ TMI 11% : option barème peut être avantageuse pour dividendes (abatt. 40%).');
+    if (loyersBruts > 0 && chargesLMNP > loyersBruts * 0.5) notes.push('✅ LMNP réel : charges > 50% → régime réel optimal (vs micro-BIC).');
+    if (loyersBruts === 0) notes.push('💡 Renseignez vos loyers LMNP et charges JD2M pour simuler votre BIC net.');
+    notes.push('📍 T2 Limoges 87000 · Régime réel LMNP · Expert JD2M · DPE E → travaux avant 2034.');
+    notesEl.innerHTML = notes.join(' &nbsp;|&nbsp; ');
+  }
 
   // ── 1. CALCUL IR FOYER ──────────────────────────────────────
   var ir = calcIR(revenu, parts);
@@ -8973,6 +9609,15 @@ document.addEventListener('DOMContentLoaded', function() {
     showPage(last);
   })();
   setInterval(refreshPrices,60000);
+  // Widgets dashboard chargés après un court délai (DOM prêt + données Firebase)
+  setTimeout(function() {
+    if (window.renderPEGDashboard) window.renderPEGDashboard();
+    if (window.renderT2Dashboard) window.renderT2Dashboard();
+    if (window.renderNextAction) window.renderNextAction();
+    if (window.renderAnomaliesCard) window.renderAnomaliesCard();
+    if (window.renderAnniversairesCard) window.renderAnniversairesCard();
+    if (window.renderProgressionRetraite) window.renderProgressionRetraite();
+  }, 2000);
 });
 
 // ══ NET / BRUT TOGGLE ════════════════════════════════════════
@@ -9193,29 +9838,8 @@ if (refreshTauxBtn) refreshTauxBtn.addEventListener('click', function(){
 
 // ── Initial page render ──────────────────────────────────────
 
-// ── Net/Brut header toggle ─────────────────────────────────────
-var hdrWrap = document.getElementById('hdr-total-wrap');
-if (hdrWrap) {
-  hdrWrap.addEventListener('click', function(e){
-    // Double-clic : toujours basculer le flou (révéler si flouté, re-flouter si révélé)
-    // Clic simple : révéler si flouté, basculer net/brut si révélé
-    if (_hdrClickTimer) {
-      clearTimeout(_hdrClickTimer);
-      _hdrClickTimer = null;
-      setHdrBlur(!_hdrBlurred); // toggle blur
-    } else {
-      _hdrClickTimer = setTimeout(function(){
-        _hdrClickTimer = null;
-        if (_hdrBlurred) {
-          setHdrBlur(false); // révéler
-        } else {
-          showBrut = !showBrut; // basculer net ↔ brut
-          renderAll();
-        }
-      }, 220);
-    }
-  });
-}
+// ── Net/Brut header toggle — défini une seule fois (voir premier bloc) ──
+
 
 // ══ OUTIL LOYER T2 LIMOGES ═══════════════════════════════════
 
@@ -10221,7 +10845,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ══ PWA — Service Worker ══════════════════════════════════════
 (function() {
-  if ('serviceWorker' in navigator) {
+  if ('serviceWorker' in navigator && navigator.serviceWorker) {
     // Inline SW via blob
     var swCode = `
 const CACHE = 'patritracker-v1';
@@ -10247,7 +10871,11 @@ self.addEventListener('fetch', e => {
 `;
     var blob = new Blob([swCode], {type: 'application/javascript'});
     var url = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(url).catch(function(){});
+    try {
+      navigator.serviceWorker.register(url).catch(function(){});
+    } catch(swErr) {
+      // SW non supporté ou contexte non-sécurisé — ignorer silencieusement
+    }
   }
 })();
 
@@ -10356,7 +10984,281 @@ window.closePwaMore = function() {
   if (overlay) overlay.classList.remove('open');
 };
 
-// ══ PWA — Install prompt ══════════════════════════════════════
+// ══ INITIALISATION MÉMOIRE PIERRE (données permanentes Maxime) ══
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    if (!window.ajouterMemoirePierre) return;
+    // Ces données sont injectées une seule fois (source:system, pas de doublon)
+    var mem = [
+      // Style de vie
+      ['styleVie', 'PACS avec Alexia depuis 22/09/2022. Régime séparation de biens par défaut PACS.'],
+      ['styleVie', 'Enfant à naître le 04/06/2026. 2e enfant envisagé dans 3-4 ans.'],
+      ['styleVie', 'Conjointe Alexia : professeure des écoles, cherche poste (concours 2025). Revenus instables.'],
+      ['styleVie', 'SNCF Régulateur COGC Limoges, Maîtrise Qual. E (Niv.5), 9 ans ancienneté, 3×8 WE/JF inclus.'],
+      ['styleVie', 'Pas de mobilité géographique prévue. Promotion cadre envisagée dans 7-10 ans.'],
+      // Finances
+      ['faits', 'Salaire net 2 053€/mois hors primes. Annuel ~30 000€ net avec primes 3x8/WE.'],
+      ['faits', 'TMI 11%. Zone 3 IR (87). Expert-comptable LMNP : cabinet JD2M.'],
+      ['faits', 'T2 Limoges 383 rue François Perrin 87000 : 47m², achat 62 000€ (24/08/2022), DPE E, loyer 520€/mois.'],
+      ['faits', 'Crédit T2 : 352€/mois (assurance incluse), taux 1,84%, CRD 75 081€, fin 05/2048.'],
+      ['faits', 'Charges T2 : copro 69€/mois, TF 938€/an, PNO 158,99€/an. Régime réel LMNP.'],
+      ['faits', 'PEA ouvert 25/10/2024. AV Linxea Spirit 2 ouverte 17/03/2025 (frais gestion 2%, UC 0,5%).'],
+      ['faits', 'Abondement PEG SNCF : 30% sur 0-500€ + 20% sur 500-1000€ + 10% sur 1000-1500€. Max 300€ pour 1500€ versés/an.'],
+      ['faits', 'Retraite SNCF estimée : 2 300€ net/mois (régime spécial). Cible revenus passifs : 500-1000€/mois.'],
+      // Objectifs
+      ['objectifs', 'Retraite à 60 ans (~2057). Retraite SNCF estimée 2 300€ net/mois (régime spécial SNCF).'],
+      ['objectifs', 'Revenus passifs investissements cible : 500-1 000€/mois à la retraite.'],
+      ['objectifs', 'Conserver T2 Limoges comme rente retraite, sauf opportunité majeure.'],
+      ['objectifs', 'Travaux DPE T2 avant 2034 au moment le plus rentable fiscalement (déficit).'],
+      // Préférences
+      ['preferences', 'Profil risque dynamique/offensif. Horizon 30 ans. Volatilité mesurée acceptable.'],
+      ['preferences', 'ETF en priorité. Stockpicking possible si opportunité forte. PEA prioritaire, CTO/crypto si opportunité.'],
+      ['preferences', 'Niveau intermédiaire en finance (bases solides). Débutant en patrimoine/fiscalité/succession.'],
+      ['preferences', 'Explications développées mais concises. Veut progresser sur : LMNP, PEA/AV, succession, retraite SNCF.'],
+    ];
+    var added = 0;
+    mem.forEach(function(m) {
+      if (window.ajouterMemoirePierre(m[0], m[1], 'system')) added++;
+    });
+    if (added > 0 && window._saveState) window._saveState();
+  }, 3000);
+});
+
+// ══ SWIPE TO CLOSE — modals + bottom sheet ════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  // Swipe vers le bas pour fermer les modals (.modal)
+  var _swipeStart = null;
+  document.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 1) {
+      _swipeStart = { y: e.touches[0].clientY, t: Date.now() };
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (!_swipeStart) return;
+    var dy = e.changedTouches[0].clientY - _swipeStart.y;
+    var dt = Date.now() - _swipeStart.t;
+    _swipeStart = null;
+    // Swipe rapide vers le bas (>80px en <400ms) → fermer modal visible
+    if (dy > 80 && dt < 400) {
+      // Fermer les modals .ov.on
+      var ovOpen = document.querySelector('.ov.on, .ov[style*="flex"]');
+      if (ovOpen) {
+        ovOpen.classList.remove('on');
+        ovOpen.style.display = '';
+        return;
+      }
+      // Fermer le bottom sheet Plus
+      var moreMenu = document.getElementById('pwa-more-menu');
+      if (moreMenu && moreMenu.classList.contains('open')) {
+        if (window.closePwaMore) window.closePwaMore();
+      }
+    }
+  }, { passive: true });
+
+  // Swipe vers le bas sur le handle du bottom sheet
+  var moreMenu = document.getElementById('pwa-more-menu');
+  var handle = moreMenu && moreMenu.querySelector('.pwa-more-handle');
+  if (handle) {
+    var _handleSwipeY = null;
+    handle.addEventListener('touchstart', function(e) {
+      _handleSwipeY = e.touches[0].clientY;
+    }, { passive: true });
+    handle.addEventListener('touchend', function(e) {
+      if (_handleSwipeY === null) return;
+      var dy = e.changedTouches[0].clientY - _handleSwipeY;
+      _handleSwipeY = null;
+      if (dy > 40) {
+        if (window.closePwaMore) window.closePwaMore();
+      }
+    }, { passive: true });
+  }
+});
+
+// ══ INDICATEUR DE TOKENS IA ══════════════════════════════════
+function updateTokenIndicator(usedTokens, limitTokens) {
+  var el = document.getElementById('ia-token-indicator');
+  if (!el) return;
+  var pct = Math.min(100, Math.round((usedTokens / limitTokens) * 100));
+  var color = pct < 60 ? 'var(--green)' : pct < 85 ? 'var(--gold)' : 'var(--red)';
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:6px;font-size:9px;font-family:JetBrains Mono,monospace;color:var(--muted);">'
+    + '<div style="flex:1;height:3px;background:var(--bd);border-radius:2px;overflow:hidden;">'
+    + '<div style="height:100%;width:' + pct + '%;background:' + color + ';transition:width .3s;"></div>'
+    + '</div>'
+    + '<span style="color:' + color + ';flex-shrink:0;">' + usedTokens.toLocaleString('fr-FR') + '/' + limitTokens.toLocaleString('fr-FR') + ' tok</span>'
+    + '</div>';
+}
+window.updateTokenIndicator = updateTokenIndicator;
+
+// ══ RACCOURCIS CLAVIER ═══════════════════════════════════════
+(function() {
+  var SHORTCUTS = {
+    'd': 'dashboard',   'D': 'dashboard',
+    'e': 'enveloppes',  'E': 'enveloppes',
+    'i': 'immo',        'I': 'immo',
+    'l': 'livrets',     'L': 'livrets',
+    'g': 'charts',      'G': 'charts',
+    'f': 'fiscalite',   'F': 'fiscalite',
+    'r': 'retraite',    'R': 'retraite',
+    's': 'strategie',   'S': 'strategie',
+    'o': 'outils',      'O': 'outils',
+    'a': 'analyse',     'A': 'analyse',
+    'h': 'history',     'H': 'history',
+    'p': 'opportunites','P': 'opportunites',
+  };
+
+  document.addEventListener('keydown', function(e) {
+    // Ne rien faire si focus sur un input/textarea/select
+    var tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    // Ne rien faire si modal ouverte
+    if (document.querySelector('.ov.on, .ov[style*="flex"]')) return;
+
+    // Alt + lettre → navigation
+    if (e.altKey && !e.ctrlKey && !e.metaKey) {
+      var page = SHORTCUTS[e.key];
+      if (page) {
+        e.preventDefault();
+        if (window.showPage) window.showPage(page);
+        return;
+      }
+    }
+
+    // Touche seule (sans modificateur)
+    if (!e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+      // ? → aide raccourcis
+      if (e.key === '?') {
+        e.preventDefault();
+        afficherAideRaccourcis();
+        return;
+      }
+      // F → fullscreen
+      if (e.key === 'F' && e.shiftKey) {
+        e.preventDefault();
+        toggleFullscreen();
+        return;
+      }
+      // Escape → fermer modals
+      if (e.key === 'Escape') {
+        var ov = document.querySelector('.ov.on');
+        if (ov) { ov.classList.remove('on'); return; }
+        if (window.closePwaMore) window.closePwaMore();
+        return;
+      }
+      // P → ouvrir Pierre
+      if (e.key === 'p' || e.key === 'P') {
+        var iaOv = document.getElementById('ov-ia');
+        if (iaOv && !iaOv.classList.contains('on')) {
+          e.preventDefault();
+          iaOv.classList.add('on');
+          if (window.lancerAnalyseIA) window.lancerAnalyseIA();
+        }
+        return;
+      }
+    }
+
+    // Ctrl+S → snapshot
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      if (window.creerSnapshotManuel) window.creerSnapshotManuel();
+      return;
+    }
+    // Ctrl+E → exporter JSON
+    if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+      e.preventDefault();
+      if (window.exportJSON) window.exportJSON();
+      return;
+    }
+  });
+
+  function afficherAideRaccourcis() {
+    var modal = document.createElement('div');
+    modal.className = 'ov';
+    modal.style.display = 'flex';
+    var shortcuts = [
+      ['Alt+D', 'Dashboard'],['Alt+E', 'Enveloppes'],['Alt+I', 'Immobilier'],
+      ['Alt+L', 'Livrets'],['Alt+G', 'Graphiques'],['Alt+F', 'Fiscalité'],
+      ['Alt+R', 'Retraite'],['Alt+S', 'Stratégie'],['Alt+A', 'Analyse'],
+      ['Alt+H', 'Historique'],['Alt+P', 'Opportunités'],
+      ['Ctrl+S', 'Snapshot rapide'],['Ctrl+E', 'Exporter JSON'],
+      ['P', 'Ouvrir Pierre'],['Échap', 'Fermer modal'],['?', 'Cette aide'],
+    ];
+    var rows = shortcuts.map(function(s) {
+      return '<tr><td style="padding:4px 10px 4px 0;font-family:JetBrains Mono,monospace;font-size:11px;color:var(--gold);">' + s[0] + '</td>'
+        + '<td style="font-size:12px;">' + s[1] + '</td></tr>';
+    }).join('');
+    modal.innerHTML = '<div class="modal" style="max-width:400px;">'
+      + '<h2>⌨️ Raccourcis clavier</h2>'
+      + '<table style="width:100%;border-collapse:collapse;">' + rows + '</table>'
+      + '<div class="brow" style="margin-top:16px;justify-content:flex-end;">'
+      + '<button class="btn" id="kbd-close">Fermer</button>'
+      + '</div></div>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', function(e){ if(e.target===modal) document.body.removeChild(modal); });
+    document.getElementById('kbd-close').onclick = function(){ document.body.removeChild(modal); };
+  }
+  window.afficherAideRaccourcis = afficherAideRaccourcis;
+})();
+
+// ══ MODE PLEIN ÉCRAN ═══════════════════════════════════════════
+function toggleFullscreen() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    var el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    if (window._toast) window._toast('Plein écran activé · Échap pour quitter');
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+}
+window.toggleFullscreen = toggleFullscreen;
+
+// Bouton plein écran dans le header (desktop uniquement)
+document.addEventListener('DOMContentLoaded', function() {
+  if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) return;
+  // Seulement sur desktop (pas mobile)
+  if (window.matchMedia('(max-width: 768px)').matches) return;
+  var hdr = document.querySelector('.hdr-right');
+  if (!hdr) return;
+  var btn = document.createElement('button');
+  btn.className = 'btn gh sm';
+  btn.title = 'Plein écran (Shift+F)';
+  btn.textContent = '⛶';
+  btn.style.cssText = 'font-size:14px;flex-shrink:0;padding:5px 8px;';
+  btn.addEventListener('click', toggleFullscreen);
+  // Mettre avant le theme picker
+  var themePicker = hdr.querySelector('.theme-picker');
+  if (themePicker) hdr.insertBefore(btn, themePicker);
+  else hdr.insertBefore(btn, hdr.firstChild);
+
+  // Mettre à jour l'icône selon l'état
+  document.addEventListener('fullscreenchange', function() {
+    btn.textContent = document.fullscreenElement ? '✕' : '⛶';
+    btn.title = document.fullscreenElement ? 'Quitter plein écran' : 'Plein écran (Shift+F)';
+  });
+  document.addEventListener('webkitfullscreenchange', function() {
+    btn.textContent = document.webkitFullscreenElement ? '✕' : '⛶';
+  });
+});
+
+// Bouton ? aide raccourcis dans le header (desktop)
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.matchMedia('(max-width: 768px)').matches) return;
+  var hdr = document.querySelector('.hdr-right');
+  if (!hdr) return;
+  var btn = document.createElement('button');
+  btn.className = 'btn gh sm';
+  btn.title = 'Raccourcis clavier (?)';
+  btn.textContent = '?';
+  btn.style.cssText = 'font-size:12px;flex-shrink:0;padding:4px 8px;font-weight:700;';
+  btn.addEventListener('click', function() { if(window.afficherAideRaccourcis) window.afficherAideRaccourcis(); });
+  var themePicker = hdr.querySelector('.theme-picker');
+  if (themePicker) hdr.insertBefore(btn, themePicker);
+  else hdr.insertBefore(btn, hdr.firstChild);
+});
+
+
 (function() {
   var deferredPrompt = null;
   window.addEventListener('beforeinstallprompt', function(e) {
@@ -10378,11 +11280,39 @@ window.closePwaMore = function() {
   });
 })();
 
-// ══ PWA — Keyboard handling (back button) ════════════════════
-window.addEventListener('popstate', function() {
-  // no-op — prevents white screen on Android back button
+// ══ PWA — Bouton retour natif (Android/iOS) ══════════════════
+window.addEventListener('popstate', function(e) {
+  var PAGE_LABELS = {
+    dashboard:'Vue d\'ensemble', enveloppes:'Enveloppes', immo:'Immobilier',
+    livrets:'Livrets', charts:'Graphiques', analyse:'Analyse',
+    fiscalite:'Fiscalité', retraite:'Retraite 2057', strategie:'Stratégie',
+    outils:'Outils', opportunites:'Opportunités', actu:'Actualités',
+    history:'Historique'
+  };
+  // Si l'état contient une page, naviguer vers elle
+  if (e.state && e.state.page) {
+    var pg = e.state.page;
+    document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
+    document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
+    var el = document.getElementById('pg-' + pg);
+    if (el) el.classList.add('on');
+    document.querySelectorAll('.nb').forEach(function(b){if(b.dataset.page===pg)b.classList.add('on');});
+    try { sessionStorage.setItem('pwa-last-page', pg); } catch(ex) {}
+    if (window.syncPwaBtns) window.syncPwaBtns(pg);
+    // Mettre à jour header mobile
+    var backBtn = document.getElementById('mobile-back-btn');
+    var logoEl = document.getElementById('header-logo');
+    var titleEl = document.getElementById('header-page-title');
+    var isDash = (pg === 'dashboard');
+    if (backBtn) backBtn.style.display = isDash ? 'none' : '';
+    if (logoEl) logoEl.style.display = isDash ? '' : 'none';
+    if (titleEl) { titleEl.textContent = PAGE_LABELS[pg] || pg; titleEl.style.display = isDash ? 'none' : ''; }
+  } else {
+    if (window.showPage) window.showPage('dashboard');
+  }
 });
-try { window.history.pushState({}, ''); } catch(e) {}
+// Initialiser l'état dashboard dans l'historique
+try { window.history.replaceState({page: 'dashboard'}, '', '#dashboard'); } catch(e) {}
 </script>
 
 
@@ -11008,20 +11938,63 @@ window.confirmerAction = confirmerAction;
 // ════════════════════════════════════════════════════════════════
 function getSystemPrompt() {
   var NL = String.fromCharCode(10);
-  // Version compressée — ~600 tokens au lieu de ~2500
   return [
-    "Tu es Pierre, conseiller patrimonial de Maxime (29 ans, SNCF, couple, 1 enfant, retraite 2057).",
-    "Stratégie cible : 80% PEA + 20% AV. Tu es expert : patrimoine, fiscalité FR, immobilier, marchés, droit.",
+    "Tu es Pierre, conseiller patrimonial personnel de Maxime. Tu le connais parfaitement.",
+    "Tu es expert : patrimoine, fiscalité FR, immobilier, marchés financiers, droit, succession.",
     "",
-    "RÈGLES : Lis toujours lire_situation_complete avant d'analyser. Calcule avant d'estimer.",
-    "Propose sans jamais modifier sans accord. Sois direct, chiffré, actionnable. Vouvoie Maxime.",
-    "Max 400 mots. Termine par une action concrète ou question.",
+    "=== PROFIL COMPLET MAXIME ===",
+    "Âge : 29 ans. PACS depuis 22/09/2022. Conjointe : Alexia. Enfant à naître le 04/06/2026. 2e enfant envisagé dans 3-4 ans.",
+    "Conjointe : professeure des écoles, actuellement en recherche de poste (concours 2025). Revenus non stables pour l'instant.",
+    "SNCF : Maîtrise qualification E (Niveau 5), Régulateur COGC Limoges. 9 ans d'ancienneté.",
+    "Rythme 3×8 : 4j travaillés / 2j repos. Horaires 05h-12h / 12h-20h / 20h-05h. WE + jours fériés inclus.",
+    "Promotion cadre envisagée dans 7 à 10 ans. Pas de mobilité géographique prévue.",
     "",
-    "FISCAL CLÉ : PEA exo IR >5 ans (PS 17,2%). AV abatt. 4600€/an >8 ans, 152 500€/bénéf. succession.",
-    "LMNP réel : amortissements (~2-3%/an bien), BIC souvent nul. PEG SNCF : exo IR, PS dus.",
-    "Donation : 100k€/parent/enfant/15 ans. PFU 30% (CTO). Option barème si TMI<12,8%.",
-    "Plus-value immo : exo IR 22 ans, totale 30 ans. DPE G interdit 2025, F 2028, E 2034.",
-    "IR tranches 2025 : 0/11/30/41/45%. Quotient familial. PER : déductible 10% revenus."
+    "=== REVENUS & FISCALITÉ ===",
+    "Salaire net Maxime : 2 053€/mois hors primes. Annuel total avec primes : ~30 000€ net.",
+    "TMI 11%. Zone 3 IR (dép. 87, délai déclaration ~5 juin). Quotient familial : 2,5 parts (couple PACS + 1 enfant).",
+    "Expert-comptable LMNP : cabinet JD2M.",
+    "",
+    "=== LOCALISATION ===",
+    "RP : 3 rue Louis Jouvet, Rilhac-Rancon 87570. Maison 100m² + 906m² terrain.",
+    "T2 LMNP : 383 rue François Perrin, Limoges 87000. 47m² . Bail meublé. DPE E. Acquis 24/08/2022.",
+    "Dép. 87 = Zone B2 (pas d'encadrement loyers). Marché Limoges : ~1 700-2 200€/m² T2.",
+    "Ne jamais mentionner règles zones tendues (Paris/IDF/Lyon) sauf demande explicite.",
+    "",
+    "=== IMMOBILIER DÉTAIL ===",
+    "T2 Limoges : achat 62 000€. Crédit 352€/mois (assurance incluse), taux 1,84%, fin 05/2048, CRD 75 081€.",
+    "Charges T2 : copro 69€/mois, TF 938€/an, PNO 158,99€/an. Loyer 520€/mois. Régime réel LMNP.",
+    "Stratégie T2 : conserver jusqu'à retraite (rente), vente si opportunité majeure. Travaux DPE prévus avant 2034.",
+    "RP Rilhac-Rancon : achat 167 684€, valeur estimée 180 000€. Quote-part Maxime 50% (co-emprunteur Alexia).",
+    "Crédit RP : PTZ 30 000€ à 0% + prêt lisseur 100 684€ à 4%. Amortissement réel à partir d'août 2026.",
+    "",
+    "=== ENVELOPPES FINANCIÈRES ===",
+    "PEA BoursoBank : ouvert le 25/10/2024. Stratégie : ETF actions diversifiés. Cible 80% patrimoine financier.",
+    "AV Linxea Spirit 2 : ouverte le 17/03/2025. Frais gestion 2%, UC 0,5%. Cible 20% patrimoine financier (transmission).",
+    "PEG SNCF : abondement SNCF actif. Roulement vers PEA prévu dès déblocage (5 ans).",
+    "Abondement PEG SNCF : 30% sur tranche 0-500€ / 20% sur 500-1000€ / 10% sur 1000-1500€. Max 300€ pour 1500€ versés.",
+    "Optimal PEG : verser 1 500€/an → abondement 300€ (rendement garanti 20%). Débloquer après 5 ans → arbitrer vers PEA ESE.",
+    "",
+    "=== OBJECTIFS RETRAITE (cible ~60 ans, horizon 2057) ===",
+    "Retraite SNCF estimée : 2 300€ net/mois (régime spécial SNCF). Complément cible : 500-1 000€/mois passifs (T2 + PEA/AV).",
+    "Complément investissements cible : 500-1 000€/mois de revenus passifs.",
+    "Profil risque : dynamique/offensif adapté à l'horizon 30 ans (volatilité mesurée acceptable).",
+    "Préférence : ETF prioritaire. PEA = ESE (BNP Easy S&P500) principal. Stockpicking si opportunité. CTO/crypto si opportunité.",
+    "Immobilier : conserver T2, possible résidence secondaire ou locatif supplémentaire à terme.",
+    "",
+    "=== PROFIL APPRENTISSAGE ===",
+    "Niveau intermédiaire en finance (bases solides). Patrimoine/fiscalité/succession : débutant.",
+    "Préfère explications développées mais concises. Veut progresser sur tous les sujets.",
+    "Priorités d'apprentissage : fiscalité LMNP, optimisation PEA/AV, succession/donation, retraite SNCF.",
+    "",
+    "=== RÈGLES PIERRE ===",
+    "Lis lire_situation_complete avant d'analyser. Calcule avant d'estimer.",
+    "Adapte le vocabulaire : explique les termes techniques. Propose sans jamais modifier sans accord.",
+    "Sois direct, chiffré, actionnable. Vouvoie Maxime. Max 400 mots. Termine par action ou question.",
+    "",
+    "FISCAL CLÉ : PEA exo IR >5 ans (PS 17,2% restent). AV abatt. 4 600€/an après 8 ans (17/03/2033), 152 500€/bénéf. succession.",
+    "LMNP réel : amortissements ~2-3%/an bien + mobilier 10-20%/an. BIC souvent nul. PEG : exo IR, PS dus.",
+    "Plus-value immo : exo IR 22 ans (2044 pour T2), totale 30 ans (2052). DPE E interdit location 2034.",
+    "IR tranches 2025 : 0/11/30/41/45%. PER : déductible 10% revenus. PFU 30% CTO. Option barème si TMI<12,8%."
   ].join(NL);
 }
 
@@ -11035,9 +12008,13 @@ function getPatrimoineContext() {
   var NL = String.fromCharCode(10);
   var lines = [
     "DATE : " + new Date().toLocaleDateString('fr-FR'),
+    "LOCALISATION : T2 LMNP 383 rue François Perrin, Limoges 87000 | RP 3 rue Louis Jouvet, Rilhac-Rancon 87570 | Zone 3 IR | TMI 11%",
+    "PROFIL : Maxime 29 ans, SNCF Régulateur COGC, 3x8, 9 ans ancienneté. PACS Alexia. Enfant 04/06/2026. TMI 11%.",
     "PATRIMOINE NET : " + Math.round(c.total||0).toLocaleString('fr-FR') + " EUR | BRUT : " + Math.round(c.brut||0).toLocaleString('fr-FR') + " EUR | DETTES : " + Math.round(c.dettes||0).toLocaleString('fr-FR') + " EUR",
-    "PEA : " + Math.round(c.pea||0).toLocaleString('fr-FR') + " EUR | AV : " + Math.round(c.av||0).toLocaleString('fr-FR') + " EUR | PEG : " + Math.round(c.peg||0).toLocaleString('fr-FR') + " EUR | Livrets : " + Math.round(c.livT||0).toLocaleString('fr-FR') + " EUR",
-    "Salaire : ~30 000 EUR/an | Foyer : 2,5 parts | LMNP T2 Limoges loyer ~520 EUR/mois"
+    "PEA (ouv. 25/10/2024) : " + Math.round(c.pea||0).toLocaleString('fr-FR') + " EUR | AV Linxea (ouv. 17/03/2025, 2%/0,5%) : " + Math.round(c.av||0).toLocaleString('fr-FR') + " EUR | PEG : " + Math.round(c.peg||0).toLocaleString('fr-FR') + " EUR | Livrets : " + Math.round(c.livT||0).toLocaleString('fr-FR') + " EUR",
+    "T2 Limoges : 47m² achat 62k€ (08/2022), crédit 352€/mois taux 1,84% CRD 75 081€ fin 05/2048, loyer 520€/mois DPE E",
+    "Charges T2 : copro 69€/mois + TF 938€/an + PNO 159€/an | Régime réel LMNP, expert JD2M",
+    "Salaire : ~30 000 EUR/an | Foyer : 2,5 parts | T2 LMNP Limoges 87000 loyer ~520 EUR/mois | RP Rilhac-Rancon 87570 | Zone 3 IR"
   ];
 
   // Positions — format compact
@@ -11076,6 +12053,7 @@ function getPatrimoineContext() {
 function estimerTokens(text) {
   return Math.ceil((text || '').length / 4);
 }
+window.estimerTokens = estimerTokens;
 
 // Contexte réduit si dépassement tokens
 function getContexteAdapte(maxTokens) {
@@ -11295,7 +12273,7 @@ async function callClaudeIA(userMsg, isFirst) {
       }
       if (errMsg.includes('overloaded') || errMsg.includes('rate_limit') || errMsg.includes('Rate limit') || errMsg.includes('TPM') || errMsg.includes('429')) {
         var conseil = errMsg.includes('TPM') || errMsg.includes('token')
-          ? '⏳ Limite de tokens/minute atteinte sur Groq. Attendez 30 secondes puis réessayez, ou passez sur Gemini (AIza...) dans les paramètres IA — limite plus haute.'
+          ? '⏳ Limite Groq atteinte. Réessayez dans 30s, ou cliquez ⚙️ en haut pour passer sur Gemini (gratuit, limite 4× plus haute).'
           : '⏳ Service surchargé. Réessayez dans quelques secondes.';
         return conseil;
       }
@@ -11426,7 +12404,28 @@ function renderIAConversation(el) {
   html += '</div>';
   html += '<div style="font-size:9px;color:var(--muted);margin-top:8px;font-family:JetBrains Mono,monospace;">Pierre v3 — Expert patrimonial IA · Modifications sur confirmation · Données locales uniquement</div>';
 
+  // Indicateur tokens — calculé ici et passé directement (pas de script inline)
+  var active = window.getActiveProvider ? window.getActiveProvider() : null;
+  var TPM_LIMITS_UI = { groq: 12000, openrouter: 8000, gemini: 32000, anthropic: 40000 };
+  var tpmLimit = active ? (TPM_LIMITS_UI[active.id] || 12000) : 12000;
+  var sysTokens = window.estimerTokens ? window.estimerTokens(
+    (window.getSystemPrompt ? window.getSystemPrompt() : '') +
+    (window.getMemoirePromptContext ? window.getMemoirePromptContext() : '') +
+    (window.getPatrimoineContext ? window.getPatrimoineContext() : '')
+  ) : 0;
+  var convTokens = window._iaConversation.reduce(function(s,m){
+    return s + (window.estimerTokens ? window.estimerTokens(typeof m.content==='string' ? m.content : JSON.stringify(m.content)) : 0);
+  }, 0);
+  var totalEst = sysTokens + convTokens;
+
+  html += '<div id="ia-token-indicator" style="margin-top:6px;"></div>';
+
   el.innerHTML = html;
+
+  // Mettre à jour l'indicateur de tokens directement (pas de script inline)
+  setTimeout(function() {
+    if (window.updateTokenIndicator) window.updateTokenIndicator(totalEst, tpmLimit);
+  }, 50);
 
   var msgs = document.getElementById('ia-messages');
   if (msgs) msgs.scrollTop = msgs.scrollHeight;
@@ -11455,7 +12454,7 @@ async function lancerAnalyseIA() {
     + '<div style="font-size:13px;">Pierre analyse votre patrimoine...</div></div>';
   if (btn) btn.disabled = true;
 
-  var ctx = getPatrimoineContext();
+  var ctx = window.getContexteAdapte ? window.getContexteAdapte(4000) : getPatrimoineContext();
   var NL  = String.fromCharCode(10);
   var firstMsg = [
     "Analyse complète de ma situation patrimoniale. Utilise lire_situation_complete puis donne :",
@@ -11482,9 +12481,13 @@ async function envoyerMessageIA() {
   input.value = '';
   input.disabled = true;
 
-  var ctx = getPatrimoineContext();
+  // Contexte adapté à la limite tokens du provider actif
+  var active = window.getActiveProvider ? window.getActiveProvider() : null;
+  var TPM_MAP = { groq: 6000, openrouter: 4000, gemini: 8000, anthropic: 16000 };
+  var ctxBudget = (TPM_MAP[(active && active.id) || 'groq'] || 6000) - 1500;
+  var ctx = window.getContexteAdapte ? window.getContexteAdapte(ctxBudget) : (window.getPatrimoineContext ? window.getPatrimoineContext() : '');
   var NL  = String.fromCharCode(10);
-  var fullMsg = msg + NL + NL + "[Données actuelles]" + NL + ctx;
+  var fullMsg = msg + NL + NL + '[Donnees actuelles]' + NL + ctx;
 
   window._iaConversation.push({role:'user', content: msg});
   var el = document.getElementById('ia-content');
@@ -11496,8 +12499,14 @@ async function envoyerMessageIA() {
     var t = document.createElement('div');
     t.id = 'ia-typing';
     t.style.cssText = 'display:flex;gap:8px;align-items:center;padding:8px 0;';
-    t.innerHTML = '<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">P</div>'
-      + '<div style="padding:10px 14px;background:var(--s2);border-radius:2px 12px 12px 12px;border:1px solid var(--bd);font-size:12px;color:var(--muted);">Pierre réfléchit...</div>';
+    var tAvatar = document.createElement('div');
+    tAvatar.style.cssText = 'width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;';
+    tAvatar.textContent = 'P';
+    var tBubble = document.createElement('div');
+    tBubble.style.cssText = 'padding:10px 14px;background:var(--s2);border-radius:2px 12px 12px 12px;border:1px solid var(--bd);font-size:12px;color:var(--muted);';
+    tBubble.textContent = 'Pierre reflechit...';
+    t.appendChild(tAvatar);
+    t.appendChild(tBubble);
     msgs.appendChild(t);
     msgs.scrollTop = msgs.scrollHeight;
   }
@@ -11507,8 +12516,24 @@ async function envoyerMessageIA() {
   var typing = document.getElementById('ia-typing');
   if (typing) typing.remove();
 
-  window._iaConversation.push({role:'assistant', content: response});
+  // Si rate limit, la réponse brute est stockée (pas de HTML inline)
+  window._iaConversation.push({role:'assistant', content: response || ''});
   renderIAConversation(el);
+
+  // Ajouter bouton config si rate limit
+  if (response && (response.includes('Limite Groq') || response.includes('Rate limit') || response.includes('⏳'))) {
+    var msgEls = document.querySelectorAll('#ia-messages > div');
+    var lastMsg = msgEls[msgEls.length - 1];
+    if (lastMsg) {
+      var cfgBtn = document.createElement('button');
+      cfgBtn.className = 'btn gh sm';
+      cfgBtn.style.cssText = 'font-size:10px;margin-top:8px;';
+      cfgBtn.textContent = '⚙️ Changer de provider IA';
+      cfgBtn.onclick = function(){ if(window.demanderCleAPI) window.demanderCleAPI(); };
+      lastMsg.appendChild(cfgBtn);
+    }
+  }
+
   if (input) input.disabled = false;
 }
 window.envoyerMessageIA = envoyerMessageIA;
@@ -11521,9 +12546,35 @@ async function lancerConseilRapide() {
   el.innerHTML = '<div style="color:var(--muted);font-size:12px;display:flex;align-items:center;gap:8px;"><div style="animation:spin 1s linear infinite;font-size:16px;">↻</div> Pierre analyse...</div>';
   if (btn) btn.disabled = true;
 
-  var ctx = getPatrimoineContext();
+  var ctx = window.getContexteAdapte ? window.getContexteAdapte(2500) : getPatrimoineContext();
   var NL  = String.fromCharCode(10);
-  var msg = ["Donne le conseil patrimonial le plus important et urgent en 3-4 phrases max.", "Sois très concret, chiffré, actionnable. Signale si quelque chose est urgent ou dangereux.", "", ctx].join(NL);
+
+  // Contexte enrichi avec alertes du mois
+  var now = new Date();
+  var month = now.getMonth() + 1;
+  var year  = now.getFullYear();
+  var S = window._pState ? window._pState() : null;
+  var extra = [];
+
+  if (month === 4) extra.push('URGENT : Avril = mois PEG. Vérifier prime reçue + roulement disponible.');
+  if ([5,6].indexOf(month) >= 0) extra.push('URGENT : Délai déclaration IR zone 3 ~5 juin. LMNP 2031 avec JD2M.');
+  if (month === 11) extra.push('RAPPEL : Taxe foncière T2 Limoges + RP Rilhac à payer avant le 20 nov.');
+
+  // PEG actions en cours
+  if (S && S.pegRoulement) {
+    var retDispo = S.pegRoulement.filter(function(r){ return r.disponible <= year && r.statut !== 'retire'; });
+    if (retDispo.length) extra.push('ACTION PEG : Versement ' + retDispo[0].annee + ' disponible à retirer → PEA ESE.');
+    var nonSaisi = !S.pegRoulement.some(function(r){ return r.annee === year && r.verse > 0; });
+    if (nonSaisi && month >= 3 && month <= 6) extra.push('PEG ' + year + ' : prime non encore saisie dans Vesta.');
+  }
+
+  var msg = [
+    'Donne le conseil patrimonial le plus important et urgent en 3-4 phrases max.',
+    'Sois très concret, chiffré, actionnable pour ma situation.',
+    extra.length ? ('Contexte du moment : ' + extra.join(' ')) : '',
+    '',
+    ctx
+  ].filter(Boolean).join(NL);
 
   var response = await callClaudeIA(msg, true);
 
@@ -11638,7 +12689,7 @@ window.lancerConseilRapide = lancerConseilRapide;
     ov.style.cssText='position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;';
     var title=document.createElement('div');
     title.style.cssText='font-family:"Playfair Display",serif;font-size:32px;color:var(--gold);';
-    title.textContent='PatriTracker';
+    title.textContent='Vesta';
     var box=document.createElement('div');
     box.style.cssText='background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:32px 36px;text-align:center;max-width:340px;width:90%;';
     var lock=document.createElement('div');lock.style.fontSize='28px';lock.style.marginBottom='12px';lock.textContent='🔒';
@@ -11728,19 +12779,26 @@ function renderCalendrierFiscal() {
   // ── Échéances fiscales fixes ──────────────────────────────
   add(3, 31, 'Déclaration revenus fonciers 2072',    'Si SCI à l\'IR — dépôt liasse 2072', 'Fiscal', 'warn');
   add(5,  8, 'Ouverture déclaration IR en ligne',    'Service impots.gouv.fr ouvert', 'Fiscal', 'info');
-  add(5, 22, 'Déclaration IR — Zone 1 (dép. 01-19)', 'Délai zone 1 — non-résidents zone 3', 'Fiscal', 'high');
-  add(5, 29, 'Déclaration IR — Zone 2 (dép. 20-54)', 'Délai zone 2', 'Fiscal', 'high');
-  add(6,  5, 'Déclaration IR — Zone 3 (dép. 55-974)','Délai zone 3 — Haute-Vienne = zone 2', 'Fiscal', 'high');
-  add(5, 31, 'Liasse BIC 2031 — LMNP réel',          'Déclaration LMNP réel à déposer (ou expert-comptable)', 'LMNP', 'high');
+  // Haute-Vienne (87) = Zone 3 (dép. 55-974) — délai 5 juin
+  add(6,  5, 'Déclaration IR — Votre délai (Zone 3)', 'Haute-Vienne (87) = Zone 3. Date limite déclaration en ligne : ~5 juin.', 'Fiscal', 'high');
+  add(5, 31, 'Liasse BIC 2031 — LMNP réel T2 Limoges','Déclaration LMNP réel à déposer (ou expert-comptable). Concerne votre T2 Limoges 87000.', 'LMNP', 'high');
   add(9, 15, 'Acompte IR — si > 347 EUR impôt N-1',  'Versement acompte mensuel (ou trimestriel)', 'Fiscal', 'warn');
-  add(10,15, 'Revalorisation loyers T4',              'Vérifier nouvel IRL T3 — révision possible', 'Immo', 'info');
-  add(11, 5, 'Taxe foncière — date limite paiement',  'Paiement TF en ligne avant le 20 nov', 'Immo', 'high');
+  add(10,15, 'Revalorisation loyer T2 Limoges',       'Vérifier nouvel IRL T3 — révision possible de votre loyer (bail meublé 1 an)', 'Immo', 'info');
+  add(11, 5, 'Taxe foncière — date limite paiement',  'Paiement TF en ligne avant le 20 nov. Concerne T2 Limoges + RP Rilhac-Rancon 87570.', 'Immo', 'high');
   add(12,31, 'Versements PER déductibles',            'Dernier jour pour versements PER 2025 déductibles du revenu', 'Retraite', 'warn');
   add(12,31, 'Plafond PEA',                           'Vérifier versements PEA (plafond 150k EUR)', 'PEA', 'info');
 
   // ── IRL trimestriel ───────────────────────────────────────
   add(1, 31, 'IRL T4 publié',  'Indice Q4 — révision loyers possible', 'Immo', 'info');
   add(4, 30, 'IRL T1 publié',  'Indice Q1 — révision loyers possible', 'Immo', 'info');
+  // Rappels PEG — avril chaque année
+  add(4,  1, 'PEG SNCF — Saisir prime dans Vesta', '📥 Entrer montant de la prime dans l\'Optimisateur PEG (Enveloppes). Verser sur PEG pour déclencher l\'abondement SNCF (30/20/10%).', 'PEG', 'high');
+  // Rappel retrait 5 ans dynamique
+  if (S && S.pegRoulement) {
+    S.pegRoulement.filter(function(r){ return r.disponible === yr && r.statut !== 'retire'; }).forEach(function(r) {
+      add(4, 1, 'PEG ' + r.annee + ' — RETRAIT disponible !', '🏆 5 ans écoulés ! Retirer versement ' + r.annee + ' (' + Math.round(r.total || 0) + '€ placé) et transférer immédiatement sur PEA ESE ou CW8.', 'PEG', 'high');
+    });
+  }
   add(7, 31, 'IRL T2 publié',  'Indice Q2 — révision loyers T2 Limoges', 'Immo', 'warn');
   add(10,31, 'IRL T3 publié',  'Indice Q3 — révision loyers possible', 'Immo', 'info');
 
@@ -11803,6 +12861,17 @@ function renderCalendrierFiscal() {
   });
 
   var html = '';
+
+  // Bandeau localisation
+  html += '<div style="background:rgba(212,175,83,0.07);border:1px solid var(--gold)44;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">';
+  html += '<span style="font-size:18px;">📍</span>';
+  html += '<div style="font-size:11px;line-height:1.5;">';
+  html += '<span style="font-weight:600;color:var(--gold);">Haute-Vienne (87) — Zone 3</span>';
+  html += ' · Délai déclaration IR : <strong>~5 juin</strong>';
+  html += ' · T2 LMNP : <strong>Limoges 87000</strong>';
+  html += ' · RP : <strong>Rilhac-Rancon 87570</strong>';
+  html += ' · Zone B2 (pas d\'encadrement des loyers)';
+  html += '</div></div>';
 
   // Upcoming alerts banner
   var soon = events.filter(function(e){ return e.soon && !e.past; });
@@ -12043,31 +13112,62 @@ function lancerSuiviMensuel() {
   var ov = document.getElementById('ov-ia');
   if (ov) ov.classList.add('on');
 
-  var now   = new Date();
-  var mois  = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
-  var NL    = String.fromCharCode(10);
-  var S     = window._pState ? window._pState() : null;
-  var ctx   = window.getPatrimoineContext ? window.getPatrimoineContext() : '';
+  var now  = new Date();
+  var mois = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  var NL   = String.fromCharCode(10);
+  var S    = window._pState ? window._pState() : null;
+
+  // Contexte adapté pour éviter le rate limit
+  var active = window.getActiveProvider ? window.getActiveProvider() : null;
+  var TPM_MAP = { groq: 6000, openrouter: 4000, gemini: 8000, anthropic: 16000 };
+  var ctxBudget = (TPM_MAP[(active && active.id) || 'groq'] || 6000) - 1800;
+  var ctx = window.getContexteAdapte ? window.getContexteAdapte(ctxBudget) : '';
+
+  // Contexte spécifique mois courant
+  var month = now.getMonth() + 1;
+  var year  = now.getFullYear();
+  var pegDispoThisYear = S && S.pegRoulement
+    ? S.pegRoulement.filter(function(r){ return r.disponible === year && r.statut !== 'retire'; })
+    : [];
+  var pegNonSaisi = S && S.pegRoulement
+    ? !S.pegRoulement.some(function(r){ return r.annee === year && r.verse > 0; })
+    : true;
+
+  var contextMois = [];
+  if (month === 4) {
+    contextMois.push('⚠️ AVRIL : mois clé PEG SNCF.');
+    if (pegNonSaisi) contextMois.push('→ Prime ' + year + ' non encore saisie dans Vesta.');
+    if (pegDispoThisYear.length) contextMois.push('→ RETRAIT disponible : versement ' + pegDispoThisYear[0].annee + ' à sortir du PEG et placer sur PEA ESE.');
+  }
+  if ([5,6].indexOf(month) >= 0) contextMois.push('⚠️ Délai déclaration IR zone 3 (87) : ~5 juin. Vérifier liasse LMNP 2031 faite avec JD2M.');
+  if (month === 7) contextMois.push('IRL T2 publié → vérifier si révision loyer T2 Limoges possible (bail meublé).');
+  if (month === 11) contextMois.push('Taxe foncière T2 Limoges + RP Rilhac-Rancon à régler avant le 20 nov.');
+  if (month === 12) contextMois.push('Dernier mois pour versements PER déductibles. Vérifier plafond PEA (150k€).');
 
   var msg = [
     'Suivi mensuel — ' + mois.charAt(0).toUpperCase() + mois.slice(1) + '.',
-    'Guide-moi étape par étape pour mettre à jour mes données :',
-    '1. Quelles valeurs dois-je vérifier et saisir ce mois-ci ?',
-    '2. Pose-moi les questions une par une pour que je puisse répondre',
-    '3. Mets à jour chaque valeur après ma confirmation',
+    contextMois.length ? ('Priorités ce mois-ci :' + NL + contextMois.join(NL)) : '',
+    '',
+    'Guide-moi étape par étape :',
+    '1. Quelles valeurs dois-je vérifier et mettre à jour ce mois-ci ?',
+    '2. Pose les questions une par une pour que je réponde',
+    '3. Mets à jour chaque valeur après confirmation',
     '',
     ctx
-  ].join(NL);
+  ].filter(Boolean).join(NL);
 
   if (window._iaConversation !== undefined) {
     window._iaConversation = [];
     window._pendingAction  = null;
   }
 
+  var el = document.getElementById('ia-content');
+  if (el && window.renderIAConversation) window.renderIAConversation(el);
+
   setTimeout(function() {
     var inp = document.getElementById('ia-user-input');
     if (inp) {
-      inp.value = 'Suivi mensuel ' + mois + ' — guide-moi pour tout mettre à jour';
+      inp.value = msg;
       if (window.envoyerMessageIA) window.envoyerMessageIA();
     } else if (window.lancerAnalyseIA) {
       window.lancerAnalyseIA();
@@ -12746,58 +13846,72 @@ function renderScorePatrimonial() {
 
   // ── 3. Optimisation fiscale (20 pts) ─────────────────────────
   var scoreFisc = 0;
-  if ((c.pea||0) > 0) scoreFisc += 6;           // PEA actif
-  if ((c.av||0)  > 0) scoreFisc += 5;           // AV actif
+  if ((c.pea||0) > 0)  scoreFisc += 5;  // PEA actif (exo IR 2029)
+  if ((c.av||0)  > 0)  scoreFisc += 4;  // AV actif (abattement 2033)
+  if ((c.peg||0) > 0 && (S.pegRoulement||[]).some(function(r){ return r.abo > 0; }))
+    scoreFisc += 4;                      // PEG + abondement SNCF actif
   var pvPEA = 0;
   (S.positions||[]).filter(function(p){return p.envelope==='PEA';})
     .forEach(function(p){ pvPEA += Math.max(0,(p.price||0)*(p.qty||0) - (p.priceAvg||p.price||0)*(p.qty||0)); });
-  if (pvPEA > 0 && (c.pea||0) > 5000) scoreFisc += 5; // PEA avec PV
-  if ((S.livrets||[]).some(function(l){ return l.type==='LEP'; })) scoreFisc += 4; // LEP
+  if (pvPEA > 0 && (c.pea||0) > 5000) scoreFisc += 3;
+  if ((S.livrets||[]).some(function(l){ return /^lep/i.test(l.type||l.name||''); })) scoreFisc += 2;
+  if ((S.immo||[]).some(function(b){ return b.type==='Locatif'||b.type==='LMNP'; })) scoreFisc += 2;
   scoreFisc = Math.min(20, scoreFisc);
   scores.push(scoreFisc);
+  var fiscDetails = [];
+  if ((c.pea||0)>0) fiscDetails.push('PEA ouvert 25/10/2024 (exo IR 2029)');
+  if ((c.peg||0)>0 && (S.pegRoulement||[]).some(function(r){return r.abo>0;})) fiscDetails.push('PEG+abo SNCF');
+  if ((c.av||0)>0)  fiscDetails.push('AV (abatt. 4600EUR en 2033)');
   details.push({ label:'Optimisation fiscale', score:scoreFisc, max:20,
-    comment: scoreFisc >= 16 ? 'Très bonne utilisation des enveloppes fiscales' : 'Marge d\'optimisation disponible',
-    color: scoreFisc >= 14 ? 'var(--green)' : scoreFisc >= 8 ? 'var(--gold)' : 'var(--red)' });
+    comment: fiscDetails.join(' - ') || 'Marge disponible',
+    color: scoreFisc>=14?'var(--green)':scoreFisc>=8?'var(--gold)':'var(--red)' });
 
   // ── 4. Adéquation retraite (20 pts) ──────────────────────────
-  var ageActuel = 29;
-  var anneeRetraite = 2057;
-  var horizonAns = anneeRetraite - new Date().getFullYear();
-  var patriNet = c.total || 0;
+  var horizonAns = 2057 - new Date().getFullYear();
+  var patriNet   = c.total || 0;
+  // Cible : 500k€ net pour générer 500-1000€/mois en 2057 (retraite SNCF 2300€ déjà acquise)
   var patriCible2057 = 500000;
   var progression = patriNet / patriCible2057 * 100;
   var scoreRet = Math.min(20, Math.round(progression / 5));
+  // Bonus : PEA actif + horizon long = atout majeur
+  if ((c.pea||0) > 0 && horizonAns >= 25) scoreRet = Math.min(20, scoreRet + 3);
   scores.push(scoreRet);
   details.push({ label:'Adéquation retraite 2057', score:scoreRet, max:20,
-    comment: Math.round(progression) + '% du chemin vers 500k EUR net cible · ' + horizonAns + ' ans restants',
+    comment: Math.round(progression) + '% du chemin vers 500k EUR net · Retraite SNCF : 2 300 EUR/mois acquis · ' + horizonAns + ' ans horizon',
     color: scoreRet >= 14 ? 'var(--green)' : scoreRet >= 8 ? 'var(--gold)' : 'var(--red)' });
 
   // ── 5. Gestion du risque (15 pts) ────────────────────────────
   var scoreRisq = 0;
   var immos = S.immo || [];
-  var hasDPE_E = immos.some(function(b){ return b.dpe === 'E' && b.type === 'Locatif'; });
-  var hasPNO   = immos.some(function(b){ return (b.pno||0) > 0; });
+  var hasDPE_E  = immos.some(function(b){ return /e/i.test(b.dpe||'') && (b.type||'').toLowerCase() !== 'rp'; });
+  var hasPNO    = immos.some(function(b){ return (b.pno||b.assurancePNO||0) > 0; });
   var hasLivrets = (c.livT||0) > 1000;
-  if (!hasDPE_E) scoreRisq += 5; else scoreRisq += 2;
-  if (hasPNO)    scoreRisq += 4;
+  if (!hasDPE_E)  scoreRisq += 5; else scoreRisq += 2; // DPE E = risque 2034
+  if (hasPNO)     scoreRisq += 3;
   if (hasLivrets) scoreRisq += 4;
   var debtRatio = (c.dettes||0) / Math.max(c.brut||1, 1);
-  if (debtRatio < 0.5) scoreRisq += 2;
+  if (debtRatio < 0.6) scoreRisq += 3;
   scoreRisq = Math.min(15, scoreRisq);
   scores.push(scoreRisq);
+  var commentRisq = [];
+  if (hasDPE_E) commentRisq.push('⚠ DPE E : travaux avant 2034 (interdiction location)');
+  if (!hasPNO)  commentRisq.push('Vérifier assurance PNO T2');
+  if (!hasLivrets) commentRisq.push('Épargne précaution insuffisante');
+  if (debtRatio >= 0.6) commentRisq.push('Ratio dette élevé (' + Math.round(debtRatio*100) + '%)');
   details.push({ label:'Gestion du risque', score:scoreRisq, max:15,
-    comment: hasDPE_E ? '⚠ DPE E — travaux à planifier avant 2034' : 'Bonne maîtrise du risque',
+    comment: commentRisq.length ? commentRisq.join(' · ') : 'Bonne maîtrise du risque — DPE, PNO, liquidité OK',
     color: scoreRisq >= 12 ? 'var(--green)' : scoreRisq >= 7 ? 'var(--gold)' : 'var(--red)' });
 
   // ── 6. Stratégie transmission (10 pts) ───────────────────────
   var scoreTrans = 0;
-  if ((c.av||0) > 0) scoreTrans += 5;
-  if ((c.av||0) / ((c.pea||0) + (c.av||0) + 1) >= 0.15) scoreTrans += 3;
-  scoreTrans += 2; // conjoint PACS/marié
+  var avPct = (c.av||0) / Math.max((c.pea||0) + (c.av||0), 1);
+  if ((c.av||0) > 0) scoreTrans += 4;       // AV ouverte (clause bénéficiaire)
+  if (avPct >= 0.15)  scoreTrans += 3;       // AV bien pondérée (>15%)
+  scoreTrans += 3;                           // PACS + enfant = transmission optimisée
   scoreTrans = Math.min(10, scoreTrans);
-  scores.push(scoreTrans);
+  var avDateMsg = 'AV ouverte 17/03/2025 → abattement le 17/03/2033';
   details.push({ label:'Stratégie transmission', score:scoreTrans, max:10,
-    comment: scoreTrans >= 8 ? 'AV bien positionnée pour transmission' : 'Renforcer l\'AV et consulter notaire',
+    comment: scoreTrans >= 8 ? avDateMsg + ' · PACS + clause bénéficiaire' : 'Renforcer AV — ' + avDateMsg,
     color: scoreTrans >= 7 ? 'var(--green)' : scoreTrans >= 4 ? 'var(--gold)' : 'var(--red)' });
 
   var totalScore = scores.reduce(function(a,b){ return a+b; }, 0);
@@ -13349,11 +14463,12 @@ async function lancerBacktest() {
 
   // Approximate historical CAGR (annualized return) for known assets
   var cagrTable = {
-    '^GSPC':  { name:'S&P 500',    cagr:0.105, vol:0.16, since:1980 },
-    'CW8.PA': { name:'MSCI World', cagr:0.08,  vol:0.15, since:2008 },
-    '^FCHI':  { name:'CAC 40',     cagr:0.055, vol:0.18, since:1990 },
-    'PAEEM.PA': { name:'MSCI EM',  cagr:0.06,  vol:0.22, since:2010 },
-    'GLD':    { name:'Or',         cagr:0.07,  vol:0.18, since:2000 }
+    '^GSPC':   { name:'S&P 500 (USD)',       cagr:0.105, vol:0.16, since:1980 },
+    'ESE.PA':  { name:'ESE — BNP S&P500 PEA',cagr:0.10,  vol:0.16, since:2005, note:'Éligible PEA — votre ETF principal' },
+    'CW8.PA':  { name:'CW8 — MSCI World PEA',cagr:0.08,  vol:0.15, since:2008, note:'Éligible PEA' },
+    '^FCHI':   { name:'CAC 40',              cagr:0.055, vol:0.18, since:1990 },
+    'PAEEM.PA':{ name:'MSCI EM',             cagr:0.06,  vol:0.22, since:2010 },
+    'GLD':     { name:'Or',                  cagr:0.07,  vol:0.18, since:2000 }
   };
   var info = cagrTable[asset] || { name:asset, cagr:0.07, vol:0.16 };
   if (info.since && startYear < info.since) startYear = info.since;
@@ -13796,7 +14911,7 @@ function demanderPermissionNotifs() {
   return Notification.requestPermission().then(function(perm) {
     if (perm === 'granted') {
       if (window._toast) window._toast('✅ Notifications activées');
-      envoyerNotif('PatriTracker', 'Notifications activées ! Vous recevrez les alertes importantes ici.');
+      envoyerNotif('Vesta', 'Notifications activées ! Vous recevrez les alertes importantes ici.');
     } else {
       if (window._toast) window._toast('⚠️ Notifications refusées');
     }
@@ -13899,7 +15014,7 @@ function verifierAlertes() {
     var weekKey = now.getFullYear() + '-W' + Math.floor(now.getDate()/7);
     if (dayOfWeek === 0 && hour >= 18 && S.notifsLastCheck.hebdo !== weekKey) {
       envoyerNotif('🎓 Conseil hebdo de Pierre',
-        'C\'est dimanche ! Ouvrez PatriTracker pour votre suivi hebdomadaire.',
+        'C\'est dimanche ! Ouvrez Vesta pour votre suivi hebdomadaire.',
         { tag: 'hebdo' });
       S.notifsLastCheck.hebdo = weekKey;
       if (window._saveState) window._saveState();
@@ -13922,6 +15037,47 @@ function verifierAlertes() {
           { tag: 'mouvement' });
         S.notifsLastCheck.mouvements = todayStr;
         if (window._saveState) window._saveState();
+      }
+    }
+  }
+
+  // 5) RAPPELS PEG — Avril chaque année
+  if (S.notifsConfig.peg !== false && month === 4) {
+    var pegAnnualKey = 'peg-annual-' + year;
+    if (S.notifsLastCheck[pegAnnualKey] !== todayStr) {
+      // 5a) Rappel annuel : saisir la prime dans l'optimisateur
+      var dejaEnregistre = S.pegRoulement && S.pegRoulement.some(function(r) {
+        return r.annee === year && r.statut === 'place' && r.verse > 0;
+      });
+      if (!dejaEnregistre) {
+        envoyerNotif(
+          '💰 PEG SNCF — Saisir la prime ' + year,
+          'Ouvrez Vesta → Enveloppes → Optimiseur PEG. Entrez le montant de votre prime et versez sur le PEG pour déclencher l\'abondement SNCF.',
+          { tag: 'peg-annual-' + year, requireInteraction: true,
+            onClick: function() { if (window.showPage) window.showPage('enveloppes'); } }
+        );
+        S.notifsLastCheck[pegAnnualKey] = todayStr;
+        if (window._saveState) window._saveState();
+      }
+
+      // 5b) Rappel retrait 5 ans : vérifier si un versement est disponible
+      if (S.pegRoulement && S.pegRoulement.length) {
+        var retrait5ans = S.pegRoulement.filter(function(r) {
+          return r.disponible === year && r.statut !== 'retire';
+        });
+        if (retrait5ans.length > 0) {
+          var montantTotal = retrait5ans.reduce(function(s, r) { return s + (r.total || 0); }, 0);
+          // Estimer le net après PS
+          var montantNet = Math.round(montantTotal * Math.pow(1 + 0.0269, 5) * (1 - 0.097 * 0.2));
+          envoyerNotif(
+            '🏆 RETRAIT PEG ' + year + ' — ' + retrait5ans[0].annee + ' est disponible !',
+            'Versement ' + retrait5ans[0].annee + ' débloqué. Retirez et transférez sur PEA ESE/CW8 dès maintenant. Montant estimé : ~' + montantNet.toLocaleString('fr-FR') + ' €.',
+            { tag: 'peg-retrait-' + retrait5ans[0].annee, requireInteraction: true,
+              onClick: function() { if (window.showPage) window.showPage('enveloppes'); } }
+          );
+          S.notifsLastCheck[pegAnnualKey] = todayStr;
+          if (window._saveState) window._saveState();
+        }
       }
     }
   }
@@ -13952,7 +15108,9 @@ function getAlertesFiscalesEnCours() {
   if ([1,4,7,10].indexOf(month) >= 0 && day <= 5) {
     alertes.push({
       titre: 'IRL trimestriel publié',
-      message: 'Nouvel IRL publié. Pensez à indexer votre loyer LMNP.',
+      message: month === 7
+        ? 'IRL T2 publié (juillet). Votre bail meublé T2 Limoges peut être révisé. Calculez le nouveau loyer autorisé dans Outils → IRL.'
+        : 'Nouvel IRL publié. Vérifiez la possibilité de revaloriser votre loyer T2 Limoges.',
       urgent: false
     });
   }
@@ -13999,6 +15157,7 @@ function ouvrirCentreNotifs() {
     + '<div style="display:grid;gap:8px;margin-bottom:18px;">'
     + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-fiscal"' + (S.notifsConfig.fiscal?' checked':'') + '> 📅 Échéances fiscales</label>'
     + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-wl"' + (S.notifsConfig.watchlist?' checked':'') + '> 🎯 Alertes watchlist</label>'
+    + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-peg"' + (S.notifsConfig.peg !== false?' checked':'') + '> 🔄 PEG SNCF (prime avril + retrait 5 ans)</label>'
     + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-hebdo"' + (S.notifsConfig.hebdo?' checked':'') + '> 🎓 Conseil hebdo Pierre</label>'
     + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-mvt"' + (S.notifsConfig.mouvements?' checked':'') + '> 📈 Mouvements importants (≥5%)</label>'
     + '</div>'
@@ -14034,6 +15193,7 @@ function ouvrirCentreNotifs() {
   document.getElementById('btn-save-notifs').onclick = function() {
     S.notifsConfig.fiscal = document.getElementById('nc-fiscal').checked;
     S.notifsConfig.watchlist = document.getElementById('nc-wl').checked;
+    S.notifsConfig.peg = document.getElementById('nc-peg') ? document.getElementById('nc-peg').checked : true;
     S.notifsConfig.hebdo = document.getElementById('nc-hebdo').checked;
     S.notifsConfig.mouvements = document.getElementById('nc-mvt').checked;
     if (window._saveState) window._saveState();
@@ -14049,7 +15209,7 @@ function ouvrirCentreNotifs() {
   };
   document.getElementById('btn-test-notif').onclick = function() {
     if (Notification.permission === 'granted') {
-      envoyerNotif('🧪 Test PatriTracker', 'Notifications fonctionnelles !');
+      envoyerNotif('🧪 Test Vesta', 'Notifications fonctionnelles !');
     } else {
       demanderPermissionNotifs();
     }
@@ -14805,6 +15965,544 @@ function renderAnomaliesCard() {
 window.renderAnomaliesCard = renderAnomaliesCard;
 
 // ══════════════════════════════════════════════════════════════
+// WIDGET PEG DASHBOARD
+// ══════════════════════════════════════════════════════════════
+function renderPEGDashboard() {
+  var el = document.getElementById('peg-dashboard-content');
+  if (!el) return;
+  var S = window._pState ? window._pState() : null;
+  if (!S) return;
+  var now = new Date();
+  var curYear = now.getFullYear();
+  var curMonth = now.getMonth() + 1;
+  var peg = S.pegRoulement || [];
+  var RDMT_PEG = 0.0269;
+  var totalValPEG = 0;
+  peg.forEach(function(r) {
+    if (r.statut === 'retire') return;
+    var ans = Math.min(5, Math.max(0, curYear - r.annee));
+    totalValPEG += (r.total || 0) * Math.pow(1 + RDMT_PEG, ans);
+  });
+  var retraitDispo = peg.filter(function(r){ return r.disponible <= curYear && r.statut !== 'retire'; });
+  var nonSaisi = !peg.some(function(r){ return r.annee === curYear && r.verse > 0; });
+  var prochaineDisp = peg.filter(function(r){ return r.disponible === curYear + 1 && r.statut !== 'retire'; });
+  function mini(label, val, col) {
+    return '<div style="background:var(--s2);border-radius:6px;padding:8px 10px;">'
+      + '<div style="font-size:9px;color:var(--muted);">' + label + '</div>'
+      + '<div style="font-size:14px;font-weight:700;color:' + col + ';font-family:JetBrains Mono,monospace;">' + val + '</div>'
+      + '</div>';
+  }
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">';
+  html += mini('Valeur PEG estimée', Math.round(totalValPEG).toLocaleString('fr-FR') + ' EUR', 'var(--peg)');
+  html += mini('Lots actifs', peg.filter(function(r){ return r.statut !== 'retire'; }).length, 'var(--text)');
+  html += mini('Retires PEA', peg.filter(function(r){ return r.statut === 'retire'; }).length, 'var(--green)');
+  html += '</div>';
+  if (retraitDispo.length > 0) {
+    var netEst = Math.round((retraitDispo[0].total || 0) * Math.pow(1 + RDMT_PEG, 5) * (1 - 0.097 * 0.2));
+    html += '<div style="background:rgba(212,175,83,0.1);border:1px solid var(--gold);border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:11px;">';
+    html += '<span style="font-weight:700;color:var(--gold);">🔔 RETRAIT ' + curYear + '</span> — ';
+    html += 'Versement ' + retraitDispo[0].annee + ' : ~' + netEst.toLocaleString('fr-FR') + ' EUR nets';
+    html += ' <button class="btn sm" onclick="markPEGRetire(' + retraitDispo[0].annee + ')" style="font-size:10px;margin-left:8px;">Marquer retiré</button>';
+    html += '</div>';
+  }
+  if (nonSaisi) {
+    html += '<div style="background:rgba(91,141,238,0.08);border:1px solid #5b8dee33;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:11px;">';
+    html += '<span style="color:var(--blue);">Prime ' + curYear + ' non saisie</span>';
+    html += (curMonth === 4 ? ' — <b>Avril : moment ideal !</b>' : ' — saisir en avril');
+    html += ' <button class="btn gh sm" onclick="showPage(&quot;enveloppes&quot;)" style="font-size:10px;margin-left:8px;">Saisir</button>';
+    html += '</div>';
+  }
+  if (prochaineDisp.length > 0 && !retraitDispo.length) {
+    var moisR = Math.max(0, Math.round((new Date(prochaineDisp[0].disponible, 3, 1) - now) / (1000*60*60*24*30)));
+    html += '<div style="font-size:11px;color:var(--muted);">Prochain retrait : versement ' + prochaineDisp[0].annee + ' disponible ' + prochaineDisp[0].disponible + (moisR > 0 ? ' (' + moisR + ' mois)' : '') + '</div>';
+  }
+  if (!retraitDispo.length && !nonSaisi && !prochaineDisp.length) {
+    html += '<div style="font-size:11px;color:var(--green);">Tout est a jour — prochain point avril ' + (curYear + 1) + '</div>';
+  }
+  el.innerHTML = html;
+}
+window.renderPEGDashboard = renderPEGDashboard;
+
+// ══════════════════════════════════════════════════════════════
+// WIDGET T2 LIMOGES — cashflow mensuel dashboard
+// ══════════════════════════════════════════════════════════════
+function renderT2Dashboard() {
+  var el = document.getElementById('t2-cashflow-content');
+  if (!el) return;
+  var S = window._pState ? window._pState() : null;
+  if (!S || !S.immo || !S.immo.length) {
+    el.innerHTML = '<div class="empty" style="font-size:11px;">Aucun bien immobilier renseigné.</div>';
+    return;
+  }
+  var t2 = S.immo.find(function(b){ return /lmnp|limoges|t2|perrin/i.test((b.name||'') + (b.adresse||'')); });
+  if (!t2) t2 = S.immo.find(function(b){ return b.type === 'LMNP' || b.type === 'Locatif'; });
+  if (!t2) t2 = S.immo[0];
+
+  var loyer      = t2.rent || t2.loyerMensuel || 520;
+  var credit     = t2.mortgage || t2.creditMensualite || 352;
+  var copro_mois = Math.round((t2.copro || 828) / 12);   // 69€/mois × 12
+  var tf_mois    = Math.round((t2.taxeFonciere || t2.tf || 938) / 12);
+  var pno_mois   = Math.round((t2.pno || t2.assurancePNO || 159) / 12);
+  var compta_m   = Math.round((t2.compta || 1200) / 12); // JD2M ~1200€/an
+  var total_ch   = credit + copro_mois + tf_mois + pno_mois + compta_m;
+  var cashflow   = loyer - total_ch;
+  var cfColor   = cashflow >= 0 ? 'var(--green)' : 'var(--red)';
+  var cfSign    = cashflow >= 0 ? '+' : '';
+
+  // Vacance locative : marché Limoges T2 = ~2-3 semaines/an → 97% taux d'occupation
+  var tauxOccup  = 0.97;
+  var loyer_reel = Math.round(loyer * tauxOccup);
+  var cf_vacance = loyer_reel - total_ch;
+
+  var valeur    = t2.estim || t2.valeur || t2.bought || 62000;
+  var rdmt_brut = loyer * 12 / valeur * 100;
+  var rdmt_net  = (loyer - total_ch) * 12 / valeur * 100;
+  var crd       = t2.creditCRD || t2.debt || 75081;
+
+  function kpi(lbl, val, col, sub) {
+    return '<div style="background:var(--s2);border-radius:6px;padding:8px 10px;">'
+      + '<div style="font-size:9px;color:var(--muted);">' + lbl + '</div>'
+      + '<div style="font-size:14px;font-weight:700;color:' + col + ';font-family:JetBrains Mono,monospace;">' + val + '</div>'
+      + (sub ? '<div style="font-size:9px;color:var(--muted);margin-top:1px;">' + sub + '</div>' : '')
+      + '</div>';
+  }
+
+  var html = '<div style="display:grid;grid-template-columns:repeat(2,1fr) repeat(2,1fr);gap:8px;margin-bottom:10px;">';
+  html += kpi('Loyer mensuel', loyer + ' €', 'var(--green)', 'T2 47m² · bail meublé');
+  html += kpi('Charges totales', '−' + total_ch + ' €', 'var(--red)', 'crédit+copro+TF+PNO+JD2M');
+  html += kpi('Cashflow brut', cfSign + cashflow + ' €/mois', cfColor, cfSign + (cashflow * 12) + ' €/an');
+  html += kpi('Cashflow réel (97% occ.)', (cf_vacance >= 0 ? '+' : '') + cf_vacance + ' €/mois', cf_vacance >= 0 ? 'var(--green)' : 'var(--red)', 'vacance ~11j/an Limoges');
+  html += '</div>';
+
+  // Rendements + bilan annuel
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;font-size:10px;">';
+  var annuel = [
+    ['Loyers bruts/an', (loyer * 12) + ' €', 'var(--green)'],
+    ['Charges/an', (total_ch * 12) + ' €', 'var(--red)'],
+    ['Cashflow/an', cfSign + (cashflow * 12) + ' €', cfColor],
+    ['Rendement brut', rdmt_brut.toFixed(2) + '%', 'var(--gold)'],
+    ['Rendement net', rdmt_net.toFixed(2) + '%', 'var(--gold)'],
+    ['CRD crédit', Math.round(crd / 1000) + ' k€', 'var(--muted)'],
+  ];
+  annuel.forEach(function(d) {
+    html += '<div style="background:var(--s2);border-radius:5px;padding:6px 8px;">'
+      + '<div style="font-size:9px;color:var(--muted);">' + d[0] + '</div>'
+      + '<div style="font-weight:700;color:' + d[2] + ';font-family:JetBrains Mono,monospace;">' + d[1] + '</div>'
+      + '</div>';
+  });
+  html += '</div>';
+
+  // Projection DPE E → travaux 2030-2033
+  var curYear = new Date().getFullYear();
+  var ansAvant2034 = 2034 - curYear;
+  // Coût estimé rénovation thermique T2 47m² → passage E→C/D : ~15 000-25 000€
+  // Avec MaPrimeRénov' ~40% → reste ~9 000-15 000€
+  var coutTravaux = 20000; // median
+  var mpR = Math.round(coutTravaux * 0.40);
+  var reste = coutTravaux - mpR;
+  // Déficit LMNP réel sur travaux : déductible en amortissement ~10 ans
+  var amortAnnuel = Math.round(reste / 10);
+  // Valeur marché estimée après rénovation +7% (passage E→C/D)
+  var plusValueDPE = Math.round(valeur * 0.07);
+
+  html += '<div style="background:rgba(240,160,80,0.07);border:1px solid #f0a05033;border-radius:6px;padding:10px 12px;margin-bottom:8px;">';
+  html += '<div style="font-size:11px;font-weight:700;color:#f0a050;margin-bottom:6px;">⚠️ DPE E — Travaux obligatoires avant 2034 (' + ansAvant2034 + ' ans)</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;font-size:10px;">';
+  var dpeItems = [
+    ['Coût estimé rénovation', '~' + coutTravaux.toLocaleString('fr-FR') + ' €'],
+    ['MaPrimeRénov\' (~40%)', '−' + mpR.toLocaleString('fr-FR') + ' €'],
+    ['Reste à charge estimé', '~' + reste.toLocaleString('fr-FR') + ' €'],
+    ['Amort. LMNP/an (10 ans)', '~' + amortAnnuel.toLocaleString('fr-FR') + ' €/an'],
+    ['Plus-value estimée DPE→C', '+' + plusValueDPE.toLocaleString('fr-FR') + ' €'],
+    ['Fenêtre optimale', '2028-2032'],
+  ];
+  dpeItems.forEach(function(d) {
+    html += '<div><span style="color:var(--muted);">' + d[0] + ' : </span><b>' + d[1] + '</b></div>';
+  });
+  html += '</div>';
+  html += '<div style="font-size:9px;color:var(--muted);margin-top:6px;">💡 Idéal : réaliser les travaux quand le BIC LMNP est positif pour maximiser le déficit fiscal. Consulter JD2M pour le timing optimal.</div>';
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+window.renderT2Dashboard = renderT2Dashboard;
+
+// ══════════════════════════════════════════════════════════════
+// WIDGET "PROCHAINE ACTION" — synthèse en haut dashboard
+// ══════════════════════════════════════════════════════════════
+function renderNextAction() {
+  var banner = document.getElementById('next-action-banner');
+  var textEl = document.getElementById('next-action-text');
+  var subEl  = document.getElementById('next-action-sub');
+  if (!banner || !textEl) return;
+
+  var S   = window._pState ? window._pState() : null;
+  var now = new Date();
+  var y   = now.getFullYear();
+  var m   = now.getMonth() + 1;
+  var actions = [];
+
+  // PEG — retrait disponible (priorité max)
+  if (S && S.pegRoulement) {
+    var retDispo = S.pegRoulement.filter(function(r){ return r.disponible <= y && r.statut !== 'retire'; });
+    if (retDispo.length) {
+      var netEst = Math.round((retDispo[0].total||0) * Math.pow(1.0269, 5) * 0.9);
+      actions.push({ prio: 1, text: '🏆 Retirer PEG ' + retDispo[0].annee + ' → PEA ESE', sub: '~' + netEst.toLocaleString('fr-FR') + ' € nets à transférer sur PEA BoursoBank', btn: 'enveloppes' });
+    }
+    // Prime non saisie en avril
+    var nonSaisi = !S.pegRoulement.some(function(r){ return r.annee === y && r.verse > 0; });
+    if (nonSaisi && m === 4) actions.push({ prio: 2, text: '📥 Saisir prime PEG ' + y, sub: 'Avril = mois PEG. Entrer le montant de la prime dans l\'Optimisateur PEG', btn: 'enveloppes' });
+  }
+
+  // Déclaration IR (mai-juin)
+  if ([5, 6].indexOf(m) >= 0) actions.push({ prio: 2, text: '📋 Déclaration IR Zone 3', sub: 'Délai ~5 juin. Vérifier liasse 2031 LMNP avec JD2M avant de déclarer.', btn: 'fiscalite' });
+
+  // Taxe foncière (oct-nov)
+  if ([10, 11].indexOf(m) >= 0) actions.push({ prio: 3, text: '🏠 Taxe foncière à payer', sub: 'T2 Limoges + RP Rilhac-Rancon · Avant le 20 novembre', btn: 'immo' });
+
+  // IRL (juillet → révision loyer)
+  if (m === 7) actions.push({ prio: 3, text: '📊 IRL T2 publié — réviser loyer ?', sub: 'Vérifier si révision possible T2 Limoges (bail meublé 1 an)', btn: 'outils' });
+
+  // PEA sans versement depuis > 3 mois
+  if (S && S.history) {
+    var lastPEA = S.history.filter(function(entry){ return entry.cat === 'pea' && entry.action === 'achat'; }).slice(-1)[0];
+    if (lastPEA) {
+      var daysSince = Math.round((now - new Date(lastPEA.date)) / (1000*60*60*24));
+      if (daysSince > 90) actions.push({ prio: 4, text: '📈 PEA inactif depuis ' + Math.round(daysSince/30) + ' mois', sub: 'Dernier achat : ' + lastPEA.date + '. Alimenter en ESE S&P500 ?', btn: 'enveloppes' });
+    }
+  }
+
+  // Mise à jour mensuelle
+  actions.push({ prio: 5, text: '🔄 Suivi mensuel avec Pierre', sub: 'Mettre à jour les données et recevoir les conseils du mois', btn: null });
+
+  if (!actions.length) { if (banner) banner.style.display = 'none'; return; }
+
+  // Prendre la priorité la plus haute
+  actions.sort(function(a,b){ return a.prio - b.prio; });
+  var best = actions[0];
+
+  textEl.textContent = best.text;
+  if (subEl) subEl.textContent = best.sub || '';
+
+  // Mettre à jour ou créer le bouton (éviter les doublons)
+  var existing = banner.querySelector('.action-btn');
+  if (best.btn) {
+    if (!existing) {
+      existing = document.createElement('button');
+      existing.className = 'btn sm action-btn';
+      existing.style.cssText = 'margin-top:8px;font-size:10px;';
+      existing.textContent = 'Aller →';
+      banner.appendChild(existing);
+    }
+    existing.onclick = function(){ if(window.showPage) window.showPage(best.btn); };
+    existing.style.display = '';
+  } else if (existing) {
+    existing.style.display = 'none';
+  }
+
+  banner.style.display = 'block';
+}
+window.renderNextAction = renderNextAction;
+
+// ══════════════════════════════════════════════════════════════
+// JAUGE PROGRESSION RETRAITE 2057
+// ══════════════════════════════════════════════════════════════
+function renderProgressionRetraite() {
+  var el = document.getElementById('progression-retraite-content');
+  if (!el) return;
+  var S = window._pState ? window._pState() : null;
+  if (!S) return;
+  var c = window._cAll ? window._cAll() : {};
+
+  var now = new Date();
+  var anneeDepart = 2057;
+  var anneesRestantes = anneeDepart - now.getFullYear();
+  var anneesEcoulees  = now.getFullYear() - 2026; // début investissement
+  var dureeTotal = anneeDepart - 2026;
+  var pctTemps = Math.min(100, Math.round(anneesEcoulees / dureeTotal * 100));
+
+  // Objectif capital nécessaire pour 750€/mois de revenus passifs (règle des 4%)
+  // 750€/mois × 12 / 4% = 225 000€ capital nécessaire
+  // + T2 Limoges loyer estimé 520€ × 12 / 0.05 = ~124 800€ valeur capitalisée
+  var ciblePassifs  = 750 * 12 / 0.04;   // 225 000€
+  var valeurT2      = (S.immo && S.immo[0]) ? (S.immo[0].estim || S.immo[0].valeur || S.immo[0].bought || 91000) : 91000;
+  var cibleTotal    = ciblePassifs + valeurT2; // ~316 000€ + T2
+
+  // Capital financier actuel
+  var capActuel = (c.pea || 0) + (c.av || 0) + (c.peg || 0);
+  var capAvecT2 = capActuel + valeurT2;
+  var pctCapital = Math.min(100, Math.round(capAvecT2 / cibleTotal * 100));
+
+  // Projection simple à 2057 (ESE 9%/an, versements mensuels estimés)
+  var versementMensuel = 200; // estimation conservative DCA
+  var cap2057 = capActuel;
+  for (var y = 0; y < anneesRestantes; y++) cap2057 = cap2057 * 1.09 + versementMensuel * 12;
+  var cap2057AvecT2 = cap2057 + valeurT2 * Math.pow(1.02, anneesRestantes); // T2 valorisé 2%/an
+  var rente2057 = cap2057 * 0.04 / 12;
+  var pct2057   = Math.min(100, Math.round(cap2057AvecT2 / cibleTotal * 100));
+
+  var html = '';
+
+  // KPIs
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:14px;">';
+  function k(lbl, val, col, sub) {
+    return '<div style="background:var(--s2);border-radius:6px;padding:8px 10px;">'
+      + '<div style="font-size:9px;color:var(--muted);">' + lbl + '</div>'
+      + '<div style="font-size:13px;font-weight:700;color:' + col + ';font-family:JetBrains Mono,monospace;">' + val + '</div>'
+      + (sub ? '<div style="font-size:9px;color:var(--muted);">' + sub + '</div>' : '')
+      + '</div>';
+  }
+  html += k('Capital financier actuel', Math.round(capActuel/1000) + ' k€', 'var(--gold)', 'PEA+AV+PEG');
+  html += k('Objectif capital 2057', Math.round(cibleTotal/1000) + ' k€', 'var(--text)', '750€/mois passifs +T2');
+  html += k('Rente estimée 2057', Math.round(rente2057) + ' €/mois', 'var(--green)', 'règle 4% (hors T2 +SNCF)');
+  html += k('Années restantes', anneesRestantes + ' ans', 'var(--blue)', 'avant 2057');
+  html += '</div>';
+
+  // 3 barres de progression
+  function barre(label, pct, color, note) {
+    var clamp = Math.max(2, Math.min(100, pct));
+    return '<div style="margin-bottom:10px;">'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">'
+      + '<span>' + label + '</span>'
+      + '<span style="font-weight:700;color:' + color + ';">' + pct + '%</span>'
+      + '</div>'
+      + '<div style="height:10px;background:var(--bd);border-radius:5px;overflow:hidden;">'
+      + '<div style="height:100%;width:' + clamp + '%;background:' + color + ';border-radius:5px;transition:width .6s;"></div>'
+      + '</div>'
+      + '<div style="font-size:9px;color:var(--muted);margin-top:2px;">' + note + '</div>'
+      + '</div>';
+  }
+
+  html += barre('⏱ Temps écoulé (2026→2057)', pctTemps, 'var(--blue)', now.getFullYear() + ' · ' + anneesEcoulees + ' ans investis · ' + anneesRestantes + ' ans restants');
+  html += barre('💰 Capital actuel vs objectif', pctCapital, 'var(--gold)', Math.round(capAvecT2/1000) + 'k€ / ' + Math.round(cibleTotal/1000) + 'k€ (capital financier + T2)');
+  html += barre('🎯 Projection 2057 (9%/an + DCA 200€/mois)', pct2057, 'var(--green)', '~' + Math.round(cap2057AvecT2/1000) + 'k€ estimé en 2057 · rente ~' + Math.round(rente2057) + '€/mois + 2 300€ SNCF + loyer T2');
+
+  // Message motivant
+  var total2057Rev = 2300 + Math.round(rente2057) + 420;
+  html += '<div style="background:rgba(82,201,122,0.08);border:1px solid var(--green)33;border-radius:6px;padding:10px 12px;font-size:11px;line-height:1.6;margin-top:4px;">';
+  html += '🎯 Objectif retraite 2057 : <b>2 300€ SNCF</b> + <b>~' + Math.round(rente2057) + '€/mois PEA</b> + <b>420€ loyer T2</b> = ';
+  html += '<b style="color:var(--green);font-size:13px;">~' + total2057Rev + ' €/mois</b> de revenus nets estimés.';
+  if (total2057Rev >= 3300) {
+    html += ' <span style="color:var(--green);">✅ Objectif 500-1000€ passifs dépassé !</span>';
+  } else {
+    html += ' <span style="color:var(--gold);">→ Augmenter le DCA PEA pour combler l\'écart.</span>';
+  }
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+window.renderProgressionRetraite = renderProgressionRetraite;
+
+// ══════════════════════════════════════════════════════════════
+// SIMULATEUR VENTE T2 LIMOGES — plus-value nette
+// ══════════════════════════════════════════════════════════════
+function simulerVenteT2(prixVente) {
+  var S = window._pState ? window._pState() : null;
+  if (!S || !S.immo || !S.immo.length) return null;
+  var t2 = S.immo.find(function(b){ return /lmnp|limoges|t2/i.test(b.name||b.type||''); }) || S.immo[0];
+
+  prixVente = prixVente || (t2.estim || t2.valeur || 91000);
+  var prixAchat   = t2.bought || 82870;
+  var dateAchat   = new Date(t2.buyYear ? t2.buyYear + '-08-24' : '2022-08-24');
+  var now         = new Date();
+  var anneesDetention = (now - dateAchat) / (1000*60*60*24*365);
+
+  // Plus-value brute
+  var pvBrute     = Math.max(0, prixVente - prixAchat);
+
+  // Abattements durée de détention (IR)
+  var abattIR = 0;
+  if (anneesDetention >= 6)  abattIR = Math.min(0.72, (anneesDetention - 5) * 0.06);
+  if (anneesDetention >= 22) abattIR = 1.0;
+
+  // Abattements PS
+  var abattPS = 0;
+  if (anneesDetention >= 6)  abattPS = Math.min(0.9675, (anneesDetention - 5) * 0.0165 + (anneesDetention > 22 ? (anneesDetention - 22) * 0.09 : 0));
+  if (anneesDetention >= 30) abattPS = 1.0;
+
+  var pvImposableIR = pvBrute * (1 - abattIR);
+  var pvImposablePS = pvBrute * (1 - abattPS);
+  var impotIR       = pvImposableIR * 0.19;  // 19% IR (non TMI car immo)
+  var impotPS       = pvImposablePS * 0.172;
+
+  // Frais agence (~4%), frais diagnostics (~1 000€), remboursement IRA (~1%)
+  var fraisAgence = prixVente * 0.04;
+  var fraisDivers = 1200;
+  var ira         = (t2.debt || 75081) * 0.01; // Indemnités remboursement anticipé max 1%
+
+  // Remboursement crédit
+  var crd = t2.debt || 75081;
+
+  var netVente = prixVente - impotIR - impotPS - fraisAgence - fraisDivers - ira - crd;
+
+  return {
+    prixVente, prixAchat, pvBrute,
+    anneesDetention: Math.round(anneesDetention * 10) / 10,
+    abattIR: Math.round(abattIR * 100), abattPS: Math.round(abattPS * 100),
+    pvImposableIR: Math.round(pvImposableIR), pvImposablePS: Math.round(pvImposablePS),
+    impotIR: Math.round(impotIR), impotPS: Math.round(impotPS),
+    fraisAgence: Math.round(fraisAgence), fraisDivers, ira: Math.round(ira), crd,
+    netVente: Math.round(netVente),
+    fraisTotal: Math.round(impotIR + impotPS + fraisAgence + fraisDivers + ira)
+  };
+}
+window.simulerVenteT2 = simulerVenteT2;
+
+function afficherSimulVenteT2() {
+  var modal = document.createElement('div');
+  modal.className = 'ov';
+  modal.style.display = 'flex';
+
+  var t2 = null;
+  var S = window._pState ? window._pState() : null;
+  if (S && S.immo) t2 = S.immo.find(function(b){ return /lmnp|limoges|t2/i.test(b.name||b.type||''); }) || S.immo[0];
+  var valEstim = (t2 && (t2.estim || t2.valeur)) || 91000;
+
+  modal.innerHTML = '<div class="modal" style="max-width:520px;">'
+    + '<h2>🏠 Simulateur vente T2 Limoges</h2>'
+    + '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">383 rue François Perrin · Acquis 08/2022 à 82 870 € · DPE E</div>'
+    + '<div class="fg"><label>Prix de vente envisagé (€)</label>'
+    + '<input type="number" id="sv-prix" value="' + valEstim + '" step="1000" min="50000" style="font-family:JetBrains Mono,monospace;">'
+    + '</div>'
+    + '<div id="sv-result" style="margin-top:14px;"></div>'
+    + '<div class="brow" style="margin-top:16px;justify-content:space-between;">'
+    + '<button class="btn dn sm" id="sv-close">Fermer</button>'
+    + '<button class="btn" id="sv-calc">🔍 Simuler</button>'
+    + '</div></div>';
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if(e.target===modal) document.body.removeChild(modal); });
+  document.getElementById('sv-close').onclick = function(){ document.body.removeChild(modal); };
+
+  function runSim() {
+    var prix = parseFloat(document.getElementById('sv-prix').value) || valEstim;
+    var r = simulerVenteT2(prix);
+    if (!r) return;
+    var el = document.getElementById('sv-result');
+    var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">';
+    function sk(l, v, col) {
+      return '<div style="background:var(--s2);border-radius:6px;padding:8px 10px;">'
+        + '<div style="font-size:9px;color:var(--muted);">' + l + '</div>'
+        + '<div style="font-size:13px;font-weight:700;color:' + (col||'var(--text)') + ';font-family:JetBrains Mono,monospace;">' + v + '</div>'
+        + '</div>';
+    }
+    html += sk('Prix de vente', r.prixVente.toLocaleString('fr-FR') + ' €', 'var(--text)');
+    html += sk('Plus-value brute', r.pvBrute.toLocaleString('fr-FR') + ' €', r.pvBrute>0?'var(--gold)':'var(--muted)');
+    html += sk('Impôt IR (19%)', '-' + r.impotIR.toLocaleString('fr-FR') + ' €', 'var(--red)');
+    html += sk('Prélèvements sociaux', '-' + r.impotPS.toLocaleString('fr-FR') + ' €', 'var(--red)');
+    html += sk('Frais agence (~4%)', '-' + r.fraisAgence.toLocaleString('fr-FR') + ' €', 'var(--muted)');
+    html += sk('Remboursement crédit', '-' + r.crd.toLocaleString('fr-FR') + ' €', 'var(--muted)');
+    html += '</div>';
+    var netColor = r.netVente > 0 ? 'var(--green)' : 'var(--red)';
+    html += '<div style="background:var(--s2);border:2px solid ' + netColor + ';border-radius:8px;padding:12px;text-align:center;">';
+    html += '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">NET EN POCHE APRÈS TOUT</div>';
+    html += '<div style="font-size:24px;font-weight:700;color:' + netColor + ';font-family:Playfair Display,serif;">';
+    html += (r.netVente > 0 ? '+' : '') + r.netVente.toLocaleString('fr-FR') + ' €</div>';
+    html += '<div style="font-size:10px;color:var(--muted);margin-top:4px;">' + r.anneesDetention + ' ans de détention · abatt. IR ' + r.abattIR + '% · PS ' + r.abattPS + '%</div>';
+    html += '</div>';
+    html += '<div style="font-size:10px;color:var(--muted);margin-top:8px;">⚠️ Simulation estimative. LMNP réel : amortissements potentiellement réintégrés dans la PV (réforme 2025). Consulter JD2M avant toute décision.</div>';
+    el.innerHTML = html;
+  }
+
+  document.getElementById('sv-calc').onclick = runSim;
+  document.getElementById('sv-prix').addEventListener('keydown', function(e){ if(e.key==='Enter') runSim(); });
+  runSim();
+}
+window.afficherSimulVenteT2 = afficherSimulVenteT2;
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT RELEVÉ LMNP ANNUEL POUR JD2M
+// ══════════════════════════════════════════════════════════════
+function exporterReleveLMNP(annee) {
+  annee = annee || new Date().getFullYear() - 1;
+  var S = window._pState ? window._pState() : null;
+  if (!S) return;
+  var t2 = (S.immo || []).find(function(b){ return /lmnp|limoges|t2/i.test(b.name||b.type||''); }) || (S.immo||[])[0];
+  if (!t2) { if(window._toast) window._toast('Aucun bien LMNP trouvé'); return; }
+
+  var loyer    = (t2.rent || 520) * 12;
+  var credit   = (t2.mortgage || 352) * 12;
+  var copro    = (t2.copro || 828);
+  var tf       = t2.taxeFonciere || 938;
+  var pno      = t2.pno || 159;
+  var compta   = t2.compta || 1200;
+  var chargesTotal = copro + tf + pno + compta;
+  var bic_avant_amort = loyer - chargesTotal;
+
+  // Amortissements de l'exercice
+  var amortTotal = 0;
+  var amortLines = '';
+  if (t2.amortComponents && t2.amortComponents.length) {
+    t2.amortComponents.forEach(function(a) {
+      if (a.debut <= annee) {
+        var dotation = Math.round(a.valeur / a.duree);
+        amortTotal += dotation;
+        amortLines += '  - ' + a.nom + ' : ' + dotation.toLocaleString('fr-FR') + ' € (' + a.valeur.toLocaleString('fr-FR') + '€ / ' + a.duree + ' ans)\n';
+      }
+    });
+  } else {
+    // Estimation si pas de composants
+    amortTotal = Math.round((t2.bought || 82870) * 0.03);
+    amortLines = '  - Estimation globale 3%/an : ' + amortTotal.toLocaleString('fr-FR') + ' €\n';
+  }
+
+  var bic_net = bic_avant_amort - amortTotal;
+
+  var NL = '\n';
+  var content = [
+    '=== RELEVÉ LMNP ANNUEL ' + annee + ' ===',
+    'Propriétaire : Maxime',
+    'Expert-comptable : JD2M',
+    'Bien : ' + (t2.name || 'T2 Limoges') + ' — 383 rue François Perrin, Limoges 87000',
+    'Superficie : 47 m² · DPE E · Bail meublé',
+    '',
+    '--- RECETTES ---',
+    'Loyers encaissés : ' + loyer.toLocaleString('fr-FR') + ' € (' + (t2.rent||520) + ' €/mois × 12)',
+    '',
+    '--- CHARGES DÉDUCTIBLES ---',
+    'Charges de copropriété : ' + copro.toLocaleString('fr-FR') + ' €',
+    'Taxe foncière : ' + tf.toLocaleString('fr-FR') + ' €',
+    'Assurance PNO : ' + pno.toLocaleString('fr-FR') + ' €',
+    'Honoraires expert-comptable (JD2M) : ' + compta.toLocaleString('fr-FR') + ' €',
+    'Intérêts emprunt : À COMPLÉTER (relevé banque)',
+    'TOTAL CHARGES (hors intérêts + amort) : ' + chargesTotal.toLocaleString('fr-FR') + ' €',
+    '',
+    '--- AMORTISSEMENTS PAR COMPOSANT ---',
+    amortLines.trim(),
+    'TOTAL AMORTISSEMENTS : ' + amortTotal.toLocaleString('fr-FR') + ' €',
+    '',
+    '--- RÉSULTAT BIC ---',
+    'BIC avant amortissements : ' + bic_avant_amort.toLocaleString('fr-FR') + ' €',
+    'BIC net après amortissements : ' + bic_net.toLocaleString('fr-FR') + ' € ' + (bic_net <= 0 ? '← Déficit reportable' : ''),
+    '',
+    '--- CRÉDIT IMMOBILIER ---',
+    'Capital restant dû au 31/12/' + annee + ' : ' + (t2.debt || 75081).toLocaleString('fr-FR') + ' €',
+    'Mensualité : ' + (t2.mortgage || 352) + ' €/mois · Taux : ' + (t2.loanRate || 1.8) + '% · Fin : 05/2048',
+    '',
+    '--- INFORMATIONS COMPLÉMENTAIRES ---',
+    'Régime : LMNP réel · Liasse 2031 à déposer en mai ' + (annee+1),
+    'Déclaration revenus BIC (2042 C PRO) : cases 5NA-5NZ',
+    'Zone IR : 3 (Haute-Vienne 87) · Délai déclaration : ~5 juin ' + (annee+1),
+    '',
+    '⚠ Document indicatif — à valider avec JD2M avant dépôt liasse.',
+    'Généré par VESTA le ' + new Date().toLocaleDateString('fr-FR'),
+  ].join(NL);
+
+  // Téléchargement
+  var blob = new Blob([content], {type: 'text/plain;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = 'LMNP_' + annee + '_T2_Limoges_JD2M.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (window._toast) window._toast('📄 Relevé LMNP ' + annee + ' exporté pour JD2M');
+}
+window.exporterReleveLMNP = exporterReleveLMNP;
+
+// ══════════════════════════════════════════════════════════════
 // 12. ACADÉMIE PATRIMONIALE (mini-cours interactifs)
 // ══════════════════════════════════════════════════════════════
 
@@ -14880,6 +16578,70 @@ var ACADEMIE_COURS = [
       { titre: 'PEA/CTO (cases 2OP, 2DC, 3VG)', contenu: '2OP si vous optez pour le barème. 2DC pour les dividendes. 3VG pour les plus-values CTO. Le PEA en cours n\'est PAS à déclarer (pas de retrait).' },
       { titre: 'Versements PER (case 6NS-6NX)', contenu: 'Déductible du revenu imposable jusqu\'au plafond (10% des revenus pro avec mini 4 637 € et maxi 37 094 € en 2024). Économie d\'impôt = versement × TMI.' },
       { titre: 'Crédits d\'impôt utiles', contenu: 'Garde d\'enfant à domicile (50% jusqu\'à 12 k€/enfant), travaux (CITE/MaPrimeRénov), dons aux associations (66-75%), emploi à domicile (50%). Ne pas les oublier !' }
+    ]
+  },
+  {
+    id: 'succession-donation',
+    titre: 'Succession & Donation : transmettre intelligemment',
+    duree: 8, niveau: 'Avancé', emoji: '🎁',
+    description: 'Tout ce que vous devez savoir pour organiser votre succession et optimiser les donations.',
+    sections: [
+      { titre: 'Les abattements successoraux', contenu: 'Chaque enfant bénéficie d\'un abattement de 100 000 € sur la succession de chaque parent, renouvelable tous les 15 ans. Au-delà : barème progressif 5% à 45%. Le conjoint survivant est totalement exonéré de droits si vous êtes mariés ou PACSés.' },
+      { titre: 'La donation de son vivant', contenu: 'Donner de votre vivant permet d\'utiliser les abattements (100 000 €/parent/enfant/15 ans) et de transmettre plus en plusieurs fois. Avantage : vous figez la valeur du bien au jour de la donation. Si le bien prend de la valeur après, c\'est pour le donataire sans fiscalité supplémentaire.' },
+      { titre: 'L\'assurance vie hors succession', contenu: 'L\'AV ne fait pas partie de la succession. Pour les versements avant 70 ans : 152 500 €/bénéficiaire exonérés, puis 20% jusqu\'à 700k€. Votre AV Linxea Spirit 2 ouverte à 29 ans sera un outil de transmission puissant dans 30 ans — désignez votre conjoint et vos enfants en clause bénéficiaire.' },
+      { titre: 'Le PACS et la succession', contenu: 'Bonne nouvelle : depuis 2007, les partenaires de PACS sont exonérés de droits de succession comme les époux. Par contre, le PACS ne crée pas d\'héritage automatique — il faut un testament ou une clause bénéficiaire AV. Sans testament, votre partenaire n\'hérite de rien si vous mourez sans enfant.' },
+      { titre: 'La réserve héréditaire', contenu: 'Vous ne pouvez pas déshériter vos enfants. Avec 1 enfant (votre cas) : vous pouvez librement disposer de la moitié de votre patrimoine (quotité disponible). L\'autre moitié est réservée à votre enfant. Avec 2 enfants : 1/3 libre. Avec 3+ enfants : 1/4 libre.' },
+      { titre: 'Action concrète pour vous', contenu: 'Priorité 1 : rédiger un testament olographe (manuscrit, daté, signé) pour protéger votre partenaire si décès avant PACS plus solide. Priorité 2 : vérifier la clause bénéficiaire de votre AV. Priorité 3 : dans 10-15 ans, envisager une donation-partage avec vos parents si leur patrimoine est important.' }
+    ]
+  },
+  {
+    id: 'retraite-sncf',
+    titre: 'Retraite SNCF : comprendre le régime spécial',
+    duree: 7, niveau: 'Intermédiaire', emoji: '🚂',
+    description: 'Le régime spécial SNCF expliqué : calcul, droits, compléments.',
+    sections: [
+      { titre: 'Le régime spécial SNCF', contenu: 'Les cheminots bénéficient d\'un régime de retraite spécial géré par la Caisse de Prévoyance et de Retraite (CPR SNCF). Vous cotisez plus (environ 11,75% du salaire) mais vous bénéficiez d\'avantages significatifs : départ possible à 52-57 ans selon le métier, calcul sur les 6 derniers mois (pas 25 meilleures années), pension plus avantageuse.' },
+      { titre: 'Votre cas : Régulateur COGC', contenu: 'En tant que Régulateur (travail en 3x8, nuit, WE), vous êtes classé en "service actif". Cela vous donne droit à un départ anticipé. L\'âge pivot pour le service actif SNCF est généralement 57 ans (certains métiers 52 ans). Votre cible à 60 ans est prudente et laisse une marge confortable.' },
+      { titre: 'Calcul de la pension SNCF', contenu: 'Formule : (Salaire de base des 6 derniers mois) × (Durée de service / Durée de référence) × Taux de liquidation. La durée de référence est de 37,5 ans pour une pension pleine. Avec 9 ans d\'ancienneté à 29 ans, vous en aurez ~38 ans à 60 ans → pension pleine assurée. Votre estimation : 2 300 € net/mois.' },
+      { titre: 'Les avantages non financiers', contenu: 'Retraite SNCF = carte Famille SNCF (voyages gratuits ou très réduits) maintenue à la retraite. Pas négligeable sur le long terme. Aussi : mutuelles avantageuses, aide aux logements de vacances SNCF.' },
+      { titre: 'Stratégie complémentaire', contenu: 'Votre objectif : 2 300 € SNCF + 500-1 000 € revenus investissements. Avec PEA ESE S&P500 bien alimenté sur 31 ans, la rente de votre PEA à 4% de retrait par an sur un capital de 300 000 € = 1 000 €/mois. Objectif atteignable. Ajoutez le loyer T2 Limoges libéré du crédit en 2048 : +520 €/mois nets.' }
+    ]
+  },
+  {
+    id: 'peg-roulement-avance',
+    titre: 'PEG SNCF : roulement optimal vers PEA',
+    duree: 6, niveau: 'Intermédiaire', emoji: '🔄',
+    description: 'Maximiser l\'abondement SNCF et piloter le roulement PEG → PEA ESE sur 30 ans.',
+    sections: [
+      { titre: 'L\'abondement SNCF : une aubaine fiscale', contenu: 'La SNCF abonde vos versements PEG : 30% sur les 500 premiers euros, 20% sur 500-1000€, 10% sur 1000-1500€. Maximum 300€ d\'abondement pour 1500€ versés. C\'est un rendement garanti de 20 à 30% avant même la performance du fonds. Aucun placement ne peut battre ça à court terme.' },
+      { titre: 'Le fonds Amundi Mid-Cap ESR 723', contenu: 'Le FCPE QS0002905659 investi sur le fonds Amundi Mid-Cap Euro. Perf historique ~4%/an brut, TER 1,31%/an = ~2,69%/an net. Ce fonds n\'est pas votre moteur de performance — c\'est le "parking" pendant 5 ans qui fait mûrir l\'abondement. La performance compte moins que l\'abondement lui-même.' },
+      { titre: 'La mécanique du roulement', contenu: 'Étape 1 (chaque avril) : verser votre prime sur PEG pour déclencher l\'abondement. Étape 2 (5 ans plus tard) : retirer le capital PEG disponible. Étape 3 : réinvestir immédiatement sur ESE dans votre PEA BoursoBank. Répéter chaque année. Sur 31 ans : ~31 roulements, ~31 × abondement.' },
+      { titre: 'Vos chiffres concrets 2026', contenu: 'Prime 800€ → abondement 240€ (30%). Capital PEG : 1040€ à 2,69%/an pendant 5 ans = ~1183€. Net après PS 17,2% sur PV = ~1179€. Ce 1179€ repart sur PEA ESE à 9%/an pour 26 ans = ~9600€. Vs si prime mise directement sur PEA : 800€ - 20,7% impôts = 634€ → 9% × 26 ans = ~5400€. Gain roulement PEG : +4200€ par lot.' }
+    ]
+  },
+  {
+    id: 'lmnp-dpe-deficit',
+    titre: 'LMNP réel : travaux DPE et déficit fiscal',
+    duree: 9, niveau: 'Avancé', emoji: '🔧',
+    description: 'Optimiser le timing des travaux DPE E→D pour maximiser le déficit BIC.',
+    sections: [
+      { titre: 'Votre contrainte : DPE E, 2034', contenu: 'Votre T2 Limoges est classé DPE E. La loi interdit la mise en location des biens DPE E à partir du 1er janvier 2034. Il vous reste 8 ans pour planifier et réaliser les travaux de rénovation thermique. Ne pas attendre 2033 : les artisans seront surchargés et les prix explosiront.' },
+      { titre: 'Le levier LMNP réel : amortir les travaux', contenu: 'En régime réel LMNP, les travaux de rénovation sont amortissables : menuiseries sur 10-15 ans, isolation sur 20-25 ans, chaudière sur 10 ans. 10 000€ de travaux → ~700-1000€/an d\'amortissement supplémentaire → BIC réduit d\'autant. Si BIC nul : déficit reportable sur BIC futurs (10 ans).' },
+      { titre: 'Timing optimal : quand faire les travaux ?', contenu: 'Idéalement quand votre BIC est positif (loyers > charges courantes) pour absorber les amortissements. Si BIC nul actuellement (amortissements forts), attendre que les amortissements actuels s\'épuisent (vérifier avec JD2M la date d\'extinction des composants). Ne pas faire les travaux la même année que la vente (réintégration amortissements dans PV).' },
+      { titre: 'Aides disponibles', contenu: 'MaPrimeRénov\' : jusqu\'à 70% du montant pour les ménages modestes/intermédiaires. Éco-PTZ : jusqu\'à 50 000€ à taux 0% pour rénovation globale. CEE (Certificats d\'Économie d\'Énergie) : primes directes. Ces aides sont déductibles de la base amortissable en LMNP. Coordonner avec JD2M avant de signer tout devis.' },
+      { titre: 'Scénario idéal Maxime', contenu: 'Horizon : 2028-2030. À ce moment, vos amortissements actuels (gros œuvre 75 ans, aménagements 12 ans) auront partiellement diminué. Vous pouvez enclencher de nouveaux amortissements sur travaux + bénéficier des aides. Objectif : passer DPE D, louer jusqu\'en 2048 (fin crédit), puis vendre avec exo PV IR (22 ans) ou garder comme rente.' }
+    ]
+  },
+  {
+    id: 'succession-pacs-enfant',
+    titre: 'Succession & PACS : protéger sa famille',
+    duree: 8, niveau: 'Avancé', emoji: '👨‍👩‍👧',
+    description: 'PACS, naissance, clause AV : sécuriser la transmission avec un enfant.',
+    sections: [
+      { titre: 'PACS et succession : les limites', contenu: 'Le PACS ne crée PAS d\'héritage automatique. Sans testament, votre partenaire ne reçoit rien (ce sont vos parents et enfant qui héritent). L\'exonération fiscale entre partenaires PACSÉS s\'applique uniquement si vous avez rédigé un testament. OBLIGATOIRE : testaments croisés chez un notaire.' },
+      { titre: 'L\'enfant change tout', contenu: 'Avec la naissance de votre enfant (06/06/2026), il devient héritier réservataire. Sa réserve = 1/2 de votre patrimoine net. La quotité disponible (ce que vous pouvez léguer librement) = 1/2 seulement. Avec 2 enfants : quotité disponible = 1/3. Planifier avec notaire avant le 2ème enfant.' },
+      { titre: 'L\'assurance vie hors succession', contenu: 'Vos versements AV Linxea Spirit 2 AVANT 70 ans : 152 500€ par bénéficiaire en franchise totale. Désignez NOMMÉMENT : "Alexia [nom prénom], partenaire PACSÉE, née le..." et "[prénom enfant], né le...". Évitez "mes héritiers" qui crée de l\'ambiguïté et peut déclencher des droits.' },
+      { titre: 'Actions immédiates Maxime', contenu: '1. Rédiger un testament olographe (manuscrit, daté, signé) léguer tout à Alexia en cas de décès. 2. Mettre à jour la clause bénéficiaire AV Linxea après la naissance (inclure l\'enfant). 3. Consulter Maître Dubois (agent IA notaire dans Pierre) pour simulation succession. 4. Vérifier mutuelle SNCF : prévoyance décès + maintien de salaire ?' }
     ]
   }
 ];
@@ -15057,7 +16819,7 @@ function exportPdfRapport() {
   html += '</style></head><body>';
 
   html += '<h1>Bilan patrimonial — ' + prenom + '</h1>';
-  html += '<div style="color:#666;font-size:11px;">Document généré le ' + date + ' par PatriTracker</div>';
+  html += '<div style="color:#666;font-size:11px;">Document généré le ' + date + ' par Vesta</div>';
 
   html += '<h2>Synthèse</h2>';
   html += '<div>';
@@ -15106,7 +16868,7 @@ function exportPdfRapport() {
     html += '<ul style="font-size:11px;">' + annivRows + '</ul>';
   }
 
-  html += '<div class="foot">Document généré par PatriTracker · ' + date + '<br>Pour usage personnel uniquement. Ne constitue pas un conseil financier ou fiscal.</div>';
+  html += '<div class="foot">Document généré par Vesta · ' + date + '<br>Pour usage personnel uniquement. Ne constitue pas un conseil financier ou fiscal.</div>';
   html += '<script>setTimeout(function(){window.print();}, 800);<' + '/script>';
   html += '</body></html>';
 
@@ -15262,6 +17024,9 @@ window.showMoisDetail = showMoisDetail;
           if (window.renderScorePatrimonial) renderScorePatrimonial();
           if (window.renderAnniversairesCard) renderAnniversairesCard();
           if (window.renderAnomaliesCard) renderAnomaliesCard();
+          if (window.renderPEGDashboard) renderPEGDashboard();
+          if (window.renderT2Dashboard) renderT2Dashboard();
+          if (window.renderNextAction) renderNextAction();
         }
         // Historique
         if (id === 'history') {
@@ -15271,6 +17036,7 @@ window.showMoisDetail = showMoisDetail;
         // Retraite
         if (id === 'retraite') {
           if (window.updateProjectionInteractive) updateProjectionInteractive();
+          if (window.renderProgressionRetraite) renderProgressionRetraite();
         }
         // Opportunités
         if (id === 'opportunites') {
