@@ -960,6 +960,20 @@ body {
   <!-- Biens (T2 LMNP + RP) — accordéons dynamiques -->
   <div id="immo-cards" style="margin-bottom:10px;"></div>
 
+  <!-- T2 Limoges — cashflow mensuel -->
+<!-- T2 Limoges — cashflow mensuel -->
+  <div class="card mb" style="border-left:3px solid var(--immo);" id="card-t2-cashflow">
+    <div class="chd" style="justify-content:space-between;">
+      <span>🏠 T2 Limoges <span class="chd-sub">383 rue François Perrin · LMNP · Cashflow</span></span>
+      <div class="brow" style="gap:6px;">
+        <div id="immo-anni-badges" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+        <button class="btn gh sm" onclick="renderT2Dashboard()" style="font-size:11px;">&#8635;</button>
+      </div>
+    </div>
+    <div id="t2-cashflow-content"><div class="empty" style="font-size:11px;">Chargement...</div></div>
+  </div>
+
+  <!-- Biens immo dynamiques -->
   <!-- RP Crédits -->
 
 </div>
@@ -987,17 +1001,6 @@ body {
   </div>
 
 
-  <!-- T2 Limoges — cashflow mensuel -->
-  <div class="card mb" style="border-left:3px solid var(--immo);" id="card-t2-cashflow">
-    <div class="chd" style="justify-content:space-between;">
-      <span>🏠 T2 Limoges <span class="chd-sub">383 rue François Perrin · LMNP · Cashflow</span></span>
-      <div class="brow" style="gap:6px;">
-        <div id="immo-anni-badges" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
-        <button class="btn gh sm" onclick="renderT2Dashboard()" style="font-size:11px;">&#8635;</button>
-      </div>
-    </div>
-    <div id="t2-cashflow-content"><div class="empty" style="font-size:11px;">Chargement...</div></div>
-  </div>
 
   <!-- ══ CALENDRIER FISCAL ══ -->
   <div class="accordion-item" id="card-calendrier-fiscal" style="border:1px solid var(--bd);border-radius:10px;margin-bottom:16px;overflow:hidden;">
