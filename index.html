@@ -11845,7 +11845,7 @@ window._sauvegarderSessionResume = function() {
 
 // Sauvegarder avant fermeture
 window.addEventListener('beforeunload', function() {
-  if (window._sauvegarderSessionResume) window._sauvegarderSessionResume();
+  if (window.sauvegarderResumSession) window.sauvegarderResumSession();
 });
 
 // ── Mémoire comportementale longue durée ───────────────────────
@@ -12128,6 +12128,7 @@ function executerOutil(toolName, inp) {
   // ── calculer ─────────────────────────────────────────────────
   if (toolName === "calculer") {
     var p = inp.params || {};
+    var calcResult = null;
     // ── Mémoriser ce calcul pour le multi-tour ──────────────────
     var calcKey = inp.type;
     var calcRef = null; // sera rempli avec le résultat
@@ -12156,7 +12157,7 @@ function executerOutil(toolName, inp) {
       var rm=r/12, nm=n*12;
       var cap = C0*Math.pow(1+rm,nm) + (m > 0 ? m*(Math.pow(1+rm,nm)-1)/rm : 0);
       var verse = C0 + m*nm;
-      return ["PROJECTION ÉPARGNE (" + n + " ans, " + (r*100).toFixed(1) + "%/an)",
+      calcResult = ["PROJECTION ÉPARGNE (" + n + " ans, " + (r*100).toFixed(1) + "%/an)",
         "Capital initial : " + Math.round(C0).toLocaleString('fr-FR') + " EUR",
         "Versement mensuel : " + m + " EUR/mois",
         "Total versé : " + Math.round(verse).toLocaleString('fr-FR') + " EUR",
@@ -12176,7 +12177,7 @@ function executerOutil(toolName, inp) {
       var decote=impot<1840?Math.min(873,873-0.4575*(impot-1307)):0;
       var net=Math.max(0,impot-decote);
       var tmi=TRANCHES.filter(function(t){return quotient<=t.max;})[0]?.r||0.45;
-      return ["CALCUL IR 2025 — Revenu : " + rev.toLocaleString('fr-FR') + " EUR, " + parts + " parts",
+      calcResult = ["CALCUL IR 2025 — Revenu : " + rev.toLocaleString('fr-FR') + " EUR, " + parts + " parts",
         "Abattement 10% : -" + Math.round(abat).toLocaleString('fr-FR') + " EUR",
         "Quotient familial : " + Math.round(quotient).toLocaleString('fr-FR') + " EUR/part",
         "Impôt brut : " + Math.round(impot).toLocaleString('fr-FR') + " EUR",
@@ -12189,7 +12190,7 @@ function executerOutil(toolName, inp) {
       var loyer=p.loyer_mensuel||0, credit=p.credit_mensuel||0, tf=p.taxe_fonciere||0, pno=p.assurance_pno||0, travaux=p.provision_travaux||50, compta=p.comptable||0;
       var chargesAnn = tf + pno + travaux*12 + compta;
       var cf = loyer*12 - credit*12 - chargesAnn;
-      return ["CASHFLOW LOCATIF",
+      calcResult = ["CASHFLOW LOCATIF",
         "Loyers annuels : +" + (loyer*12).toLocaleString('fr-FR') + " EUR",
         "Crédit annuel : -" + (credit*12).toLocaleString('fr-FR') + " EUR",
         "Taxe foncière : -" + tf + " EUR",
@@ -12202,7 +12203,7 @@ function executerOutil(toolName, inp) {
     if (inp.type === "donation") {
       var age=p.age_donateur||29, nbEnfants=p.nb_enfants||1;
       var abatParEnfant=100000, total=abatParEnfant*nbEnfants;
-      return ["DONATION — Abattements disponibles",
+      calcResult = ["DONATION — Abattements disponibles",
         "Abattement parent→enfant : " + abatParEnfant.toLocaleString('fr-FR') + " EUR par enfant tous les 15 ans",
         "Pour " + nbEnfants + " enfant(s) : " + total.toLocaleString('fr-FR') + " EUR en franchise totale",
         "Prochain renouvellement : 2039 (15 ans après toute donation faite maintenant)",
@@ -12230,7 +12231,7 @@ function executerOutil(toolName, inp) {
       var impotIR=pvImposableIR*0.19; // 19% IR PV immo
       var impotPS=pvImposablePS*0.172;
       var total_impot=Math.round(impotIR+impotPS);
-      return ["PLUS-VALUE IMMOBILIÈRE — " + anneesDetention + " ans de détention",
+      calcResult = ["PLUS-VALUE IMMOBILIÈRE — " + anneesDetention + " ans de détention",
         "Prix d'achat : " + prixAchat.toLocaleString('fr-FR') + " EUR",
         "Frais acquisition (7,5% forfait) : +" + fraisAchat.toLocaleString('fr-FR') + " EUR",
         "Travaux (15% forfait si >5 ans) : +" + fraisTravaux.toLocaleString('fr-FR') + " EUR",
@@ -12261,7 +12262,7 @@ function executerOutil(toolName, inp) {
         return 8072*0.05+4037*0.10+3823*0.15+536392*0.20+(net-552324)*0.30;
       }
       var droitsParEnfant=droitsSuccession(partEnfant);
-      return ["SIMULATION SUCCESSION",
+      calcResult = ["SIMULATION SUCCESSION",
         "Patrimoine net total : " + patrimoine.toLocaleString('fr-FR') + " EUR",
         "AV hors succession (152 500 EUR/béné) : " + av.toLocaleString('fr-FR') + " EUR",
         "Patrimoine soumis aux droits : " + patrimoineSuccession.toLocaleString('fr-FR') + " EUR",
@@ -12282,7 +12283,7 @@ function executerOutil(toolName, inp) {
       var pv=cap-verse;
       var net=cap-pv*0.172; // exo IR, PS 17,2%
       var rente4=Math.round(net*0.04/12); // règle des 4%
-      return ["PROJECTION PEA ESE S&P500 — " + ans + " ans",
+      calcResult = ["PROJECTION PEA ESE S&P500 — " + ans + " ans",
         "Capital initial : " + capital.toLocaleString('fr-FR') + " EUR",
         "Versement mensuel : " + mensuel + " EUR",
         "Taux : " + (taux*100).toFixed(1) + "%/an (ESE S&P500, hypothèse prudente)",
@@ -12300,7 +12301,7 @@ function executerOutil(toolName, inp) {
       var ir_reduit=pvImposable*0.075; // 7,5% IR AV après 8 ans
       var ps=pvImposable*0.172;
       var total=ir_reduit+ps;
-      return ["FISCALITÉ RACHAT AV",
+      calcResult = ["FISCALITÉ RACHAT AV",
         "Ancienneté : " + ans_contrat + " ans",
         "Abattement annuel : " + abatt.toLocaleString('fr-FR') + " EUR" + (ans_contrat<8?" (disponible après 8 ans)":" ✅"),
         "PV imposable : " + pvImposable.toLocaleString('fr-FR') + " EUR",
@@ -12312,11 +12313,11 @@ function executerOutil(toolName, inp) {
     }
     if (inp.type === "peg_roulement") {
       var prime=p.prime||800, taux_abo=p.taux_abo||0.30, capital_peg=prime*(1+taux_abo);
-      var net_5ans=capital_peg*Math.pow(1.0269,5)*(1-0.172*0.2); // PS sur PV
-      var pea_25ans=net_5ans*Math.pow(1.09,25); // 25 ans sur PEA si entrée à 35 ans
+      var net_5ans=capital_peg*Math.pow(1.0269,5)*(1-0.172*0.2);
+      var pea_25ans=net_5ans*Math.pow(1.09,25);
       var pv_pea=pea_25ans-net_5ans;
       var net_pea=pea_25ans-pv_pea*0.172;
-      return ["SIMULATION ROULEMENT PEG → PEA",
+      calcResult = ["SIMULATION ROULEMENT PEG → PEA",
         "Prime : " + prime.toLocaleString('fr-FR') + " EUR → abondement +" + Math.round(prime*taux_abo) + " EUR",
         "Capital PEG : " + Math.round(capital_peg).toLocaleString('fr-FR') + " EUR",
         "Après 5 ans (2,69%/an net) : " + Math.round(net_5ans).toLocaleString('fr-FR') + " EUR nets",
@@ -12325,6 +12326,12 @@ function executerOutil(toolName, inp) {
         "Net après PS PEA (17,2% sur PV) : " + Math.round(net_pea).toLocaleString('fr-FR') + " EUR",
         "Gain vs retrait direct (pas d'abondement) : +" + Math.round(net_pea - prime*0.793*Math.pow(1.09,30)).toLocaleString('fr-FR') + " EUR"
       ].join(NL);
+    }
+    // Mémoriser le calcul pour continuité multi-tour
+    if (calcResult) {
+      if (window.memoriserCalcul) window.memoriserCalcul(inp.type, inp.params, calcResult);
+      if (window.observerComportement) window.observerComportement('Calcul ' + inp.type + ' effectué');
+      return calcResult;
     }
     return "Type de calcul non supporté : " + inp.type;
   }
@@ -12985,6 +12992,101 @@ async function callClaudeIA(userMsg, isFirst) {
 // ════════════════════════════════════════════════════════════════
 function renderIAConversation(el) {
   if (!el) return;
+
+  // ── Parser Markdown → HTML ───────────────────────────────────
+  function mdToHtml(txt) {
+    if (!txt || typeof txt !== 'string') return '';
+    var h = txt;
+
+    // Tableaux markdown
+    h = h.replace(/(\|[^\n]+\|\n)((?:\|[-: ]+\|)+\n)((?:\|[^\n]+\|\n?)+)/g, function(match, header, sep, body) {
+      var cols = header.split('|').filter(function(c){ return c.trim(); });
+      var rows = body.trim().split('\n').filter(Boolean);
+      var tbl = '<table style="width:100%;border-collapse:collapse;font-size:11px;margin:8px 0;">';
+      tbl += '<thead><tr>' + cols.map(function(c){
+        return '<th style="padding:5px 8px;text-align:left;border-bottom:2px solid var(--gold)44;color:var(--gold);font-family:JetBrains Mono,monospace;font-size:10px;text-transform:uppercase;">' + c.trim() + '</th>';
+      }).join('') + '</tr></thead><tbody>';
+      rows.forEach(function(row){
+        var cells = row.split('|').filter(function(c){ return c.trim() !== '' || c !== row.split('|')[0]; }).filter(function(c,i,a){ return i>0 && i<a.length-0; });
+        // Re-split proprement
+        var parts = row.split('|');
+        parts = parts.slice(1, parts.length - (parts[parts.length-1].trim()===''?1:0));
+        tbl += '<tr>' + parts.map(function(c, ci){
+          return '<td style="padding:5px 8px;border-bottom:1px solid var(--bd);' + (ci===0?'font-weight:600;':'') + '">' + c.trim() + '</td>';
+        }).join('') + '</tr>';
+      });
+      tbl += '</tbody></table>';
+      return tbl;
+    });
+
+    // Titres
+    h = h.replace(/^### (.+)$/gm, '<div style="font-weight:700;color:var(--text);font-size:12px;margin:10px 0 4px;border-bottom:1px solid var(--bd);padding-bottom:3px;">$1</div>');
+    h = h.replace(/^## (.+)$/gm,  '<div style="font-weight:700;color:var(--gold);font-size:13px;margin:12px 0 5px;">$1</div>');
+    h = h.replace(/^# (.+)$/gm,   '<div style="font-weight:700;color:var(--gold);font-size:15px;margin:12px 0 6px;font-family:Playfair Display,serif;">$1</div>');
+
+    // Blocs de code
+    h = h.replace(/```[\s\S]*?```/g, function(m){
+      var code = m.replace(/```\w*/,'').replace(/```/,'').trim();
+      return '<pre style="background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:8px 10px;font-family:JetBrains Mono,monospace;font-size:10px;overflow-x:auto;margin:6px 0;">' + code + '</pre>';
+    });
+    h = h.replace(/`([^`]+)`/g, '<code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;font-size:10px;">$1</code>');
+
+    // Gras / italique
+    h = h.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    h = h.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    // Listes numérotées
+    h = h.replace(/(?:^|\n)(\d+)\. (.+)/g, function(match, num, content) {
+      return '\n<div style="display:flex;gap:8px;padding:3px 0;"><span style="color:var(--gold);font-weight:700;flex-shrink:0;font-family:JetBrains Mono,monospace;font-size:11px;">' + num + '.</span><span style="font-size:12px;">' + content + '</span></div>';
+    });
+
+    // Listes à puces
+    h = h.replace(/(?:^|\n)[•\-\*] (.+)/g, function(match, content) {
+      return '\n<div style="display:flex;gap:8px;padding:2px 0;"><span style="color:var(--gold);flex-shrink:0;margin-top:2px;">▸</span><span style="font-size:12px;">' + content + '</span></div>';
+    });
+
+    // Blocs de résultat (lignes ALL CAPS ou commençant par emoji)
+    h = h.replace(/^((?:TOTAL|CAPITAL|NET|IMPÔT|PATRIMOINE|RENDEMENT)[^\n]+)$/gm, '<div style="font-weight:700;color:var(--green);font-family:JetBrains Mono,monospace;font-size:12px;background:var(--green)11;padding:5px 8px;border-radius:5px;margin:4px 0;">$1</div>');
+
+    // Sauts de ligne
+    h = h.split('\n\n').join('<br>').split('\n').join('<br>');
+
+    return h;
+  }
+
+  // ── Détection liens vers outils Vesta ────────────────────────
+  function injecterLiensOutils(txt) {
+    var LIENS = [
+      { regex: /(?:optimisateur|outil|simulateur|calcul[^\w].*(?:PEG|roulement))/gi, page: 'outils', label: '→ Outil PEG Roulement', emoji: '🔄' },
+      { regex: /(?:outil.*succession|simulat.*succession|calcul.*succession)/gi, page: 'fiscalite', label: '→ Fiscalité & Succession', emoji: '⚖️' },
+      { regex: /(?:académie|cours|apprendre|formation)/gi, page: 'enveloppes', label: '→ Académie patrimoniale', emoji: '🎓', onclick: 'ouvrirAcademie()' },
+      { regex: /(?:graphique|évolution|courbe|projection.*visuelle)/gi, page: 'charts', label: '→ Graphiques', emoji: '📊' },
+      { regex: /(?:votre T2|T2 Limoges|détails.*immo)/gi, page: 'immo', label: '→ Immobilier', emoji: '🏠' },
+      { regex: /(?:PEA.*détails|enveloppes.*PEA|vos positions)/gi, page: 'enveloppes', label: '→ Enveloppes', emoji: '📈' },
+      { regex: /(?:calendrier fiscal|échéance.*fiscal|déclaration.*IR)/gi, page: 'fiscalite', label: '→ Fiscalité', emoji: '📋' },
+      { regex: /(?:retraite.*projection|simulat.*retraite)/gi, page: 'retraite', label: '→ Retraite 2057', emoji: '🏖️' },
+    ];
+
+    var found = [];
+    LIENS.forEach(function(lien) {
+      if (lien.regex.test(txt) && found.indexOf(lien.page) < 0) {
+        found.push(lien.page);
+        lien._match = true;
+      }
+    });
+
+    if (found.length === 0) return '';
+
+    var btns = LIENS.filter(function(l){ return l._match; }).map(function(l) {
+      var action = l.onclick
+        ? 'onclick="' + l.onclick + '"'
+        : 'onclick="showPage(\'' + l.page + '\')"';
+      return '<button class="btn gh sm" ' + action + ' style="font-size:10px;gap:4px;">' + l.emoji + ' ' + l.label + '</button>';
+    }).join('');
+
+    return '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd)33;display:flex;flex-wrap:wrap;gap:5px;">' + btns + '</div>';
+  }
+
   var html = '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:450px;overflow-y:auto;padding:4px;" id="ia-messages">';
 
   var displayConv = window._iaConversation.filter(function(m, i) {
@@ -12993,20 +13095,23 @@ function renderIAConversation(el) {
     return true;
   });
 
+  // Agent actuel
+  var agentId = window._currentAgent || 'pierre';
+  var agentInfo = (window._pierreAgents || {})[agentId] || { nom:'Pierre', emoji:'🎯' };
+
   displayConv.forEach(function(m, i) {
     var isUser = m.role === 'user';
-    var text = m.content
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/^#+\s+(.*)/gm, '<div style="font-weight:700;color:var(--gold);margin:10px 0 4px;font-size:13px;">$1</div>')
-      .replace(/^- (.*)/gm, '<div style="padding:3px 0 3px 10px;border-left:2px solid var(--bd);font-size:11px;margin:2px 0;">$1</div>');
-    text = text.split('\n\n').join('<br><br>').split('\n').join('<br>');
-
+    var rawText = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
+    var text = isUser ? rawText.replace(/\[Donnees actuelles\][\s\S]*/,'').trim() : mdToHtml(rawText);
     var isLast = i === displayConv.length - 1;
     var hasConfirm = !isUser && isLast && window._pendingAction;
+    var toolLinks = (!isUser && isLast) ? injecterLiensOutils(rawText) : '';
 
     html += '<div style="display:flex;gap:8px;align-items:flex-start;flex-direction:' + (isUser?'row-reverse':'row') + ';margin-bottom:4px;">';
-    html += '<div style="width:30px;height:30px;border-radius:50%;background:' + (isUser?'var(--blue)':'linear-gradient(135deg,#5b8dee,#9b72cf)') + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px;">' + (isUser?'M':'P') + '</div>';
+    html += '<div style="width:30px;height:30px;border-radius:50%;background:' + (isUser?'var(--blue)':'linear-gradient(135deg,#5b8dee,#9b72cf)') + ';display:flex;align-items:center;justify-content:center;font-size:' + (isUser?'12':'11') + 'px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px;">' + (isUser?'M':agentInfo.emoji) + '</div>';
     html += '<div style="max-width:83%;padding:10px 14px;border-radius:' + (isUser?'12px 2px 12px 12px':'2px 12px 12px 12px') + ';font-size:12px;line-height:1.65;background:' + (isUser?'var(--blue)20':'var(--s2)') + ';border:1px solid ' + (isUser?'var(--blue)40':'var(--bd)') + ';">' + text;
+
+    if (toolLinks) html += toolLinks;
 
     if (hasConfirm) {
       var label = window._pendingAction.label || '';
@@ -13025,7 +13130,7 @@ function renderIAConversation(el) {
 
   // Input bar
   html += '<div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--bd);">';
-  html += '<input id="ia-user-input" type="text" placeholder="Posez une question, demandez une analyse ou une modification..." style="flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:9px 13px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s;" onkeydown="if(event.key===\'Enter\')envoyerMessageIA()" onfocus="this.style.borderColor=\'var(--gold)\'" onblur="this.style.borderColor=\'var(--bd)\'">';
+  html += '<input id="ia-user-input" type="text" placeholder="Question à Pierre, calcul, analyse..." style="flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:9px 13px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s;" onkeydown="if(event.key===\'Enter\')envoyerMessageIA()" onfocus="this.style.borderColor=\'var(--gold)\'" onblur="this.style.borderColor=\'var(--bd)\'">';
   html += '<button class="btn" onclick="envoyerMessageIA()" style="flex-shrink:0;padding:8px 16px;">→</button>';
   html += '</div>';
 
@@ -14051,6 +14156,121 @@ async function fetchPrixTicker(ticker) {
   }
   return null;
 }
+
+// ── Fallback Alpha Vantage (gratuit 25 req/jour) ─────────────
+async function fetchPrixAlphaVantage(ticker) {
+  var AV_KEY = localStorage.getItem('alpha-vantage-key');
+  if (!AV_KEY) return null;
+  try {
+    var url = 'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=' + encodeURIComponent(ticker) + '&apikey=' + AV_KEY;
+    var r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) return null;
+    var d = await r.json();
+    var q = d['Global Quote'];
+    if (q && q['05. price']) {
+      return { price: parseFloat(q['05. price']), source: 'Alpha Vantage' };
+    }
+  } catch(e) {}
+  return null;
+}
+window.fetchPrixAlphaVantage = fetchPrixAlphaVantage;
+
+// ── IRL automatique via API INSEE ────────────────────────────
+// Série IRL : 001694051 (indice officiel INSEE, gratuit, sans clé)
+async function fetchIRLInsee() {
+  var CACHE_KEY = 'irl-insee-cache';
+  var CACHE_TTL = 30 * 24 * 3600 * 1000; // 30 jours en ms
+
+  // Vérifier cache
+  try {
+    var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if (cached && (Date.now() - cached.ts) < CACHE_TTL) {
+      return cached;
+    }
+  } catch(e) {}
+
+  var proxyFns = [
+    function(u){ return 'https://corsproxy.io/?' + encodeURIComponent(u); },
+    function(u){ return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
+  ];
+
+  var url = 'https://api.insee.fr/series/BDM/V1/data/SERIES_BDM/001694051?lastNObservations=4&format=json';
+
+  for (var i = 0; i < proxyFns.length; i++) {
+    try {
+      var r = await fetch(proxyFns[i](url), {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(8000)
+      });
+      if (!r.ok) continue;
+      var txt = await r.text();
+      var data = JSON.parse(txt);
+      // Parser la réponse INSEE
+      var series = data && data['message:GenericData'] && data['message:GenericData']['message:DataSet'];
+      if (!series) continue;
+      var obs = series['generic:Series'] && series['generic:Series']['generic:Obs'];
+      if (!obs || !obs.length) continue;
+      // Trouver les 2 dernières observations
+      var sorted = obs.slice().sort(function(a, b) {
+        var da = a['generic:ObsDimension']['@value'];
+        var db = b['generic:ObsDimension']['@value'];
+        return da < db ? -1 : 1;
+      });
+      var last   = sorted[sorted.length - 1];
+      var prev   = sorted[sorted.length - 2];
+      var valLast = parseFloat(last['generic:ObsValue']['@value']);
+      var valPrev = parseFloat(prev['generic:ObsValue']['@value']);
+      var periode = last['generic:ObsDimension']['@value']; // ex: "2024-T3"
+
+      var result = {
+        valeur: valLast,
+        precedent: valPrev,
+        periode: periode,
+        variation: ((valLast - valPrev) / valPrev * 100).toFixed(2),
+        ts: Date.now()
+      };
+
+      localStorage.setItem(CACHE_KEY, JSON.stringify(result));
+
+      // Calculer automatiquement le loyer révisé T2 Limoges
+      var S = window._pState ? window._pState() : null;
+      if (S && S.immo) {
+        var t2 = S.immo.find(function(b){ return /limoges|t2|lmnp/i.test((b.name||'') + (b.type||'')); });
+        if (t2) {
+          var irlRef = t2.irlReference || valPrev; // IRL du bail
+          var loyerActuel = t2.rent || 520;
+          var loyerRevise = Math.round(loyerActuel * valLast / irlRef * 100) / 100;
+          var hausse = Math.round((loyerRevise - loyerActuel) * 100) / 100;
+          result.t2 = {
+            loyerActuel: loyerActuel,
+            loyerRevise: loyerRevise,
+            hausse: hausse,
+            irlRef: irlRef
+          };
+          if (window._saveState) {
+            S._irlDernier  = valLast;
+            S._irlPeriode  = periode;
+            S._irlAlertMsg = 'IRL ' + periode + ' = ' + valLast + ' · Révision T2 possible : ' + loyerRevise + ' EUR/mois (+' + hausse + ' EUR)';
+            window._saveState();
+          }
+          if (hausse > 0 && window._toast) {
+            window._toast('📊 IRL ' + periode + ' : révision loyer T2 possible +' + hausse + ' EUR/mois');
+          }
+        }
+      }
+      return result;
+    } catch(e) {}
+  }
+  return null;
+}
+window.fetchIRLInsee = fetchIRLInsee;
+
+// Lancer l'IRL au démarrage (silencieux)
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    if (window.fetchIRLInsee) window.fetchIRLInsee().catch(function(){});
+  }, 5000);
+});
 
 // ══ ISIN → Ticker mapping ════════════════════════════════════
 var ISIN_MAP = {
@@ -16048,25 +16268,114 @@ window.supprimerMemoirePierre = supprimerMemoirePierre;
 function getMemoirePromptContext() {
   var mem = getMemoirePierre();
   if (!mem) return '';
+  var NL = String.fromCharCode(10);
   var parts = [];
+
   if ((mem.styleVie||[]).length) {
-    parts.push('CE QUE PIERRE SAIT DE VOUS :\n' + mem.styleVie.map(function(m){return '- ' + m.contenu;}).join('\n'));
+    parts.push('CE QUE PIERRE SAIT DE VOUS :' + NL + mem.styleVie.map(function(m){return '- ' + m.contenu;}).join(NL));
   }
   if ((mem.preferences||[]).length) {
-    parts.push('VOS PRÉFÉRENCES :\n' + mem.preferences.map(function(m){return '- ' + m.contenu;}).join('\n'));
+    parts.push('VOS PRÉFÉRENCES :' + NL + mem.preferences.map(function(m){return '- ' + m.contenu;}).join(NL));
   }
   if ((mem.refus||[]).length) {
-    parts.push('CE QUE VOUS AVEZ REFUSÉ (ne pas re-suggérer) :\n' + mem.refus.map(function(m){return '- ' + m.contenu;}).join('\n'));
+    parts.push('CE QUE VOUS AVEZ REFUSÉ (ne jamais re-suggérer) :' + NL + mem.refus.map(function(m){return '- ' + m.contenu;}).join(NL));
   }
   if ((mem.objectifs||[]).length) {
-    parts.push('VOS OBJECTIFS :\n' + mem.objectifs.map(function(m){return '- ' + m.contenu;}).join('\n'));
+    parts.push('VOS OBJECTIFS :' + NL + mem.objectifs.map(function(m){return '- ' + m.contenu;}).join(NL));
   }
   if ((mem.faits||[]).length) {
-    parts.push('FAITS IMPORTANTS :\n' + mem.faits.map(function(m){return '- ' + m.contenu;}).join('\n'));
+    parts.push('FAITS IMPORTANTS :' + NL + mem.faits.map(function(m){return '- ' + m.contenu;}).join(NL));
   }
-  return parts.length ? ('\n\n=== MÉMOIRE LONG TERME ===\n' + parts.join('\n\n') + '\n=== FIN MÉMOIRE ===\n') : '';
+
+  // ── Résumé session précédente ─────────────────────────────
+  try {
+    var lastSummary = localStorage.getItem('pierre-last-session-summary');
+    if (lastSummary) {
+      parts.push('RÉSUMÉ DERNIER ÉCHANGE :' + NL + lastSummary);
+    }
+  } catch(e) {}
+
+  // ── Derniers calculs mémorisés ────────────────────────────
+  try {
+    var lastCalcs = JSON.parse(localStorage.getItem('pierre-last-calcs') || '[]');
+    if (lastCalcs.length > 0) {
+      parts.push('DERNIERS CALCULS EFFECTUÉS :' + NL +
+        lastCalcs.slice(-4).map(function(c){
+          return '- [' + c.type + '] ' + c.resume;
+        }).join(NL)
+      );
+    }
+  } catch(e) {}
+
+  // ── Comportements et tendances observées ─────────────────
+  try {
+    var comportements = JSON.parse(localStorage.getItem('pierre-comportements') || '[]');
+    if (comportements.length > 0) {
+      parts.push('COMPORTEMENTS OBSERVÉS :' + NL +
+        comportements.slice(-5).map(function(c){ return '- ' + c; }).join(NL)
+      );
+    }
+  } catch(e) {}
+
+  return parts.length ? (NL + NL + '=== MÉMOIRE LONG TERME ===' + NL + parts.join(NL + NL) + NL + '=== FIN MÉMOIRE ===' + NL) : '';
 }
 window.getMemoirePromptContext = getMemoirePromptContext;
+
+// ── Sauvegarder résumé de session ────────────────────────────
+function sauvegarderResumSession() {
+  var conv = window._iaConversation || [];
+  if (conv.length < 2) return;
+  var NL = String.fromCharCode(10);
+  // Prendre les 3 derniers échanges et en faire un résumé compact
+  var recent = conv.slice(-6);
+  var topics = [];
+  recent.forEach(function(m) {
+    if (m.role === 'user') {
+      var txt = (typeof m.content === 'string' ? m.content : '').slice(0, 80);
+      if (txt.length > 10) topics.push(txt);
+    }
+  });
+  var summary = 'Sujets abordés : ' + topics.join(' / ');
+  // Extraire les faits importants mentionnés
+  var lastAssistant = recent.filter(function(m){ return m.role === 'assistant'; }).slice(-1)[0];
+  if (lastAssistant) {
+    var txt = (typeof lastAssistant.content === 'string' ? lastAssistant.content : '').slice(0, 200);
+    summary += NL + 'Dernière réponse : ' + txt;
+  }
+  try {
+    localStorage.setItem('pierre-last-session-summary', summary);
+    localStorage.setItem('pierre-last-session-date', new Date().toLocaleDateString('fr-FR'));
+  } catch(e) {}
+}
+window.sauvegarderResumSession = sauvegarderResumSession;
+
+// ── Mémoriser un calcul effectué ─────────────────────────────
+function memoriserCalcul(type, params, resultat) {
+  try {
+    var calcs = JSON.parse(localStorage.getItem('pierre-last-calcs') || '[]');
+    calcs.push({
+      type: type,
+      date: new Date().toLocaleDateString('fr-FR'),
+      params: params,
+      resume: resultat.split('\n')[0] // première ligne = résumé
+    });
+    if (calcs.length > 10) calcs = calcs.slice(-10);
+    localStorage.setItem('pierre-last-calcs', JSON.stringify(calcs));
+  } catch(e) {}
+}
+window.memoriserCalcul = memoriserCalcul;
+
+// ── Observer comportements ────────────────────────────────────
+function observerComportement(action) {
+  try {
+    var comps = JSON.parse(localStorage.getItem('pierre-comportements') || '[]');
+    var date = new Date().toLocaleDateString('fr-FR');
+    comps.push('[' + date + '] ' + action);
+    if (comps.length > 20) comps = comps.slice(-20);
+    localStorage.setItem('pierre-comportements', JSON.stringify(comps));
+  } catch(e) {}
+}
+window.observerComportement = observerComportement;
 
 function ouvrirMemoirePierre() {
   var mem = getMemoirePierre();
