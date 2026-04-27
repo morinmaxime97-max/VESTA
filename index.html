@@ -652,8 +652,8 @@ body {
     </div>
   </div>
   <div class="krow k3">
-    <div class="kpi bl"><div class="klbl">PEA</div><div class="kval" id="k-pea">—</div><div class="ksub" id="k-pea-s"></div></div>
-    <div class="kpi ro"><div class="klbl">Assurance Vie</div><div class="kval" id="k-av">—</div><div class="ksub" id="k-av-s"></div></div>
+    <div class="kpi bl"><div class="klbl">PEA BoursoBank</div><div class="kval" id="k-pea">—</div><div class="ksub" id="k-pea-s"></div><div style="font-size:9px;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace;" id="kpi-pea-anni"></div></div>
+    <div class="kpi ro"><div class="klbl">AV Linxea Spirit 2</div><div class="kval" id="k-av">—</div><div class="ksub" id="k-av-s"></div><div style="font-size:9px;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace;" id="kpi-av-anni"></div></div>
     <div class="kpi yel"><div class="klbl">PEG SNCF</div><div class="kval" id="k-peg">—</div><div class="ksub" id="k-peg-s"></div></div>
   </div>
   <div class="g2 mb">
@@ -677,45 +677,11 @@ body {
     <div id="score-patri-content" style="min-height:80px;"></div>
   </div>
 
-  <!-- Anomalies patrimoniales -->
-  <div class="card mb" style="border-left:3px solid var(--red);">
-    <div class="chd" style="justify-content:space-between;">
-      <span>🔍 Détecteur d'anomalies <span class="chd-sub">Points d'attention</span></span>
-      <button class="btn gh sm" onclick="renderAnomaliesCard()" style="font-size:11px;">&#8635; Analyser</button>
-    </div>
-    <div id="anomalies-card" style="min-height:60px;"><div class="empty">Cliquez sur "Analyser" pour vérifier votre patrimoine.</div></div>
-  </div>
 
-  <!-- Anniversaires patrimoniaux -->
-  <div class="card mb" style="border-left:3px solid #9b72cf;">
-    <div class="chd" style="justify-content:space-between;">
-      <span>🎂 Anniversaires patrimoniaux <span class="chd-sub">PEA · AV · Immo</span></span>
-      <button class="btn gh sm" onclick="renderAnniversairesCard()" style="font-size:11px;">&#8635; Actualiser</button>
-    </div>
-    <div id="anniversaires-card" style="min-height:60px;"><div class="empty">Cliquez sur "Actualiser" pour voir vos prochaines échéances.</div></div>
-  </div>
 
-  <!-- PEG SNCF — prochaine action -->
-  <div class="card mb" style="border-left:3px solid var(--peg);" id="card-peg-dashboard">
-    <div class="chd" style="justify-content:space-between;">
-      <span>🔄 PEG SNCF <span class="chd-sub">Roulement &amp; prochaine action</span></span>
-      <button class="btn gh sm" onclick="showPage('enveloppes')" style="font-size:11px;">Gérer →</button>
-    </div>
-    <div id="peg-dashboard-content"><div class="empty" style="font-size:11px;">Chargement...</div></div>
-  </div>
 
-  <!-- T2 Limoges — cashflow mensuel -->
-  <div class="card mb" style="border-left:3px solid var(--immo);" id="card-t2-cashflow">
-    <div class="chd" style="justify-content:space-between;">
-      <span>🏠 T2 Limoges <span class="chd-sub">383 rue François Perrin · LMNP</span></span>
-      <div class="brow">
-        <button class="btn gh sm" onclick="afficherSimulVenteT2()" style="font-size:10px;">💰 Simul. vente</button>
-        <button class="btn gh sm" onclick="exporterReleveLMNP()" style="font-size:10px;">📄 Export JD2M</button>
-        <button class="btn gh sm" onclick="showPage('immo')" style="font-size:11px;">Détails →</button>
-      </div>
-    </div>
-    <div id="t2-cashflow-content"><div class="empty" style="font-size:11px;">Chargement...</div></div>
-  </div>
+
+
 
   <!-- Pierre — Conseil IA du jour -->
   <div class="card mb" id="card-ia-conseil" style="border-left:3px solid #9b72cf;">
@@ -747,8 +713,11 @@ body {
   <!-- PEA -->
   <div class="card mb">
     <div class="chd">
-      <span>🏦 PEA <span class="tag t-pea">PEA</span></span>
-      <div class="brow"><div id="pea-kpi" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);"></div></div>
+      <span>🏦 PEA BoursoBank <span class="tag t-pea">PEA</span></span>
+      <div class="brow">
+        <div id="pea-kpi" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);"></div>
+        <div id="env-pea-anni" style="font-size:10px;font-family:'JetBrains Mono',monospace;padding:3px 8px;border-radius:4px;background:var(--s2);border:1px solid var(--bd);"></div>
+      </div>
     </div>
   <div class="accordion-item" style="border:1px solid var(--bd);border-radius:10px;margin-bottom:10px;overflow:hidden;">
     <button onclick="toggleAccordion('acc-pea-update')" style="width:100%;text-align:left;background:var(--s2);border:none;padding:11px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;">
@@ -777,8 +746,9 @@ body {
   <!-- AV -->
   <div class="card mb">
     <div class="chd">
-      <span>📄 Assurance Vie <span class="tag t-av">AV</span></span>
+      <span>📄 Assurance Vie Linxea Spirit 2 <span class="tag t-av">AV</span></span>
       <div class="brow">
+        <div id="env-av-anni" style="font-size:10px;font-family:'JetBrains Mono',monospace;padding:3px 8px;border-radius:4px;background:var(--s2);border:1px solid var(--bd);"></div>
         <div id="av-kpi" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--av);"></div>
         <a href="https://www.linxea.com/espace-client/" target="_blank" class="btn gh sm" style="text-decoration:none;font-size:11px;">🔗 Espace Linxea</a>
         <button class="btn sm" id="btn-add-av">+ Ajouter</button>
@@ -947,7 +917,7 @@ body {
           </div>
           <div id="peg-roul-save-status" style="font-size:9px;color:var(--green);margin-top:6px;font-family:'JetBrains Mono',monospace;min-height:12px;"></div>
         </div>
-        <div id="peg-roulement-mini" style="font-size:10px;color:var(--muted);">Chargement...</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:8px;">→ Tableau complet disponible dans <button class="btn gh sm" onclick="showPage('outils')" style="font-size:10px;">Outils → PEG Roulement</button></div>
       </div>
     </div>
   </div>
@@ -1014,6 +984,19 @@ body {
     <div style="margin-top:10px;font-size:10px;color:var(--muted);border-top:1px solid var(--bd);padding-top:8px;" id="fiscal-resume-notes">
       <!-- Notes personnalisées -->
     </div>
+  </div>
+
+
+  <!-- T2 Limoges — cashflow mensuel -->
+  <div class="card mb" style="border-left:3px solid var(--immo);" id="card-t2-cashflow">
+    <div class="chd" style="justify-content:space-between;">
+      <span>🏠 T2 Limoges <span class="chd-sub">383 rue François Perrin · LMNP · Cashflow</span></span>
+      <div class="brow" style="gap:6px;">
+        <div id="immo-anni-badges" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+        <button class="btn gh sm" onclick="renderT2Dashboard()" style="font-size:11px;">&#8635;</button>
+      </div>
+    </div>
+    <div id="t2-cashflow-content"><div class="empty" style="font-size:11px;">Chargement...</div></div>
   </div>
 
   <!-- ══ CALENDRIER FISCAL ══ -->
@@ -1479,6 +1462,15 @@ body {
       <div id="score-env-advice" style="margin-top:10px;padding:8px 10px;border-radius:7px;font-size:11px;font-family:JetBrains Mono,monospace;border:1px solid var(--bd);background:var(--s2);display:none;"></div>
       </div>
     </div>
+  </div>
+
+  <!-- Détecteur d'anomalies -->
+  <div class="card mb" style="border-left:3px solid var(--red);">
+    <div class="chd" style="justify-content:space-between;">
+      <span>🔍 Détecteur d'anomalies <span class="chd-sub">Points d'attention patrimoniale</span></span>
+      <button class="btn gh sm" onclick="renderAnomaliesCard()" style="font-size:11px;">&#8635; Analyser</button>
+    </div>
+    <div id="anomalies-card" style="min-height:60px;"><div class="empty">Cliquez sur "Analyser" pour détecter les anomalies de votre patrimoine.</div></div>
   </div>
 
   <!-- TER Frais cachés -->
@@ -2346,7 +2338,7 @@ body {
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
     <h1 style="font-family:'Playfair Display',serif;font-size:20px;">🕐 Historique &amp; Snapshots</h1>
     <div class="brow">
-      <button class="btn gh sm" id="btn-import">⬆ Importer</button>
+      
       <button class="btn gh sm" id="btn-export">⬇ Exporter JSON</button>
     </div>
   </div>
@@ -6258,7 +6250,7 @@ function showPage(id) {
   if(id==='fiscalite') setTimeout(function(){ if(window.renderCalendrierFiscal) renderCalendrierFiscal(); }, 50);
   if(id==='enveloppes') { setTimeout(initAVLinxeaFields,50); setTimeout(initPEGFields,50); setTimeout(renderPEGRoulement_mini,150); setTimeout(function(){ var a=parseInt(document.getElementById('peg-roul-annee')&&document.getElementById('peg-roul-annee').value); if(!a){var el=document.getElementById('peg-roul-annee'); if(el) el.value=new Date().getFullYear();} },200); }
   if(id==='strategie') { renderStrategie(); renderPEGRoulement(); }
-  if(id==='analyse') renderAnalyse();
+  if(id==='analyse') { renderAnalyse(); setTimeout(function(){ if(window.renderAnomaliesCard) window.renderAnomaliesCard(); }, 100); }
   if(id==='fiscalite') renderFiscalite();
   if(id==='immo') { renderRPCredits(); renderCapaciteEmprunt(); renderLoyerTool(); }
   if(id==='actu') { renderActu(false); }
@@ -6330,29 +6322,31 @@ function openLivret(eid){
 }
 
 // ══ BUTTON WIRING ════════════════════════════════════════════
-document.getElementById('btn-add-pos').addEventListener('click',function(){openPos();});
-document.getElementById('btn-add-pos2').addEventListener('click',function(){openPos();});
-document.addEventListener('DOMContentLoaded', function(){
-  var bpa = document.getElementById('btn-add-pea-acc');
-  if (bpa) bpa.addEventListener('click', function(){ openPos(); document.getElementById('p-env').value='PEA'; });
-});
-document.getElementById('btn-add-av').addEventListener('click',function(){openPos();document.getElementById('p-env').value='AV';});
-document.getElementById('btn-add-immo').addEventListener('click',function(){(window._openImmo||function(){})();});
-document.getElementById('btn-add-livret').addEventListener('click',function(){openLivret();});
-document.getElementById('btn-refresh').addEventListener('click',function(){refreshPrices();});
-document.getElementById('btn-snap').addEventListener('click',function(){addSnapshot();});
-document.getElementById('btn-clear-snap').addEventListener('click',function(){clearSnapshots();});
-document.getElementById('btn-pdf').addEventListener('click',function(){exportPDF();});
-document.getElementById('btn-pdf2').addEventListener('click',function(){exportPDF();});
-document.getElementById('btn-export').addEventListener('click',function(){exportJSON();});
-document.getElementById('btn-import').addEventListener('click',function(){document.getElementById('import-file').click();});
-document.getElementById('import-file').addEventListener('change',function(){handleImport(this);});
-document.getElementById('m-pos-cancel').addEventListener('click',function(){closeOv('ov-pos');});
-document.getElementById('m-pos-save').addEventListener('click',function(){savePos();});
-document.getElementById('m-immo-cancel').addEventListener('click',function(){closeOv('ov-immo');});
-document.getElementById('m-immo-save').addEventListener('click',function(){saveImmo();});
-document.getElementById('m-livret-cancel').addEventListener('click',function(){closeOv('ov-livret');});
-document.getElementById('m-livret-save').addEventListener('click',function(){saveLivret();});
+(function() {
+  function on(id, evt, fn) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener(evt, fn);
+  }
+  on('btn-add-pos',    'click', function(){ openPos(); });
+  on('btn-add-pos2',   'click', function(){ openPos(); });
+  on('btn-add-av',     'click', function(){ openPos(); document.getElementById('p-env').value='AV'; });
+  on('btn-add-immo',   'click', function(){ (window._openImmo||function(){})(); });
+  on('btn-add-livret', 'click', function(){ openLivret(); });
+  on('btn-refresh',    'click', function(){ refreshPrices(); });
+  on('btn-snap',       'click', function(){ addSnapshot(); });
+  on('btn-clear-snap', 'click', function(){ clearSnapshots(); });
+  on('btn-pdf',        'click', function(){ exportPDF(); });
+  on('btn-pdf2',       'click', function(){ exportPDF(); });
+  on('btn-export',     'click', function(){ exportJSON(); });
+  // btn-import supprimé — bouton retiré du header
+  on('import-file',    'change',function(){ handleImport(this); });
+  on('m-pos-cancel',   'click', function(){ closeOv('ov-pos'); });
+  on('m-pos-save',     'click', function(){ savePos(); });
+  on('m-immo-cancel',  'click', function(){ closeOv('ov-immo'); });
+  on('m-immo-save',    'click', function(){ saveImmo(); });
+  on('m-livret-cancel','click', function(){ closeOv('ov-livret'); });
+  on('m-livret-save',  'click', function(){ saveLivret(); });
+})();
 
 // ── Ticker auto-lookup : Entrée ou bouton ──
 var lookupBtn=document.getElementById('btn-ticker-lookup');
@@ -7571,6 +7565,77 @@ function renderAll(){
   htm('k-dettes-s','<span style="color:var(--muted);font-size:10px;">T2 '+fmtK(c.immoDbt)+' · RP '+fmtK(c.immoRPDbt)+'</span>');
   txt('k-pea',fmtK(c.pea));htm('k-pea-s','<span class="'+pC(c.pea-c.peaInv)+'">'+fmtP(c.peaInv?((c.pea-c.peaInv)/c.peaInv*100):0)+'</span>');
   txt('k-av',fmtK(c.av));htm('k-av-s','<span class="'+pC(c.av-c.avInv)+'">'+fmtP(c.avInv?((c.av-c.avInv)/c.avInv*100):0)+'</span>');
+  // ── Anniversaires PEA / AV dans KPIs et Enveloppes ────────────────────────
+  (function() {
+    var now     = new Date();
+    var msDay   = 86400000;
+    function dTo(d){ return Math.ceil((new Date(d) - now) / msDay); }
+    function age(d){ var o=new Date(d),y=now.getFullYear()-o.getFullYear(),mo=now.getMonth()-o.getMonth(); if(mo<0){y--;mo+=12;} return y+'a '+mo+'m'; }
+    function badge(txt, col) {
+      return '<span style="display:inline-block;font-size:9px;font-family:JetBrains Mono,monospace;padding:2px 6px;border-radius:3px;border:1px solid '+col+'44;color:'+col+';background:'+col+'11;">' + txt + '</span>';
+    }
+
+    // PEA — KPI dashboard + badge enveloppes
+    var d5pea = dTo('2029-10-25');
+    var peaAgeStr = age('2024-10-25');
+    var peaTxt, peaCol;
+    if (d5pea > 0) {
+      peaTxt = 'Ouvert ' + peaAgeStr + ' · Exo IR dans ' + Math.ceil(d5pea/30) + ' mois (25/10/2029)';
+      peaCol = d5pea < 180 ? 'var(--gold)' : 'var(--muted)';
+    } else {
+      peaTxt = '✅ Exo IR depuis 25/10/2029 · ' + peaAgeStr;
+      peaCol = 'var(--green)';
+    }
+    var peaKpiEl = document.getElementById('kpi-pea-anni');
+    if (peaKpiEl) { peaKpiEl.innerHTML = peaTxt; peaKpiEl.style.color = peaCol; }
+
+    var envPeaEl = document.getElementById('env-pea-anni');
+    if (envPeaEl) {
+      envPeaEl.innerHTML = d5pea > 0
+        ? '📅 Exo IR dans ' + Math.ceil(d5pea/30) + ' mois <span style="color:var(--muted);">(25/10/2029)</span>'
+        : '✅ PEA exonéré IR depuis 25/10/2029';
+      envPeaEl.style.color = d5pea <= 0 ? 'var(--green)' : (d5pea < 180 ? 'var(--gold)' : 'var(--text)');
+    }
+
+    // AV — KPI dashboard + badge enveloppes
+    var d8av = dTo('2033-03-17');
+    var avAgeStr = age('2025-03-17');
+    var avTxt, avCol;
+    if (d8av > 0) {
+      avTxt = 'Ouverte ' + avAgeStr + ' · Abatt. 4600€ dans ' + Math.ceil(d8av/30) + ' mois (17/03/2033)';
+      avCol = d8av < 180 ? 'var(--gold)' : 'var(--muted)';
+    } else {
+      avTxt = '✅ Abattement 4600€/an depuis 17/03/2033 · ' + avAgeStr;
+      avCol = 'var(--green)';
+    }
+    var avKpiEl = document.getElementById('kpi-av-anni');
+    if (avKpiEl) { avKpiEl.innerHTML = avTxt; avKpiEl.style.color = avCol; }
+
+    var envAvEl = document.getElementById('env-av-anni');
+    if (envAvEl) {
+      envAvEl.innerHTML = d8av > 0
+        ? '📅 Abatt. 4600€ dans ' + Math.ceil(d8av/30) + ' mois <span style="color:var(--muted);">(17/03/2033)</span>'
+        : '✅ Abattement 4600€/an actif';
+      envAvEl.style.color = d8av <= 0 ? 'var(--green)' : (d8av < 180 ? 'var(--gold)' : 'var(--text)');
+    }
+
+    // Immo T2 Limoges — badges anniversaires
+    var immoBadgesEl = document.getElementById('immo-anni-badges');
+    if (immoBadgesEl) {
+      var achat = new Date('2022-08-24');
+      var badges = [];
+      var dFinCredit = dTo('2048-05-01');
+      var d22ans     = dTo('2044-08-24'); // exo IR PV
+      var d30ans     = dTo('2052-08-24'); // exo totale PV
+      var d2034dpe   = dTo('2034-01-01'); // DPE E interdit
+      if (d2034dpe > 0 && d2034dpe < 365*4) badges.push(badge('⚠ DPE E → 2034', 'var(--red)'));
+      if (d22ans > 0 && d22ans < 365*5)     badges.push(badge('Exo IR PV dans ' + Math.ceil(d22ans/365) + 'a', 'var(--gold)'));
+      else if (d22ans <= 0 && d30ans > 0)   badges.push(badge('✅ Exo IR PV', 'var(--green)'));
+      if (d30ans <= 0)                       badges.push(badge('✅ Exo totale PV', 'var(--green)'));
+      if (dFinCredit > 0 && dFinCredit < 365*5) badges.push(badge('Fin crédit dans ' + Math.ceil(dFinCredit/365) + 'a', 'var(--blue)'));
+      immoBadgesEl.innerHTML = badges.join(' ');
+    }
+  })();
   txt('k-peg',fmtK(c.peg));htm('k-peg-s','<span class="'+pC(c.peg-c.pegInv)+'">+'+fmtN(6)+'%/an</span>');
   txt('k-immo',fmtK(c.immoNet+c.rpNet));
   htm('k-immo-s','<span style="color:var(--muted);font-size:10px;">T2 net '+fmtK(c.immoNet)+' · RP net '+fmtK(c.rpNet)+'</span>');
@@ -9614,8 +9679,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.renderPEGDashboard) window.renderPEGDashboard();
     if (window.renderT2Dashboard) window.renderT2Dashboard();
     if (window.renderNextAction) window.renderNextAction();
-    if (window.renderAnomaliesCard) window.renderAnomaliesCard();
-    if (window.renderAnniversairesCard) window.renderAnniversairesCard();
     if (window.renderProgressionRetraite) window.renderProgressionRetraite();
   }, 2000);
 });
@@ -9877,10 +9940,14 @@ function saveRP() {
   toast('Résidence principale mise à jour ✓');
 }
 
-document.getElementById('m-rp-cancel').addEventListener('click', function(){ closeOv('ov-rp'); });
-document.getElementById('m-rp-save').addEventListener('click',   function(){ saveRP(); });
-// Click outside to close
-document.getElementById('ov-rp').addEventListener('click', function(e){ if(e.target===this) closeOv('ov-rp'); });
+document.addEventListener('DOMContentLoaded', function() {
+  var rpCancel = document.getElementById('m-rp-cancel');
+  if (rpCancel) rpCancel.addEventListener('click', function(){ closeOv('ov-rp'); });
+  var rpSave = document.getElementById('m-rp-save');
+  if (rpSave) rpSave.addEventListener('click', function(){ saveRP(); });
+  var ovRp = document.getElementById('ov-rp');
+  if (ovRp) ovRp.addEventListener('click', function(e){ if(e.target===this) closeOv('ov-rp'); });
+});
 
 
 // ══ MODAL RP — LIGNES DE CRÉDIT ÉDITABLES ════════════════════
@@ -13790,17 +13857,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Close on backdrop
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.classList.remove('on'); });
 
-  // Add import button to header
-  var hdr = document.querySelector('.hdr-right');
-  if (hdr) {
-    var btn = document.createElement('button');
-    btn.className = 'btn gh sm';
-    btn.style.cssText = 'font-size:10px;flex-shrink:0;';
-    btn.innerHTML = '📂 Import';
-    btn.title = 'Importer un relevé ou export CSV';
-    btn.addEventListener('click', ouvrirImportModal);
-    hdr.insertBefore(btn, hdr.firstChild);
-  }
+  // Import button retiré — fonctionnalité disponible dans Outils → Lecture intelligente
 });
 </script>
 
@@ -16405,7 +16462,8 @@ function afficherSimulVenteT2() {
   }
 
   document.getElementById('sv-calc').onclick = runSim;
-  document.getElementById('sv-prix').addEventListener('keydown', function(e){ if(e.key==='Enter') runSim(); });
+  var svPrix = document.getElementById('sv-prix');
+  if (svPrix) svPrix.addEventListener('keydown', function(e){ if(e.key==='Enter') runSim(); });
   runSim();
 }
 window.afficherSimulVenteT2 = afficherSimulVenteT2;
@@ -16780,9 +16838,23 @@ function exportPdfRapport() {
   }).join('');
 
   var immoRows = (S.immo||[]).map(function(b){
-    var charges = (b.tf||0)/12 + (b.charges||0) + (b.assurancePNO||0)/12;
-    var cf = (b.loyerMensuel||0) - charges - (b.creditMensualite||0);
-    return '<tr><td>' + (b.name||'') + '</td><td>' + (b.type||'—') + '</td><td class="r">' + Math.round(b.estim||b.bought||0).toLocaleString('fr-FR') + ' €</td><td class="r">' + Math.round(b.creditCRD||0).toLocaleString('fr-FR') + ' €</td><td class="r">' + (b.loyerMensuel||0) + ' €</td><td class="r" style="color:' + (cf>=0?'#0a7':'#c33') + '">' + (cf>=0?'+':'') + Math.round(cf) + ' €</td></tr>';
+    var loyer   = b.rent || b.loyerMensuel || 0;
+    var credit  = b.mortgage || b.creditMensualite || 0;
+    var copro_m = Math.round((b.copro || 828) / 12);
+    var tf_m    = Math.round((b.taxeFonciere || b.tf || 0) / 12);
+    var pno_m   = Math.round((b.pno || b.assurancePNO || 0) / 12);
+    var compta_m= Math.round((b.compta || 1200) / 12);
+    var charges = copro_m + tf_m + pno_m + compta_m;
+    var cf = loyer - credit - charges;
+    var crd = b.creditCRD || b.debt || 0;
+    var val = b.valeur || b.estim || b.bought || 0;
+    return '<tr><td>' + (b.name||'') + '</td><td>' + (b.type||'—') + '</td><td>' + (b.dpe||'—') + '</td>'
+      + '<td class="r">' + Math.round(val).toLocaleString('fr-FR') + ' €</td>'
+      + '<td class="r">' + Math.round(crd).toLocaleString('fr-FR') + ' €</td>'
+      + '<td class="r">' + loyer + ' €</td>'
+      + '<td class="r">' + credit + ' €</td>'
+      + '<td class="r">' + charges + ' €</td>'
+      + '<td class="r" style="color:' + (cf>=0?'#0a7':'#c33') + '">' + (cf>=0?'+':'') + Math.round(cf) + ' €</td></tr>';
   }).join('');
 
   var livRows = (S.livrets||[]).map(function(l){
@@ -16867,6 +16939,32 @@ function exportPdfRapport() {
     html += '<h2>Échéances patrimoniales</h2>';
     html += '<ul style="font-size:11px;">' + annivRows + '</ul>';
   }
+
+
+  // Section PEG roulement
+  var pegRoul = S.pegRoulement || [];
+  var pegRows = pegRoul.map(function(r){
+    var est = r.statut === 'retire' ? 'Retiré ✓' : ('Dispo ' + (r.disponible || (r.annee+5)));
+    return '<tr><td>' + r.annee + '</td><td class="r">' + (r.verse||0).toLocaleString('fr-FR') + ' €</td>'
+      + '<td class="r" style="color:#0a7">+' + Math.round(r.abo||0) + ' €</td>'
+      + '<td class="r">' + Math.round(r.total||0).toLocaleString('fr-FR') + ' €</td>'
+      + '<td>' + est + '</td></tr>';
+  }).join('');
+  if (pegRows) {
+    html += '<h2>Roulement PEG SNCF → PEA</h2>';
+    html += '<p style="font-size:11px;color:#666;">Stratégie : PEG 5 ans (abondement SNCF 20-30%) puis transfert sur PEA ESE S&P500. TER 1,31% · 2,69%/an net.</p>';
+    html += '<table><thead><tr><th>Année</th><th>Versé</th><th>Abondement</th><th>Total PEG</th><th>Statut</th></tr></thead><tbody>' + pegRows + '</tbody></table>';
+  }
+
+  // Section fiscal synthèse
+  html += '<h2>Synthèse fiscale</h2>';
+  html += '<ul>';
+  html += '<li><b>TMI :</b> 11% · Zone IR 3 (Haute-Vienne 87) · Délai déclaration : ~5 juin</li>';
+  html += '<li><b>LMNP réel</b> T2 Limoges : Expert JD2M · DPE E (travaux avant 2034)</li>';
+  html += '<li><b>PEA BoursoBank</b> : ouvert 25/10/2024 → exonération IR le 25/10/2029</li>';
+  html += '<li><b>AV Linxea Spirit 2</b> : ouverte 17/03/2025 → abattement 4 600€/an le 17/03/2033</li>';
+  html += '<li><b>PEG SNCF</b> : exonéré IR, prélèvements sociaux 9,7% à la sortie</li>';
+  html += '</ul>';
 
   html += '<div class="foot">Document généré par Vesta · ' + date + '<br>Pour usage personnel uniquement. Ne constitue pas un conseil financier ou fiscal.</div>';
   html += '<script>setTimeout(function(){window.print();}, 800);<' + '/script>';
@@ -17022,7 +17120,6 @@ window.showMoisDetail = showMoisDetail;
         // Dashboard
         if (id === 'dashboard') {
           if (window.renderScorePatrimonial) renderScorePatrimonial();
-          if (window.renderAnniversairesCard) renderAnniversairesCard();
           if (window.renderAnomaliesCard) renderAnomaliesCard();
           if (window.renderPEGDashboard) renderPEGDashboard();
           if (window.renderT2Dashboard) renderT2Dashboard();
