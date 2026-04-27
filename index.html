@@ -710,7 +710,7 @@ body {
   <!-- PEA -->
   <div class="card mb">
     <div class="chd">
-      <span>🏦 PEA BoursoBank <span class="tag t-pea">PEA</span></span>
+      <span>🏦 PEA <span class="tag t-pea">PEA</span></span>
       <div class="brow">
         <div id="pea-kpi" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);"></div>
         <div id="env-pea-anni" style="font-size:10px;font-family:'JetBrains Mono',monospace;padding:3px 8px;border-radius:4px;background:var(--s2);border:1px solid var(--bd);"></div>
@@ -7593,7 +7593,7 @@ function renderAll(){
   txt('k-dettes', fmtK(c.detteTotale));
   htm('k-dettes-s','<span style="color:var(--muted);font-size:10px;">T2 '+fmtK(c.immoDbt)+' · RP '+fmtK(c.immoRPDbt)+'</span>');
   txt('k-pea',fmtK(c.pea));htm('k-pea-s','<span class="'+pC(c.pea-c.peaInv)+'">'+fmtP(c.peaInv?((c.pea-c.peaInv)/c.peaInv*100):0)+'</span>');
-  txt('k-av',fmtK(c.av));htm('k-av-s','<span class="'+pC(c.av-c.avInv)+'">'+fmtP(c.avInv?((c.av-c.avInv)/c.avInv*100):0)+'</span>');
+  txt('k-av',fmtK(c.av));htm('k-av-s','<span class="'+pC(c.av-c.avInv)+'">'+(c.avInv > c.av * 0.1 ? fmtP((c.av-c.avInv)/c.avInv*100) : '—')+'</span>');
   // ── Anniversaires PEA / AV dans KPIs et Enveloppes ────────────────────────
   (function() {
     var now     = new Date();
@@ -7788,7 +7788,7 @@ function renderEnvTable(elId, env, total){
   }
   // Render table HTML (cours column gets placeholder for inline widget)
   var rowsHtml = pos.map(function(p){
-    var v=posVal(p), pnl=(p.price-p.pru)*(p.qty||0), pct=p.pru?(p.price-p.pru)/p.pru*100:0;
+    var v=posVal(p), pnl=(p.price-p.pru)*(p.qty||0), pct=(p.pru && p.pru > p.price * 0.01) ? (p.price-p.pru)/p.pru*100 : 0;
     var envTotalLocal=pos.reduce(function(s,pp){return s+posVal(pp);},0);
     var w=total?v/total*100:0, wEnv=envTotalLocal?v/envTotalLocal*100:0;
     var geoLabel = p.geo ? '<span class="tag" style="background:#5a647818;color:var(--muted);border:1px solid #5a647838;font-size:7px;margin-left:3px">'+p.geo.split(' / ')[0]+'</span>' : '';
@@ -7915,7 +7915,7 @@ function renderAVCards(){
   var totVal = envTotal;
   var totInv = pos.reduce(function(s,p){ return s+posInvested(p); },0);
   var totPnl = totVal - totInv;
-  var totPct = totInv ? totPnl/totInv*100 : 0;
+  var totPct = (totInv > totVal * 0.1) ? totPnl/totInv*100 : 0;
   rowsHtml.push('<tr style="border-top:2px solid var(--bd);font-weight:600;">'
     + '<td colspan="4" style="color:var(--muted);font-size:11px;font-family:JetBrains Mono,monospace;">TOTAL AV</td>'
     + '<td class="mono"><b>' + fmt(totVal) + '</b></td>'
