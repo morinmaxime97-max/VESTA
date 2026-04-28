@@ -14833,24 +14833,25 @@ var KNOWN_TICKERS = {
 };
 
 async function fetchPrixTicker(ticker) {
-  // Resolve ticker alias
+  // Les tickers PEG (fonds SNCF) ne sont pas sur Yahoo Finance
+  if (/^0P000[0-9A-Z]/.test(ticker)) return null;
+
+  // Cache 15 minutes
+  try {
+    var cacheKey = 'prix-cache-' + ticker;
+    var cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+    if (cached && (Date.now() - cached.ts) < 15 * 60 * 1000) return cached.data;
+  } catch(e) {}
+
   var known = KNOWN_TICKERS[ticker];
   var resolvedTicker = (known && known.ticker) ? known.ticker : ticker;
-
-  var yahoUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
-    + encodeURIComponent(resolvedTicker) + '?interval=1d&range=5d';
-
-  // Also try query2 as backup
-  var yahoUrl2 = 'https://query2.finance.yahoo.com/v8/finance/chart/'
-    + encodeURIComponent(resolvedTicker) + '?interval=1d&range=5d';
-
+  var yahoUrl  = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(resolvedTicker) + '?interval=1d&range=5d';
+  var yahoUrl2 = 'https://query2.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(resolvedTicker) + '?interval=1d&range=5d';
   var proxyFns = [
     function(u){ return 'https://corsproxy.io/?' + encodeURIComponent(u); },
     function(u){ return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
     function(u){ return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u); },
-    function(u){ return 'https://thingproxy.freeboard.io/fetch/' + u; },
   ];
-
   var urls = [yahoUrl, yahoUrl2];
 
   for (var ui = 0; ui < urls.length; ui++) {
@@ -14858,31 +14859,25 @@ async function fetchPrixTicker(ticker) {
       try {
         var proxyUrl = proxyFns[pi](urls[ui]);
         var ctrl = new AbortController();
-        var t = setTimeout(function(){ ctrl.abort(); }, 7000);
+        var t = setTimeout(function(){ ctrl.abort(); }, 6000);
         var res = await fetch(proxyUrl, { signal: ctrl.signal });
         clearTimeout(t);
         if (!res.ok) continue;
         var txt = await res.text();
-        if (!txt || txt.trim().startsWith('<') || txt.trim().startsWith('<!')) continue;
+        if (!txt || txt.trim().startsWith('<')) continue;
         var data = JSON.parse(txt);
         var result = data && data.chart && data.chart.result && data.chart.result[0];
         var meta = result && result.meta;
         if (meta && meta.regularMarketPrice) {
           var price = parseFloat(meta.regularMarketPrice);
-          var name  = (known && known.name) || meta.longName || meta.shortName || resolvedTicker;
+          var name  = (known && known.name)  || meta.longName || meta.shortName || resolvedTicker;
           var label = (known && known.label) || name;
-          var note  = (known && known.note) || '';
-          return {
-            price: price,
-            currency: meta.currency || 'EUR',
-            name: name,
-            label: label,
-            note: note,
-            isPEG: !!(known && known.isPEG),
-            source: 'Yahoo Finance'
-          };
+          var note  = (known && known.note)  || '';
+          var ret = { price:price, currency:meta.currency||'EUR', name:name, label:label, note:note, isPEG:false, source:'Yahoo Finance' };
+          try { localStorage.setItem('prix-cache-' + ticker, JSON.stringify({data:ret, ts:Date.now()})); } catch(e) {}
+          return ret;
         }
-      } catch(e) {}
+      } catch(e) { /* timeout ou réseau - essayer proxy suivant */ }
     }
   }
   return null;
