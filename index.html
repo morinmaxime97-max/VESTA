@@ -13189,6 +13189,8 @@ function getActiveProvider() {
 }
 
 async function callClaudeIA(userMsg, isFirst) {
+  // Garantir _iaConversation toujours initialisé
+  if (!window._iaConversation) window._iaConversation = [];
   var active = getActiveProvider();
   if (!active.key) {
     demanderCleAPI();
@@ -13202,8 +13204,8 @@ async function callClaudeIA(userMsg, isFirst) {
 
   var messages = [];
   // Historique tronque a 6 messages (3 echanges) pour economiser tokens
-  if (!isFirst && window._iaConversation.length > 0) {
-    window._iaConversation.slice(-6).forEach(function(m) { messages.push(m); });
+  if (!isFirst && (window._iaConversation||[]).length > 0) {
+    (window._iaConversation||[]).slice(-6).forEach(function(m) { messages.push(m); });
   }
   messages.push({role:'user', content: userMsg});
 
@@ -13783,7 +13785,7 @@ function renderIAConversation(el) {
 
   var html = '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:450px;overflow-y:auto;padding:4px;" id="ia-messages">';
 
-  var displayConv = window._iaConversation.filter(function(m, i) {
+  var displayConv = (window._iaConversation||[]).filter(function(m, i) {
     var mc = typeof m.content === 'string' ? m.content : '';
     if (i === 0 && m.role === 'user' && mc.length > 300) return false;
     if (mc === '[Confirmé]' || mc === '[Annulé]') return false;
@@ -13859,7 +13861,7 @@ function renderIAConversation(el) {
     (window.getMemoirePromptContext ? window.getMemoirePromptContext() : '') +
     (window.getPatrimoineContext ? window.getPatrimoineContext() : '')
   ) : 0;
-  var convTokens = window._iaConversation.reduce(function(s,m){
+  var convTokens = (window._iaConversation||[]).reduce(function(s,m){
     return s + (window.estimerTokens ? window.estimerTokens(typeof m.content==='string' ? m.content : JSON.stringify(m.content)) : 0);
   }, 0);
   var totalEst = sysTokens + convTokens;
