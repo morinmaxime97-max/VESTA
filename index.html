@@ -12958,9 +12958,9 @@ var IA_PROVIDERS = {
     tip: '30 req/min · 14 400 req/jour · Ultra rapide'
   },
   groq_mixtral: {
-    name: 'Groq — Llama 3.1 8B #2 (Gratuit)',
+    name: 'Groq — Llama 3 8B (Gratuit)',
     url: 'https://api.groq.com/openai/v1/chat/completions',
-    model: 'llama-3.1-8b-instant',
+    model: 'llama3-8b-8192',
     key_prefix: 'gsk_', free: true, format: 'openai',
     rpm: 30, rpd: 14400, tpm: 5000,
     tip: '30 req/min · 14 400 req/jour · Backup rapide'
@@ -13477,13 +13477,13 @@ function _selectBestProvider(excludeIds) {
     var key = _getProviderKey(pid);
     if (!key) continue;
 
-    // Vérifier limite journalière
+    // Vérifier limite journalière (80% = passer au suivant)
     var u = _getUsage(pid);
     var limit = limits[pid] || 500;
-    if (u.count >= limit * 0.95) continue; // 95% de la limite → passer au suivant
+    if (u.count >= limit * 0.8) continue;
 
-    // Vérifier erreurs récentes (backoff 60s après erreur)
-    if (u.errors >= 3 && u.lastError && (Date.now() - u.lastError) < 60000) continue;
+    // Vérifier erreurs récentes (backoff 30s après erreur)
+    if (u.errors >= 2 && u.lastError && (Date.now() - u.lastError) < 30000) continue;
 
     return { id: pid, provider: IA_PROVIDERS[pid], key: key };
   }
@@ -13508,6 +13508,26 @@ function getActiveProvider() {
   var key2 = _getProviderKey(lastUsed);
   return { provider: IA_PROVIDERS[lastUsed]||IA_PROVIDERS.groq, key: key2, id: lastUsed };
 }
+
+// ── Nettoyage modèles obsolètes au démarrage ─────────────────
+(function() {
+  var obsolete = ['groq_gemma', 'groq_mixtral']; // Ces providers ont changé de modèle
+  var modelVersion = '2025-04-28'; // Incrémenter si modèles changent
+  if (localStorage.getItem('vesta-model-version') !== modelVersion) {
+    // Remettre les compteurs d'usage à 0 (nouveau jour de modèles)
+    obsolete.forEach(function(pid) {
+      localStorage.removeItem('vesta-usage-' + pid);
+    });
+    // Effacer le provider sélectionné s'il était un modèle obsolète
+    var cur = localStorage.getItem('pierre-provider');
+    if (cur && obsolete.indexOf(cur) >= 0) {
+      localStorage.removeItem('pierre-provider');
+      localStorage.removeItem('pierre-provider-manual');
+    }
+    localStorage.setItem('vesta-model-version', modelVersion);
+    console.log('[Vesta] Modèles mis à jour, compteurs réinitialisés');
+  }
+})();
 window.getActiveProvider = getActiveProvider;
 
 // Afficher l'indicateur de provider actif dans l'UI
@@ -13561,28 +13581,47 @@ try {
       }
 
       if (isRateErr || isModelErr || isModelErr2 || isGeminiErr) {
-        // Basculer automatiquement vers le provider suivant
+        // ── Rotation complète sur TOUS les providers disponibles ──
         _incUsage(active.id, true);
-        var fallback = _selectBestProvider([active.id]);
-        if (fallback) {
-          var _remainGroq = Math.max(0, 14400 - (_getUsage('groq_gemma').count||0));
-          if (window._toast) window._toast('⚡ ' + (IA_PROVIDERS[active.id]||{name:''}).name.split(' ')[0] + ' → ' + fallback.provider.name.split('—')[1]?.split('(')[0]?.trim() || fallback.provider.name.split(' ')[0]);
-          _refreshProviderBadge(fallback.id, true);
-          data = await makeReq(messages, true, fallback);
-          active = fallback;
-          _incUsage(fallback.id, false);
-          if (!data.error) {
-            // OK - continuer
-          } else {
-            var fallback2 = _selectBestProvider([active.id, fallback.id]);
-            if (fallback2) {
-              if (window._toast) window._toast('⚡ Bascule sur ' + fallback2.provider.name.split(' ')[0]);
-              _refreshProviderBadge(fallback2.id, true);
-              data = await makeReq(messages, true, fallback2);
-              active = fallback2;
-              _incUsage(fallback2.id, false);
-            }
+        var triedIds = [active.id];
+        var rotationData = null;
+        var rotationActive = null;
+        var maxTries = Object.keys(IA_PROVIDERS).length; // essayer tous
+
+        for (var rt = 0; rt < maxTries; rt++) {
+          var nextProv = _selectBestProvider(triedIds);
+          if (!nextProv) break; // plus aucun provider dispo
+
+          triedIds.push(nextProv.id);
+          if (window._toast) window._toast(
+            '⚡ ' + (IA_PROVIDERS[active.id]||{name:'?'}).name.split(' — ')[0].replace('Groq — ','').replace('Google ','') +
+            ' → ' + nextProv.provider.name.split(' — ')[0].replace('Groq — ','').replace('Google ','')
+          );
+          _refreshProviderBadge(nextProv.id, true);
+
+          try {
+            rotationData = await makeReq(messages, true, nextProv);
+          } catch(rotErr) {
+            _incUsage(nextProv.id, true);
+            continue; // timeout/réseau → essayer suivant
           }
+
+          if (!rotationData || rotationData.error) {
+            var rotErrMsg = (rotationData && rotationData.error && rotationData.error.message) || '';
+            var stillBad = /rate.limit|429|overload|quota|exceeded|decommission|no longer|not found|endpoint|Provider returned|RESOURCE_EXHAUSTED|SERVICE_UNAVAIL|PERMISSION/i.test(rotErrMsg);
+            _incUsage(nextProv.id, stillBad ? 1 : 0);
+            if (stillBad) continue; // essayer le suivant
+          }
+
+          // Succès !
+          rotationActive = nextProv;
+          _incUsage(nextProv.id, false);
+          break;
+        }
+
+        if (rotationActive && rotationData && !rotationData.error) {
+          active = rotationActive;
+          data = rotationData;
         }
       }
 
@@ -13661,25 +13700,33 @@ try {
     var isNetwork = e.name === 'TypeError' || (e.message && (e.message.includes('fetch') || e.message.includes('network') || e.message.includes('Failed')));
 
     if (isTimeout || isNetwork) {
-      // Essayer le provider suivant automatiquement
       _incUsage(active.id, true);
-      var fallbackNet = _selectBestProvider([active.id]);
-      if (fallbackNet) {
-        if (window._toast) window._toast('⚡ ' + (IA_PROVIDERS[active.id]||{name:''}).name.split(' ')[0] + ' timeout → ' + fallbackNet.provider.name.split(' ')[0]);
+      var triedNetIds = [active.id];
+      var maxNetTries = Object.keys(IA_PROVIDERS).length;
+
+      for (var nt = 0; nt < maxNetTries; nt++) {
+        var netFallback = _selectBestProvider(triedNetIds);
+        if (!netFallback) break;
+        triedNetIds.push(netFallback.id);
+        if (window._toast) window._toast(
+          '⚡ ' + (isTimeout ? 'Timeout' : 'Réseau') + ' → ' +
+          netFallback.provider.name.split(' — ')[0].replace('Groq — ','').replace('Google ','')
+        );
+        _refreshProviderBadge(netFallback.id, true);
         try {
-          var dataFallback = await makeReq(messages, true, fallbackNet);
-          if (!dataFallback.error) {
-            active = fallbackNet;
-            _incUsage(fallbackNet.id, false);
-            // Traiter la réponse fallback comme réponse principale
-            var fallbackText = (dataFallback.content||[]).map(function(b){ return b.type==='text'?b.text:''; }).join('');
-            return fallbackText || '(Pas de réponse)';
-          }
-        } catch(e2) {}
+          var netData = await makeReq(messages, true, netFallback);
+          if (!netData || netData.error) { _incUsage(netFallback.id, true); continue; }
+          _incUsage(netFallback.id, false);
+          var netText = (netData.content||[]).map(function(b){ return b.type==='text'?b.text:''; }).join('');
+          return netText || '(Pas de réponse)';
+        } catch(e2) {
+          _incUsage(netFallback.id, true);
+          continue;
+        }
       }
       return isTimeout
-        ? '⏱️ Vesta n\'a pas reçu de réponse dans le délai imparti. Réessayez ou vérifiez votre connexion internet.'
-        : '📡 Erreur réseau. Vérifiez votre connexion internet et réessayez.';
+        ? '⏱️ Aucun provider n\'a répondu dans les délais. Vérifiez votre connexion.'
+        : '📡 Erreur réseau. Vérifiez votre connexion internet.';
     }
     return '⚠️ Erreur : ' + e.message;
   }
@@ -19114,50 +19161,4 @@ function showMoisDetail(monthIdx, year) {
   html += '</div>';
   modal.innerHTML = html;
   document.body.appendChild(modal);
-  modal.addEventListener('click', function(e){ if(e.target === modal) document.body.removeChild(modal); });
-  document.getElementById('btn-mois-close').onclick = function(){ document.body.removeChild(modal); };
-}
-window.showMoisDetail = showMoisDetail;
-
-// ══════════════════════════════════════════════════════════════
-// DISPATCHER CENTRALISÉ showPage (unique, remplace tous les wrappers)
-// ══════════════════════════════════════════════════════════════
-(function(){
-  var _origShowPage = window.showPage;
-  if (!_origShowPage) return;
-  window.showPage = function(id) {
-    _origShowPage.apply(this, arguments);
-    setTimeout(function() {
-      try {
-        // Dashboard
-        if (id === 'dashboard') {
-          if (window.renderScorePatrimonial) renderScorePatrimonial();
-          if (window.renderAnomaliesCard) renderAnomaliesCard();
-          if (window.renderPEGDashboard) renderPEGDashboard();
-          if (window.renderT2Dashboard) renderT2Dashboard();
-          if (window.renderNextAction) renderNextAction();
-        }
-        // Historique
-        if (id === 'history') {
-          if (window.renderSnapshots) renderSnapshots();
-          if (window.renderHeatmapCalendrier) renderHeatmapCalendrier();
-        }
-        // Retraite
-        if (id === 'retraite') {
-          if (window.updateProjectionInteractive) updateProjectionInteractive();
-          if (window.renderProgressionRetraite) renderProgressionRetraite();
-        }
-        // Opportunités
-        if (id === 'opportunites') {
-          if (window.renderWatchlist) renderWatchlist();
-        }
-      } catch(e) {
-        console.warn('[showPage dispatcher]', id, e);
-      }
-    }, 220);
-  };
-})();
-</script>
-
-</body>
-</html>
+  modal.addEventListener('click', function(e){ i
