@@ -534,6 +534,7 @@ body {
 
 
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes vestaPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(212,175,83,.4)}50%{transform:scale(1.08);box-shadow:0 0 0 5px rgba(212,175,83,0)}}
 #pwa-bottom-nav{display:none!important;}
 #pwa-more-menu{display:none!important;}
 #pwa-more-overlay{display:none!important;}
@@ -11404,6 +11405,102 @@ function refreshTokenBar() {
 }
 window.refreshTokenBar = refreshTokenBar;
 
+// ── Toggle mode auto/manuel ────────────────────────────────────
+function toggleVestaMode() {
+  var current = localStorage.getItem('pierre-provider-manual') || 'auto';
+  if (current !== 'auto') {
+    // Passer en auto
+    localStorage.setItem('pierre-provider-manual', 'auto');
+    if (window._toast) window._toast('⚡ Mode automatique — Vesta choisit la meilleure IA');
+    var btn = document.getElementById('btn-vesta-mode');
+    if (btn) btn.textContent = '⚡ Auto';
+  } else {
+    // Ouvrir sélecteur de provider
+    ouvrirSelecteurProvider();
+  }
+}
+window.toggleVestaMode = toggleVestaMode;
+
+// ── Sélecteur provider ─────────────────────────────────────────
+function ouvrirSelecteurProvider() {
+  var existing = document.getElementById('ov-prov-sel');
+  if (existing) { existing.classList.add('on'); return; }
+
+  var limits = {
+    groq:1000, groq_gemma:14400, groq_mixtral:14400,
+    gemini:1500, gemini_lite:1500,
+    openrouter:200, openrouter_mistral:200, openrouter_deepseek:50,
+    anthropic:99999
+  };
+
+  var rows = _ROTATION_ORDER.map(function(pid) {
+    var prov = IA_PROVIDERS[pid];
+    if (!prov) return '';
+    var key    = _getProviderKey(pid);
+    var u      = _getUsage(pid);
+    var lim    = limits[pid] || 500;
+    var pct    = Math.min(100, Math.round(u.count / lim * 100));
+    var color  = pct < 60 ? 'var(--green)' : pct < 85 ? 'var(--gold)' : 'var(--red)';
+    var hasKey = key ? '✅' : '○';
+    var isActive = localStorage.getItem('pierre-provider-manual') === pid;
+    var name   = prov.name.replace(' (Gratuit)','').replace(' (Payant — Meilleure qualité)','');
+    return '<div onclick="selectionnerProvider(\'' + pid + '\')" style="'
+      + 'display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-radius:6px;'
+      + 'background:' + (isActive ? 'var(--gold)18' : 'var(--s2)') + ';'
+      + 'border:1px solid ' + (isActive ? 'var(--gold)' : 'var(--bd)') + ';margin-bottom:5px;'
+      + '" onmouseover="this.style.background=\'var(--s3)\'" onmouseout="this.style.background=\'' + (isActive ? 'var(--gold)18' : 'var(--s2)') + '\'">'
+      + '<span style="font-size:16px;">' + hasKey + '</span>'
+      + '<div style="flex:1;">'
+      + '<div style="font-size:12px;font-weight:600;color:var(--text);">' + name + '</div>'
+      + '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;">' + (prov.tip||'') + '</div>'
+      + (key ? '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;">'
+        + '<div style="flex:1;height:3px;background:var(--bd);border-radius:2px;"><div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:2px;"></div></div>'
+        + '<span style="font-size:9px;color:' + color + ';">' + u.count + '/' + lim + '</span>'
+        + '</div>' : '<div style="font-size:9px;color:var(--red);">Clé manquante — <a onclick="demanderCleAPI();document.getElementById(\'ov-prov-sel\').classList.remove(\'on\')" href="#" style="color:var(--blue);">Configurer</a></div>')
+      + '</div>'
+      + (isActive ? '<span style="font-size:10px;color:var(--gold);font-weight:700;">EN USE</span>' : '')
+      + '</div>';
+  }).join('');
+
+  var ov = document.createElement('div');
+  ov.id = 'ov-prov-sel';
+  ov.className = 'ov';
+  ov.innerHTML = '<div class="modal" style="max-width:440px;">'
+    + '<h2 style="font-family:Playfair Display,serif;font-size:16px;margin-bottom:4px;">⚡ Sélection IA Vesta</h2>'
+    + '<p style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-bottom:12px;">Mode automatique recommandé — Vesta bascule seule en cas de saturation</p>'
+    + '<button onclick="selectionnerProvider(\'auto\')" style="width:100%;padding:10px;background:var(--gold)22;border:2px solid var(--gold);border-radius:8px;color:var(--gold);font-weight:700;font-size:12px;cursor:pointer;margin-bottom:12px;">⚡ Mode Automatique (recommandé)</button>'
+    + rows
+    + '<button onclick="document.getElementById(\'ov-prov-sel\').classList.remove(\'on\')" class="btn gh" style="width:100%;margin-top:10px;">Fermer</button>'
+    + '</div>';
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.classList.remove('on'); });
+  document.body.appendChild(ov);
+  ov.classList.add('on');
+}
+window.ouvrirSelecteurProvider = ouvrirSelecteurProvider;
+
+function selectionnerProvider(pid) {
+  var ov = document.getElementById('ov-prov-sel');
+  if (ov) ov.remove();
+  if (pid === 'auto') {
+    localStorage.setItem('pierre-provider-manual', 'auto');
+    if (window._toast) window._toast('⚡ Mode automatique activé');
+    var btn = document.getElementById('btn-vesta-mode');
+    if (btn) btn.textContent = '⚡ Auto';
+  } else {
+    localStorage.setItem('pierre-provider-manual', pid);
+    localStorage.setItem('pierre-provider', pid);
+    var name = (IA_PROVIDERS[pid]||{}).name || pid;
+    if (window._toast) window._toast('📌 ' + name.split(' (')[0] + ' sélectionné');
+    var btn = document.getElementById('btn-vesta-mode');
+    if (btn) btn.textContent = '📌 Manuel';
+  }
+  if (window.renderIAConversation) {
+    var el = document.getElementById('ia-card');
+    if (el) renderIAConversation(el);
+  }
+}
+window.selectionnerProvider = selectionnerProvider;
+
 // ══ RACCOURCIS CLAVIER ═══════════════════════════════════════
 (function() {
   var SHORTCUTS = {
@@ -11739,14 +11836,27 @@ function updateProviderHint() {
   }
 
   var guides = {
-    groq:       { placeholder:'gsk_...', html:'<strong style="color:var(--green);">🆓 100% GRATUIT</strong> · Llama 3.3 70B · Très rapide · Sans carte bancaire<br><a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue);">1. Créer un compte Groq → Créer une clé API</a>' },
-    gemini:     { placeholder:'AIza...', html:'<strong style="color:var(--green);">🆓 GRATUIT</strong> · Gemini 1.5 Flash · 1 500 req/jour<br><a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue);">1. Google AI Studio → Get API Key</a>' },
-    openrouter: { placeholder:'sk-or-...', html:'<strong style="color:var(--green);">🆓 GRATUIT</strong> (modèles :free) · Llama 3.1 8B · Sans carte<br><a href="https://openrouter.ai/settings/keys" target="_blank" style="color:var(--blue);">1. Créer un compte OpenRouter → Keys</a>' },
-    anthropic:  { placeholder:'sk-ant-...', html:'<strong style="color:var(--gold);">💳 Payant</strong> · Claude · Meilleure qualité · ~5$ = plusieurs mois<br><a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--blue);">1. console.anthropic.com → API Keys</a>' }
+    groq:               { placeholder:'gsk_...', clé:'groq', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Llama 3.3 70B · 30 req/min · 1 000/jour<br><b>→ Même clé pour Groq Gemma et Groq Mixtral</b><br><a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue);">console.groq.com → API Keys</a>' },
+    groq_gemma:         { placeholder:'gsk_...', clé:'groq', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Gemma 2 9B · 30 req/min · 14 400/jour<br><b>→ Même clé Groq</b><br><a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue);">console.groq.com → API Keys</a>' },
+    groq_mixtral:       { placeholder:'gsk_...', clé:'groq', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Mixtral 8x7B · 30 req/min · 14 400/jour<br><b>→ Même clé Groq</b><br><a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue);">console.groq.com → API Keys</a>' },
+    gemini:             { placeholder:'AIza...', clé:'gemini', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Gemini 2.0 Flash · 15 req/min · 1 500/jour · 1M tokens contexte<br><b>→ Même clé pour Gemini Flash-Lite</b><br><a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue);">Google AI Studio → Get API Key</a>' },
+    gemini_lite:        { placeholder:'AIza...', clé:'gemini', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Gemini 2.0 Flash-Lite · 30 req/min · 1 500/jour · Plus rapide<br><b>→ Même clé Gemini</b><br><a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue);">Google AI Studio → Get API Key</a>' },
+    openrouter:         { placeholder:'sk-or-...', clé:'openrouter', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Llama 3.1 8B · 200 req/jour<br><b>→ Même clé pour Mistral et DeepSeek</b><br><a href="https://openrouter.ai/settings/keys" target="_blank" style="color:var(--blue);">openrouter.ai → Keys</a>' },
+    openrouter_mistral: { placeholder:'sk-or-...', clé:'openrouter', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Mistral 7B · 200 req/jour · Bon en français<br><b>→ Même clé OpenRouter</b><br><a href="https://openrouter.ai/settings/keys" target="_blank" style="color:var(--blue);">openrouter.ai → Keys</a>' },
+    openrouter_deepseek:{ placeholder:'sk-or-...', clé:'openrouter', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · DeepSeek R1 · 50 req/jour · Raisonnement avancé<br><b>→ Même clé OpenRouter</b><br><a href="https://openrouter.ai/settings/keys" target="_blank" style="color:var(--blue);">openrouter.ai → Keys</a>' },
+    anthropic:          { placeholder:'sk-ant-...', clé:'anthropic', html:'<b style="color:var(--gold);">💳 Payant</b> · Claude Sonnet · Meilleure qualité · ~5€ = plusieurs mois<br><a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--blue);">console.anthropic.com → API Keys</a>' },
   };
   var g = guides[sel.value] || guides.groq;
   hint.innerHTML = g.html;
-  if (inp) inp.placeholder = g.placeholder;
+  if (inp) {
+    inp.placeholder = g.placeholder;
+    // Auto-remplir depuis la clé famille
+    var savedKey = localStorage.getItem('pierre-api-key-' + (g.clé||sel.value)) || '';
+    if (savedKey && !inp._userEdited) {
+      inp.value = savedKey.slice(0,6) + '••••••••••••' + savedKey.slice(-4);
+      inp._realKey = savedKey;
+    }
+  }
 }
 window.updateProviderHint = updateProviderHint;
 
@@ -11811,7 +11921,10 @@ async function sauvegarderCleAPI() {
   } catch(e) { /* ignore test errors, save anyway */ }
   var provSel = document.getElementById('pierre-provider-sel');
   var provId = provSel ? provSel.value : 'groq';
-  localStorage.setItem('pierre-api-key-' + provId, key); // clé spécifique provider
+  var _keyFam = {groq:'groq',groq_gemma:'groq',groq_mixtral:'groq',gemini:'gemini',gemini_lite:'gemini',openrouter:'openrouter',openrouter_mistral:'openrouter',openrouter_deepseek:'openrouter',anthropic:'anthropic'};
+  var _fam = _keyFam[provId] || provId;
+  localStorage.setItem('pierre-api-key-' + _fam, key); // famille
+  localStorage.setItem('pierre-api-key-' + provId, key); // spécifique
   localStorage.setItem('pierre-api-key', key); // fallback
   localStorage.setItem('pierre-provider', provId);
   if (st) { st.textContent = 'Enregistré ! Vesta utilise ' + (IA_PROVIDERS[provId]||{name:'IA'}).name; st.style.color='var(--green)'; }
@@ -12795,47 +12908,101 @@ window.getContexteAdapte = getContexteAdapte;
 // ════════════════════════════════════════════════════════════════
 // ── Providers IA disponibles ──────────────────────────────────
 var IA_PROVIDERS = {
+  // ─── GRATUITS SANS LIMITE RÉELLE ───────────────────────────
   groq: {
-    name: 'Groq (Llama 3.3 — Gratuit)',
+    name: 'Groq — Llama 3.3 70B (Gratuit)',
     url: 'https://api.groq.com/openai/v1/chat/completions',
     model: 'llama-3.3-70b-versatile',
-    key_prefix: 'gsk_',
-    free: true,
-    format: 'openai'
+    key_prefix: 'gsk_', free: true, format: 'openai',
+    rpm: 30, rpd: 1000, tpm: 6000,
+    tip: '30 req/min · 1 000 req/jour · Très rapide'
+  },
+  groq_gemma: {
+    name: 'Groq — Gemma 2 9B (Gratuit)',
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    model: 'gemma2-9b-it',
+    key_prefix: 'gsk_', free: true, format: 'openai',
+    rpm: 30, rpd: 14400, tpm: 15000,
+    tip: '30 req/min · 14 400 req/jour · Rapide'
+  },
+  groq_mixtral: {
+    name: 'Groq — Mixtral 8x7B (Gratuit)',
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    model: 'mixtral-8x7b-32768',
+    key_prefix: 'gsk_', free: true, format: 'openai',
+    rpm: 30, rpd: 14400, tpm: 5000,
+    tip: '30 req/min · 14 400 req/jour · Bon contexte'
   },
   gemini: {
-    name: 'Google Gemini Flash (Gratuit)',
+    name: 'Google Gemini 2.0 Flash (Gratuit)',
     url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
     model: 'gemini-2.0-flash',
-    key_prefix: 'AI',
-    free: true,
-    format: 'gemini'
+    key_prefix: 'AIza', free: true, format: 'gemini',
+    rpm: 15, rpd: 1500, tpm: 1000000,
+    tip: '15 req/min · 1 500 req/jour · Contexte énorme'
+  },
+  gemini_lite: {
+    name: 'Google Gemini 2.0 Flash-Lite (Gratuit)',
+    url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent',
+    model: 'gemini-2.0-flash-lite',
+    key_prefix: 'AIza', free: true, format: 'gemini',
+    rpm: 30, rpd: 1500, tpm: 1000000,
+    tip: '30 req/min · 1 500 req/jour · Plus rapide'
   },
   openrouter: {
-    name: 'OpenRouter (Llama gratuit)',
+    name: 'OpenRouter — Llama 3.1 8B (Gratuit)',
     url: 'https://openrouter.ai/api/v1/chat/completions',
     model: 'meta-llama/llama-3.1-8b-instruct:free',
-    key_prefix: 'sk-or-',
-    free: true,
-    format: 'openai'
+    key_prefix: 'sk-or-', free: true, format: 'openai',
+    rpm: 20, rpd: 200, tpm: 8000,
+    tip: '20 req/min · 200 req/jour'
   },
+  openrouter_mistral: {
+    name: 'OpenRouter — Mistral 7B (Gratuit)',
+    url: 'https://openrouter.ai/api/v1/chat/completions',
+    model: 'mistralai/mistral-7b-instruct:free',
+    key_prefix: 'sk-or-', free: true, format: 'openai',
+    rpm: 20, rpd: 200, tpm: 8000,
+    tip: '20 req/min · 200 req/jour · Bon en français'
+  },
+  openrouter_deepseek: {
+    name: 'OpenRouter — DeepSeek R1 (Gratuit)',
+    url: 'https://openrouter.ai/api/v1/chat/completions',
+    model: 'deepseek/deepseek-r1:free',
+    key_prefix: 'sk-or-', free: true, format: 'openai',
+    rpm: 20, rpd: 50, tpm: 8000,
+    tip: '50 req/jour · Raisonnement avancé'
+  },
+  // ─── PAYANT ─────────────────────────────────────────────────
   anthropic: {
-    name: 'Claude Anthropic (Payant)',
+    name: 'Claude Anthropic (Payant — Meilleure qualité)',
     url: 'https://api.anthropic.com/v1/messages',
     model: 'claude-sonnet-4-20250514',
-    key_prefix: 'sk-ant-',
-    free: false,
-    format: 'anthropic'
+    key_prefix: 'sk-ant-', free: false, format: 'anthropic',
+    rpm: 60, rpd: 99999, tpm: 40000,
+    tip: 'Meilleure qualité · ~5€ = plusieurs mois'
   }
 };
 
 function getActiveProvider() {
   var provId = localStorage.getItem('pierre-provider') || 'groq';
-  // Clé spécifique au provider, fallback sur la clé générique
-  var apiKey = localStorage.getItem('pierre-api-key-' + provId)
-            || localStorage.getItem('pierre-api-key')
+  var prov   = IA_PROVIDERS[provId] || IA_PROVIDERS.groq;
+
+  // Partage de clé par famille (même clé Groq pour tous les modèles Groq, etc.)
+  var keyFamily = {
+    groq: 'groq', groq_gemma: 'groq', groq_mixtral: 'groq',
+    gemini: 'gemini', gemini_lite: 'gemini',
+    openrouter: 'openrouter', openrouter_mistral: 'openrouter', openrouter_deepseek: 'openrouter',
+    anthropic: 'anthropic'
+  };
+  var family = keyFamily[provId] || provId;
+
+  var apiKey = localStorage.getItem('pierre-api-key-' + provId)      // clé spécifique
+            || localStorage.getItem('pierre-api-key-' + family)      // clé famille
+            || localStorage.getItem('pierre-api-key')                 // clé générique
             || '';
-  return { provider: IA_PROVIDERS[provId] || IA_PROVIDERS.groq, key: apiKey, id: provId };
+
+  return { provider: prov, key: apiKey, id: provId, family: family };
 }
 
 async function callClaudeIA(userMsg, isFirst) {
@@ -12857,9 +13024,10 @@ async function callClaudeIA(userMsg, isFirst) {
   }
   messages.push({role:'user', content: userMsg});
 
-  var makeReq = async function(msgs, withTools) {
-    var prov = active.provider;
-    var key  = active.key;
+  var makeReq = async function(msgs, withTools, activeOverride) {
+    var act  = activeOverride || getActiveProvider();
+    var prov = act.provider;
+    var key  = act.key;
 
     // ── Contexte commun TOUS providers ──────────────────────
     var TPM = { groq:6000, openrouter:4000, gemini:8000, anthropic:16000 };
@@ -12958,24 +13126,176 @@ async function callClaudeIA(userMsg, isFirst) {
     }
   };
 
+  // ══════════════════════════════════════════════════════════════
+// ORCHESTRATEUR AUTO-ROTATION — Vesta bascule seule entre les IAs
+// Ordre de priorité : qualité → vitesse → disponibilité
+// ══════════════════════════════════════════════════════════════
+var _ROTATION_ORDER = [
+  'anthropic',          // Meilleure qualité (payant — si clé dispo)
+  'groq',               // Llama 3.3 70B rapide et puissant
+  'gemini',             // Gemini 2.0 Flash — énorme contexte
+  'groq_gemma',         // Gemma 2 9B — 14k req/jour
+  'groq_mixtral',       // Mixtral — bon en français
+  'gemini_lite',        // Flash-Lite — plus rapide
+  'openrouter',         // Llama 3.1 8B backup
+  'openrouter_mistral', // Mistral 7B — français
+  'openrouter_deepseek' // DeepSeek R1 — raisonnement
+];
+
+// Compteurs de requêtes en localStorage (reset toutes les 24h)
+function _getUsage(provId) {
   try {
-    var data = await makeReq(messages, true);
+    var raw = JSON.parse(localStorage.getItem('vesta-usage-' + provId) || '{"count":0,"date":""}');
+    var today = new Date().toDateString();
+    if (raw.date !== today) return { count: 0, date: today, errors: 0, lastError: 0 };
+    return raw;
+  } catch(e) { return { count: 0, date: new Date().toDateString(), errors: 0, lastError: 0 }; }
+}
+
+function _incUsage(provId, isError) {
+  try {
+    var u = _getUsage(provId);
+    u.count++;
+    u.date = new Date().toDateString();
+    if (isError) { u.errors = (u.errors||0) + 1; u.lastError = Date.now(); }
+    localStorage.setItem('vesta-usage-' + provId, JSON.stringify(u));
+  } catch(e) {}
+}
+
+function _getProviderKey(provId) {
+  var families = {
+    groq:'groq', groq_gemma:'groq', groq_mixtral:'groq',
+    gemini:'gemini', gemini_lite:'gemini',
+    openrouter:'openrouter', openrouter_mistral:'openrouter', openrouter_deepseek:'openrouter',
+    anthropic:'anthropic'
+  };
+  var fam = families[provId] || provId;
+  return localStorage.getItem('pierre-api-key-' + provId)
+      || localStorage.getItem('pierre-api-key-' + fam)
+      || localStorage.getItem('pierre-api-key')
+      || '';
+}
+
+// Sélectionner le meilleur provider disponible
+function _selectBestProvider(excludeIds) {
+  excludeIds = excludeIds || [];
+  var limits = {
+    groq: 1000, groq_gemma: 14400, groq_mixtral: 14400,
+    gemini: 1500, gemini_lite: 1500,
+    openrouter: 200, openrouter_mistral: 200, openrouter_deepseek: 50,
+    anthropic: 99999
+  };
+
+  for (var i = 0; i < _ROTATION_ORDER.length; i++) {
+    var pid = _ROTATION_ORDER[i];
+    if (excludeIds.indexOf(pid) >= 0) continue;
+
+    // Vérifier clé disponible
+    var key = _getProviderKey(pid);
+    if (!key) continue;
+
+    // Vérifier limite journalière
+    var u = _getUsage(pid);
+    var limit = limits[pid] || 500;
+    if (u.count >= limit * 0.95) continue; // 95% de la limite → passer au suivant
+
+    // Vérifier erreurs récentes (backoff 60s après erreur)
+    if (u.errors >= 3 && u.lastError && (Date.now() - u.lastError) < 60000) continue;
+
+    return { id: pid, provider: IA_PROVIDERS[pid], key: key };
+  }
+  return null;
+}
+
+// Provider actif (préférence utilisateur si défini)
+function getActiveProvider() {
+  var manualProv = localStorage.getItem('pierre-provider-manual');
+  if (manualProv && manualProv !== 'auto') {
+    // Mode manuel : l'utilisateur a choisi un provider spécifique
+    var key = _getProviderKey(manualProv);
+    var prov = IA_PROVIDERS[manualProv];
+    if (prov && key) return { provider: prov, key: key, id: manualProv, manual: true };
+  }
+  // Mode auto : sélectionner le meilleur disponible
+  var best = _selectBestProvider([]);
+  if (best) return { provider: best.provider, key: best.key, id: best.id, auto: true };
+
+  // Fallback : essayer le dernier utilisé
+  var lastUsed = localStorage.getItem('pierre-provider') || 'groq';
+  var key2 = _getProviderKey(lastUsed);
+  return { provider: IA_PROVIDERS[lastUsed]||IA_PROVIDERS.groq, key: key2, id: lastUsed };
+}
+window.getActiveProvider = getActiveProvider;
+
+// Afficher l'indicateur de provider actif dans l'UI
+function _refreshProviderBadge(provId, isAuto) {
+  var el = document.getElementById('vesta-provider-badge');
+  if (!el) return;
+  var prov = IA_PROVIDERS[provId];
+  if (!prov) return;
+  var name = prov.name.replace(' (Gratuit)','').replace(' (Payant — Meilleure qualité)','');
+  el.innerHTML = (isAuto ? '⚡ ' : '📌 ') + name;
+  el.title = isAuto ? 'Mode automatique — Vesta choisit la meilleure IA disponible' : 'Mode manuel — ' + name;
+}
+window._refreshProviderBadge = _refreshProviderBadge;
+
+try {
+    // Sélectionner automatiquement le meilleur provider
+    var active = getActiveProvider();
+
+    // Afficher quel provider est utilisé
+    _refreshProviderBadge(active.id, active.auto);
+    _incUsage(active.id, false);
+
+    var data = await makeReq(messages, true, active);
     if (data.error) {
       var errMsg = data.error.message || JSON.stringify(data.error);
-      if (errMsg.includes('x-api-key') || errMsg.includes('api_key') || errMsg.includes('authentication') || errMsg.includes('401')) {
+      var isAuthErr  = /x-api-key|api_key|authentication|401|invalid.*key|API key/.test(errMsg);
+      var isRateErr  = /rate.limit|Rate.limit|TPM|429|overloaded|quota|exceeded/.test(errMsg);
+      var isModelErr = /model.*not.*found|not supported|tool call validation/.test(errMsg);
+
+      if (isAuthErr) {
         demanderCleAPI();
-        return "Clé API invalide. Vérifiez votre clé dans la configuration.";
+        return '🔑 Clé invalide pour ' + (IA_PROVIDERS[active.id]||{}).name + '. Vérifiez dans ⚙️ Config IA.';
       }
-      if (data.error.type === 'exceeded_limit' || errMsg.includes('exceeded_limit') || errMsg.includes('out_of_credits')) {
-        return "Crédit épuisé. Rechargez sur console.anthropic.com/settings/billing, ou passez à Groq (gratuit).";
+
+      if (isRateErr || isModelErr) {
+        // Basculer automatiquement vers le provider suivant
+        _incUsage(active.id, true);
+        var fallback = _selectBestProvider([active.id]);
+        if (fallback) {
+          if (window._toast) window._toast('⚡ ' + (IA_PROVIDERS[active.id]||{name:''}).name.split(' ')[0] + ' saturé → bascule sur ' + fallback.provider.name.split(' ')[0]);
+          _refreshProviderBadge(fallback.id, true);
+          data = await makeReq(messages, true, fallback);
+          active = fallback;
+          _incUsage(fallback.id, false);
+          if (!data.error) {
+            // Continuer avec le nouveau provider
+          } else {
+            // Essayer un 3ème
+            var fallback2 = _selectBestProvider([active.id, fallback.id]);
+            if (fallback2) {
+              if (window._toast) window._toast('⚡ Bascule sur ' + fallback2.provider.name.split(' ')[0]);
+              _refreshProviderBadge(fallback2.id, true);
+              data = await makeReq(messages, true, fallback2);
+              active = fallback2;
+              _incUsage(fallback2.id, false);
+            }
+          }
+        }
       }
-      if (errMsg.includes('overloaded') || errMsg.includes('rate_limit') || errMsg.includes('Rate limit') || errMsg.includes('TPM') || errMsg.includes('429')) {
-        var conseil = errMsg.includes('TPM') || errMsg.includes('token')
-          ? '⏳ Limite Groq atteinte. Réessayez dans 30s, ou cliquez ⚙️ en haut pour passer sur Gemini (gratuit, limite 4× plus haute).'
-          : '⏳ Service surchargé. Réessayez dans quelques secondes.';
-        return conseil;
+
+      // Si encore une erreur après rotation
+      if (data.error) {
+        var errMsg2 = data.error.message || JSON.stringify(data.error);
+        if (/tool call validation/.test(errMsg2)) {
+          // Réessayer sans tools
+          data = await makeReq(messages, false, active);
+        }
+        if (data.error) {
+          return '⚠️ Toutes les IAs disponibles sont saturées. Ajoutez d\'autres clés dans ⚙️ ou réessayez dans quelques minutes.\n\n_Erreur : ' + errMsg2.slice(0, 100) + '_';
+        }
       }
-      return "Erreur API : " + errMsg.slice(0, 200);
     }
 
     // ── Agentic loop — tool use (max 4 iterations) ───────────
@@ -13328,7 +13648,13 @@ function renderIAConversation(el) {
   }, 0);
   var totalEst = sysTokens + convTokens;
 
-  html += '<div id="ia-token-indicator" style="margin-top:6px;"></div>';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+    + '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;" id="vesta-provider-badge">⚡ Auto</div>'
+    + '<div style="display:flex;gap:6px;align-items:center;">'
+    + '<button onclick="toggleVestaMode()" id="btn-vesta-mode" title="Basculer auto/manuel" style="font-size:9px;font-family:JetBrains Mono,monospace;background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:2px 7px;cursor:pointer;color:var(--muted);">⚡ Auto</button>'
+    + '<div id="ia-token-indicator" style="margin-top:0;"></div>'
+    + '</div>'
+    + '</div>';
 
   el.innerHTML = html;
 
@@ -13413,15 +13739,17 @@ async function envoyerMessageIA() {
     t.id = 'ia-typing';
     t.style.cssText = 'display:flex;gap:8px;align-items:center;padding:8px 0;';
     var tAvatar = document.createElement('div');
-    tAvatar.style.cssText = 'width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--gold)44;';
-    if (window.VESTA_AVATAR_IMG) {
-      var img = document.createElement('img');
-      img.src = window.VESTA_AVATAR_IMG;
-      img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top center;';
-      tAvatar.appendChild(img);
+    // Utiliser background-image pour éviter les problèmes de timing chargement
+    var vestaSrc = window.VESTA_AVATAR_IMG || '';
+    if (vestaSrc) {
+      tAvatar.style.cssText = 'width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--gold)66;'
+        + 'background-image:url("' + vestaSrc + '");background-size:cover;background-position:top center;'
+        + 'animation:vestaPulse 1.5s ease-in-out infinite;';
     } else {
-      tAvatar.style.background = 'linear-gradient(135deg,#5b8dee,#9b72cf)';
-      tAvatar.innerHTML = '<span style="font-size:14px;">🔥</span>';
+      tAvatar.style.cssText = 'width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--gold)66;'
+        + 'background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:16px;'
+        + 'animation:vestaPulse 1.5s ease-in-out infinite;';
+      tAvatar.textContent = '🔥';
     }
     var tBubble = document.createElement('div');
     tBubble.style.cssText = 'padding:10px 14px;background:var(--s2);border-radius:2px 12px 12px 12px;border:1px solid var(--bd);font-size:12px;color:var(--muted);';
