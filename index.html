@@ -13244,7 +13244,7 @@ async function callClaudeIA(userMsg, isFirst) {
           return { role:m.role, content:typeof m.content==='string'?m.content:JSON.stringify(m.content) };
         }))
       };
-      if (oaTools.length) { body.tools = oaTools; body.tool_choice = 'auto'; }
+      if (oaTools && oaTools.length) { body.tools = oaTools; body.tool_choice = 'auto'; }
 
       var r = await fetch(prov.url, { method:'POST',
         signal: AbortSignal.timeout(25000),
@@ -13512,7 +13512,7 @@ try {
         return (textParts.join('\n') || 'Action proposée — confirmez ci-dessous');
       }
 
-      if (toolResults.length === 0) break;
+      if (!toolResults || toolResults.length === 0) break;
 
       // For OpenAI format, build tool result messages differently
       if (active.provider.format === 'openai') {
@@ -13538,9 +13538,10 @@ try {
       if (data.error) break;
     }
 
-    return (data.content || [])
-      .filter(function(b){ return b.type === 'text'; })
-      .map(function(b){ return b.text; })
+    var finalContent = (data && data.content) ? data.content : [];
+    return finalContent
+      .filter(function(b){ return b && b.type === 'text'; })
+      .map(function(b){ return b.text || ''; })
       .join('');
 
   } catch(e) {
@@ -13783,8 +13784,9 @@ function renderIAConversation(el) {
   var html = '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:450px;overflow-y:auto;padding:4px;" id="ia-messages">';
 
   var displayConv = window._iaConversation.filter(function(m, i) {
-    if (i === 0 && m.role === 'user' && m.content.length > 300) return false;
-    if (m.content === '[Confirmé]' || m.content === '[Annulé]') return false;
+    var mc = typeof m.content === 'string' ? m.content : '';
+    if (i === 0 && m.role === 'user' && mc.length > 300) return false;
+    if (mc === '[Confirmé]' || mc === '[Annulé]') return false;
     return true;
   });
 
