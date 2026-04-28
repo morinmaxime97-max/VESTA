@@ -11424,7 +11424,7 @@ window.toggleVestaMode = toggleVestaMode;
 // ── Sélecteur provider ─────────────────────────────────────────
 function ouvrirSelecteurProvider() {
   var existing = document.getElementById('ov-prov-sel');
-  if (existing) { existing.classList.add('on'); return; }
+  if (existing) { existing.remove(); } // Toujours recréer pour avoir les données à jour
 
   var limits = {
     groq:1000, groq_gemma:14400, groq_mixtral:14400,
@@ -11433,12 +11433,20 @@ function ouvrirSelecteurProvider() {
     anthropic:99999
   };
 
+  // Helpers avec fallback si pas encore définis
+  var getKey = window._getProviderKey || function(pid) {
+    var fams = {groq:'groq',groq_gemma:'groq',groq_mixtral:'groq',gemini:'gemini',gemini_lite:'gemini',openrouter:'openrouter',openrouter_mistral:'openrouter',openrouter_deepseek:'openrouter',anthropic:'anthropic'};
+    return localStorage.getItem('pierre-api-key-'+(fams[pid]||pid)) || localStorage.getItem('pierre-api-key') || '';
+  };
+  var getUsage = window._getUsage || function(pid) {
+    try { var r=JSON.parse(localStorage.getItem('vesta-usage-'+pid)||'{}'); var t=new Date().toDateString(); return r.date===t?r:{count:0,date:t}; } catch(e){ return {count:0}; }
+  };
   var rotOrder = (typeof _ROTATION_ORDER !== 'undefined' ? _ROTATION_ORDER : Object.keys(IA_PROVIDERS));
   var rows = rotOrder.map(function(pid) {
     var prov = IA_PROVIDERS[pid];
     if (!prov) return '';
-    var key    = _getProviderKey(pid);
-    var u      = _getUsage(pid);
+    var key    = getKey(pid);
+    var u      = getUsage(pid);
     var lim    = limits[pid] || 500;
     var pct    = Math.min(100, Math.round(u.count / lim * 100));
     var color  = pct < 60 ? 'var(--green)' : pct < 85 ? 'var(--gold)' : 'var(--red)';
@@ -11761,7 +11769,7 @@ try { window.history.replaceState({page: 'dashboard'}, '', '#dashboard'); } catc
         <!-- Fermer -->
         <button onclick="closeOv('ov-ia')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:2px;line-height:1;">&#x2715;</button>
       </div>
-    </div> (flex:1 pour prendre l'espace disponible) -->
+    </div>
     <div id="ia-card" style="flex:1;overflow-y:auto;min-height:200px;"></div>
     <div id="ia-content" style="display:none;min-height:80px;"></div>
   </div>
@@ -13363,6 +13371,15 @@ async function callClaudeIA(userMsg, isFirst) {
         body:JSON.stringify({ contents:gMsgs,
           systemInstruction:{ parts:[{text:fullSys}] },
           generationConfig:{ maxOutputTokens:1500 } }) });
+
+      // Gérer les erreurs HTTP Gemini explicitement
+      if (!r2.ok) {
+        var errBody = {};
+        try { errBody = await r2.json(); } catch(e) {}
+        var errDetail = (errBody.error && errBody.error.message) || r2.statusText || ('HTTP '+r2.status);
+        return { error: { message: errDetail, status: r2.status } };
+      }
+
       var g2 = await r2.json();
       if (g2.error) return { error: g2.error };
       var gt = (g2.candidates&&g2.candidates[0]&&g2.candidates[0].content&&
@@ -13516,10 +13533,18 @@ try {
     if (data.error) {
       var errMsg = data.error.message || JSON.stringify(data.error);
       // Rate limit AVANT auth (Gemini "exceeded quota" contient "invalid" → faux positif)
-      var isRateErr  = /rate.limit|Rate.limit|TPM|429|overloaded|quota|exceeded|billing/i.test(errMsg);
-      var isModelErr2 = /No endpoints found|model.*not.*available|not found/i.test(errMsg);
-      // Auth uniquement si PAS un problème de quota/billing
-      var isAuthErr  = !isRateErr && /x-api-key|api_key|authentication|401|invalid.*key|API key|INVALID_ARGUMENT.*key/i.test(errMsg);
+      // ── Classification des erreurs ─────────────────────────
+      // 1. Rate limit / quota / indisponibilité → rotation automatique
+      var isRateErr = /rate.limit|Rate.limit|TPM|429|overloaded|quota|exceeded|billing|Provider returned error|provider.*error|upstream|service.*unavailable|503|502|504/i.test(errMsg);
+      // 2. Modèle introuvable → rotation
+      var isModelErr2 = /No endpoints found|model.*not.*available|not found|endpoint/i.test(errMsg);
+      // 3. Erreur Gemini spécifique (RESOURCE_EXHAUSTED, USER_LOCATION, etc.) → rotation
+      var isGeminiErr = /RESOURCE_EXHAUSTED|USER_LOCATION_INVALID|PERMISSION_DENIED|SERVICE_UNAVAILABLE|UNAVAILABLE/i.test(errMsg);
+      // 4. Auth invalide → UNIQUEMENT si PAS un problème de dispo/quota
+      var isAuthErr = !isRateErr && !isModelErr2 && !isGeminiErr
+        && /x-api-key|api_key|authentication|401|invalid.*key|API key|INVALID_ARGUMENT.*key|Unauthorized/i.test(errMsg)
+        && !/quota|billing|exceeded|limit|endpoint|provider/i.test(errMsg);
+      // 5. Modèle non supporté
       var isModelErr = /model.*not.*found|not supported|tool call validation/.test(errMsg);
 
       if (isAuthErr) {
@@ -13527,7 +13552,7 @@ try {
         return '🔑 Clé invalide pour ' + (IA_PROVIDERS[active.id]||{}).name + '. Vérifiez dans ⚙️ Config IA.';
       }
 
-      if (isRateErr || isModelErr || isModelErr2) {
+      if (isRateErr || isModelErr || isModelErr2 || isGeminiErr) {
         // Basculer automatiquement vers le provider suivant
         _incUsage(active.id, true);
         var fallback = _selectBestProvider([active.id]);
@@ -13538,9 +13563,8 @@ try {
           active = fallback;
           _incUsage(fallback.id, false);
           if (!data.error) {
-            // Continuer avec le nouveau provider
+            // OK - continuer
           } else {
-            // Essayer un 3ème
             var fallback2 = _selectBestProvider([active.id, fallback.id]);
             if (fallback2) {
               if (window._toast) window._toast('⚡ Bascule sur ' + fallback2.provider.name.split(' ')[0]);
@@ -13561,7 +13585,7 @@ try {
           data = await makeReq(messages, false, active);
         }
         if (data.error) {
-          return '⚠️ Toutes les IAs disponibles sont saturées. Ajoutez d\'autres clés dans ⚙️ ou réessayez dans quelques minutes.\n\n_Erreur : ' + errMsg2.slice(0, 100) + '_';
+          return '⏳ Toutes les IAs disponibles sont temporairement surchargées. Réessayez dans quelques secondes ou ajoutez d\'autres clés dans ⚙️.\n\n_Détail : ' + errMsg2.slice(0, 120) + '_';
         }
       }
     }
