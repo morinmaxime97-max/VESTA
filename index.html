@@ -716,7 +716,7 @@ body {
       <span>&#129302; Vesta — Conseil patrimonial</span>
       <div style="display:flex;gap:6px;">
         <button class="btn sm" id="btn-ia-quick" style="background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;font-size:11px;" onclick="lancerConseilRapide()">Actualiser</button>
-        <button class="btn gh sm" style="font-size:11px;" onclick="document.getElementById('ov-ia').classList.add('on');lancerAnalyseIA()">Chat complet</button>
+        <button class="btn gh sm" style="font-size:11px;" onclick="ouvrirModalIA()">Chat complet</button>
       </div>
     </div>
     <div id="ia-conseil-content" style="font-size:12px;color:var(--muted);line-height:1.6;min-height:60px;">
@@ -11562,7 +11562,7 @@ window.selectionnerProvider = selectionnerProvider;
         if (iaOv && !iaOv.classList.contains('on')) {
           e.preventDefault();
           iaOv.classList.add('on');
-          if (window.lancerAnalyseIA) window.lancerAnalyseIA();
+          if (window.renderIAConversation) { var el=document.getElementById('ia-card'); if(el) renderIAConversation(el); }
         }
         return;
       }
@@ -11735,18 +11735,26 @@ try { window.history.replaceState({page: 'dashboard'}, '', '#dashboard'); } catc
 
 <!-- ══ IA MODAL ══ -->
 <div id="ov-ia" class="ov">
-  <div class="modal" style="width:600px;max-width:96vw;max-height:88vh;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <h2 style="font-family:'Playfair Display',serif;font-size:18px;">Analyse IA du patrimoine</h2>
+  <div class="modal" style="width:620px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0;">
+      <div style="width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1.5px solid var(--gold)66;"
+           id="vesta-modal-avatar">
+        <!-- Alimenté par JS -->
+      </div>
+      <div style="flex:1;">
+        <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--gold);">Vesta</div>
+        <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;" id="vesta-provider-badge">⚡ Auto</div>
+      </div>
+      <button id="btn-vesta-mode" onclick="toggleVestaMode()" title="Mode IA" style="font-size:9px;font-family:'JetBrains Mono',monospace;background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:2px 7px;cursor:pointer;color:var(--muted);">⚡ Auto</button>
       <button onclick="closeOv('ov-ia')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);">&#x2715;</button>
     </div>
-    <div id="ia-content" style="min-height:120px;">
-      <div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;">Cliquez Analyser pour obtenir une analyse personnalisee.</div>
-    </div>
-    <div style="margin-top:16px;display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
-      <span style="font-size:10px;color:var(--muted);">Analyse basee sur vos donnees locales</span>
-      <button id="btn-ia-analyze" class="btn" onclick="lancerAnalyseIA()">Analyser ma situation</button>
-    </div>
+
+    <!-- Zone conversation (flex:1 pour prendre l'espace disponible) -->
+    <div id="ia-card" style="flex:1;overflow-y:auto;"></div>
+
+    <!-- Zone analyse (cachée par défaut, visible seulement pendant analyse) -->
+    <div id="ia-content" style="display:none;min-height:80px;"></div>
   </div>
 </div>
 
@@ -12006,7 +12014,7 @@ document.addEventListener('DOMContentLoaded',function(){
     b.style.cssText='background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;font-size:11px;';
     b.textContent='IA';
     b.title='Analyse IA de votre patrimoine';
-    b.addEventListener('click',function(){document.getElementById('ov-ia').classList.add('on');lancerAnalyseIA();});
+    b.addEventListener('click',function(){ ouvrirModalIA(); });
     hdr.insertBefore(b,hdr.firstChild);
   }
 });
@@ -12984,6 +12992,45 @@ var IA_PROVIDERS = {
   }
 };
 
+// ── Ouvrir le modal IA sans lancer l'analyse automatiquement ──
+function ouvrirModalIA() {
+  var ov = document.getElementById('ov-ia');
+  if (!ov) return;
+
+  // Alimenter l'avatar déesse dans le header du modal
+  var avatarEl = document.getElementById('vesta-modal-avatar');
+  if (avatarEl && window.VESTA_AVATAR_IMG) {
+    avatarEl.style.backgroundImage = 'url("' + window.VESTA_AVATAR_IMG + '")';
+    avatarEl.style.backgroundSize = 'cover';
+    avatarEl.style.backgroundPosition = 'top center';
+  } else if (avatarEl) {
+    avatarEl.innerHTML = '<div style="width:100%;height:100%;background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:16px;">🔥</div>';
+  }
+
+  ov.classList.add('on');
+
+  // Rendre la conversation immédiatement
+  var el = document.getElementById('ia-card');
+  if (el) {
+    setTimeout(function() {
+      if (window.renderIAConversation) renderIAConversation(el);
+      if (window.refreshTokenBar) refreshTokenBar();
+      if (window._refreshProviderBadge) {
+        var active = window.getActiveProvider ? window.getActiveProvider() : null;
+        if (active) window._refreshProviderBadge(active.id, active.auto);
+      }
+    }, 50);
+  }
+
+  // Focus sur le champ de saisie
+  setTimeout(function() {
+    var inp = document.getElementById('ia-user-input');
+    if (inp) inp.focus();
+  }, 200);
+}
+window.ouvrirModalIA = ouvrirModalIA;
+
+
 function getActiveProvider() {
   var provId = localStorage.getItem('pierre-provider') || 'groq';
   var prov   = IA_PROVIDERS[provId] || IA_PROVIDERS.groq;
@@ -13682,7 +13729,12 @@ async function lancerAnalyseIA() {
   window._iaConversation = [];
   window._pendingAction  = null;
   var el  = document.getElementById('ia-content');
+  var card = document.getElementById('ia-card');
   var btn = document.getElementById('btn-ia-analyze');
+
+  // Pendant l'analyse : cacher la conversation, montrer l'indicateur
+  if (el) { el.style.display = 'block'; }
+  if (card) { card.style.display = 'none'; }
   if (!el) return;
 
   el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:40px;color:var(--muted);">'
@@ -13710,7 +13762,16 @@ async function lancerAnalyseIA() {
   window._iaConversation.push({role:'user', content: firstMsg});
   window._iaConversation.push({role:'assistant', content: response});
 
-  renderIAConversation(el);
+  // Analyse terminée : basculer vers la vue conversation
+  var iaCard = document.getElementById('ia-card');
+  var iaContent = document.getElementById('ia-content');
+  if (iaContent) iaContent.style.display = 'none';
+  if (iaCard) {
+    iaCard.style.display = '';
+    renderIAConversation(iaCard);
+  } else {
+    renderIAConversation(el);
+  }
   if (btn) btn.disabled = false;
 }
 
