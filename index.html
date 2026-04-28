@@ -11858,9 +11858,9 @@ function updateProviderHint() {
     groq_mixtral:       { placeholder:'gsk_...', clé:'groq', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Mixtral 8x7B · 30 req/min · 14 400/jour<br><b>→ Même clé Groq</b><br><a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue);">console.groq.com → API Keys</a>' },
     gemini:             { placeholder:'AIza...', clé:'gemini', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Gemini 2.0 Flash · 15 req/min · 1 500/jour · 1M tokens contexte<br><b>→ Même clé pour Gemini Flash-Lite</b><br><a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue);">Google AI Studio → Get API Key</a>' },
     gemini_lite:        { placeholder:'AIza...', clé:'gemini', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Gemini 2.0 Flash-Lite · 30 req/min · 1 500/jour · Plus rapide<br><b>→ Même clé Gemini</b><br><a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue);">Google AI Studio → Get API Key</a>' },
-    openrouter:         { placeholder:'sk-or-...', clé:'openrouter', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Llama 3.1 8B · 200 req/jour<br><b>→ Même clé pour Mistral et DeepSeek</b><br><a href="https://openrouter.ai/settings/keys" target="_blank" style="color:var(--blue);">openrouter.ai → Keys</a>' },
-    openrouter_mistral: { placeholder:'sk-or-...', clé:'openrouter', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Mistral 7B · 200 req/jour · Bon en français<br><b>→ Même clé OpenRouter</b><br><a href="https://openrouter.ai/settings/keys" target="_blank" style="color:var(--blue);">openrouter.ai → Keys</a>' },
-    openrouter_deepseek:{ placeholder:'sk-or-...', clé:'openrouter', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · DeepSeek R1 · 50 req/jour · Raisonnement avancé<br><b>→ Même clé OpenRouter</b><br><a href="https://openrouter.ai/settings/keys" target="_blank" style="color:var(--blue);">openrouter.ai → Keys</a>' },
+    openrouter:         { placeholder:'sk-or-...', clé:'openrouter', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Llama 3.2 3B · 200 req/jour<br><b>→ Même clé pour Mistral et DeepSeek</b><br><a href="https://openrouter.ai/settings/keys" target="_blank" style="color:var(--blue);">openrouter.ai → Keys</a>' },
+    openrouter_mistral: { placeholder:'sk-or-...', clé:'openrouter', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · Mistral Small 24B · 200 req/jour · Excellent en français<br><b>→ Même clé OpenRouter</b><br><a href="https://openrouter.ai/settings/keys" target="_blank" style="color:var(--blue);">openrouter.ai → Keys</a>' },
+    openrouter_deepseek:{ placeholder:'sk-or-...', clé:'openrouter', html:'<b style="color:var(--green);">🆓 GRATUIT</b> · DeepSeek R1 70B distill · 50 req/jour · Raisonnement avancé<br><b>→ Même clé OpenRouter</b><br><a href="https://openrouter.ai/settings/keys" target="_blank" style="color:var(--blue);">openrouter.ai → Keys</a>' },
     anthropic:          { placeholder:'sk-ant-...', clé:'anthropic', html:'<b style="color:var(--gold);">💳 Payant</b> · Claude Sonnet · Meilleure qualité · ~5€ = plusieurs mois<br><a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--blue);">console.anthropic.com → API Keys</a>' },
   };
   var g = guides[sel.value] || guides.groq;
@@ -12967,25 +12967,25 @@ var IA_PROVIDERS = {
     tip: '30 req/min · 1 500 req/jour · Plus rapide'
   },
   openrouter: {
-    name: 'OpenRouter — Llama 3.1 8B (Gratuit)',
+    name: 'OpenRouter — Llama 3.2 3B (Gratuit)',
     url: 'https://openrouter.ai/api/v1/chat/completions',
-    model: 'meta-llama/llama-3.1-8b-instruct:free',
+    model: 'meta-llama/llama-3.2-3b-instruct:free',
     key_prefix: 'sk-or-', free: true, format: 'openai',
     rpm: 20, rpd: 200, tpm: 8000,
-    tip: '20 req/min · 200 req/jour'
+    tip: '20 req/min · 200 req/jour · Llama 3.2'
   },
   openrouter_mistral: {
-    name: 'OpenRouter — Mistral 7B (Gratuit)',
+    name: 'OpenRouter — Mistral Small 24B (Gratuit)',
     url: 'https://openrouter.ai/api/v1/chat/completions',
-    model: 'mistralai/mistral-7b-instruct:free',
+    model: 'mistralai/mistral-small-3.1-24b-instruct:free',
     key_prefix: 'sk-or-', free: true, format: 'openai',
     rpm: 20, rpd: 200, tpm: 8000,
-    tip: '20 req/min · 200 req/jour · Bon en français'
+    tip: '20 req/min · 200 req/jour · Excellent en français'
   },
   openrouter_deepseek: {
-    name: 'OpenRouter — DeepSeek R1 (Gratuit)',
+    name: 'OpenRouter — DeepSeek R1 70B (Gratuit)',
     url: 'https://openrouter.ai/api/v1/chat/completions',
-    model: 'deepseek/deepseek-r1:free',
+    model: 'deepseek/deepseek-r1-distill-llama-70b:free',
     key_prefix: 'sk-or-', free: true, format: 'openai',
     rpm: 20, rpd: 50, tpm: 8000,
     tip: '50 req/jour · Raisonnement avancé'
@@ -13515,8 +13515,11 @@ try {
     var data = await makeReq(messages, true, active);
     if (data.error) {
       var errMsg = data.error.message || JSON.stringify(data.error);
-      var isAuthErr  = /x-api-key|api_key|authentication|401|invalid.*key|API key/.test(errMsg);
-      var isRateErr  = /rate.limit|Rate.limit|TPM|429|overloaded|quota|exceeded/.test(errMsg);
+      // Rate limit AVANT auth (Gemini "exceeded quota" contient "invalid" → faux positif)
+      var isRateErr  = /rate.limit|Rate.limit|TPM|429|overloaded|quota|exceeded|billing/i.test(errMsg);
+      var isModelErr2 = /No endpoints found|model.*not.*available|not found/i.test(errMsg);
+      // Auth uniquement si PAS un problème de quota/billing
+      var isAuthErr  = !isRateErr && /x-api-key|api_key|authentication|401|invalid.*key|API key|INVALID_ARGUMENT.*key/i.test(errMsg);
       var isModelErr = /model.*not.*found|not supported|tool call validation/.test(errMsg);
 
       if (isAuthErr) {
@@ -13524,7 +13527,7 @@ try {
         return '🔑 Clé invalide pour ' + (IA_PROVIDERS[active.id]||{}).name + '. Vérifiez dans ⚙️ Config IA.';
       }
 
-      if (isRateErr || isModelErr) {
+      if (isRateErr || isModelErr || isModelErr2) {
         // Basculer automatiquement vers le provider suivant
         _incUsage(active.id, true);
         var fallback = _selectBestProvider([active.id]);
