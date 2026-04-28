@@ -13011,7 +13011,9 @@ function ouvrirModalIA() {
   var families = ['groq', 'gemini', 'openrouter', 'anthropic'];
   var keysFound = {};
   families.forEach(function(fam) {
-    keysFound[fam] = !!(localStorage.getItem('pierre-api-key-' + fam) || localStorage.getItem('pierre-api-key'));
+    // Utiliser SEULEMENT la clé spécifique à la famille pour le wizard
+    // (ne pas utiliser la clé générique 'pierre-api-key' pour éviter de masquer l'absence de config)
+    keysFound[fam] = !!(localStorage.getItem('pierre-api-key-' + fam));
   });
   var hasFreeKey  = keysFound.groq || keysFound.gemini || keysFound.openrouter;
   var hasPaidKey  = keysFound.anthropic;
@@ -13287,9 +13289,11 @@ async function callClaudeIA(userMsg, isFirst) {
       var gMsgs = msgs.filter(function(m){ return typeof m.content==='string'; })
         .map(function(m){ return { role:m.role==='assistant'?'model':'user', parts:[{text:m.content}] }; });
       // Injecter patriCtx dans le dernier message user
-      if (patriCtx && gMsgs.length) {
+      if (patriCtx && gMsgs.length > 0) {
         var gl = gMsgs[gMsgs.length-1];
-        if (gl.role==='user') gl.parts[0].text += '\n\n[DONNÉES PATRIMOINE]\n' + patriCtx;
+        if (gl && gl.role==='user' && gl.parts && gl.parts[0]) {
+          gl.parts[0].text += '\n\n[DONNÉES PATRIMOINE]\n' + patriCtx;
+        }
       }
       var r2 = await fetch(prov.url+'?key='+key, { method:'POST',
         signal: AbortSignal.timeout(25000),
@@ -13760,7 +13764,7 @@ function renderIAConversation(el) {
       }
     });
 
-    if (matched.length === 0) return '';
+    if (!matched || matched.length === 0) return '';
 
     var btns = LIENS.filter(function(l){ return l._match; }).map(function(l) {
       var pageArg = "'" + l.page + "'";
@@ -14046,7 +14050,7 @@ async function lancerConseilRapide() {
   var msg = [
     'Donne le conseil patrimonial le plus important et urgent en 3-4 phrases max.',
     'Sois très concret, chiffré, actionnable pour ma situation.',
-    extra.length ? ('Contexte du moment : ' + extra.join(' ')) : '',
+    (extra && extra.length) ? ('Contexte du moment : ' + extra.join(' ')) : '',
     '',
     ctx
   ].filter(Boolean).join(NL);
