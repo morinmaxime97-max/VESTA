@@ -13152,6 +13152,8 @@ function _saveQuickKey(fam) {
         if (window.refreshTokenBar) refreshTokenBar();
         var active = window.getActiveProvider ? window.getActiveProvider() : null;
         if (window._refreshProviderBadge && active) window._refreshProviderBadge(active.id, !!active.auto);
+        // Afficher bandeau "Ajouter d'autres clés"
+        _afficherBandeauAutresClés(el, fam);
         setTimeout(function(){ var i=document.getElementById('ia-user-input'); if(i) i.focus(); }, 100);
       }, 300);
     } else {
@@ -13167,6 +13169,55 @@ function _saveQuickKey(fam) {
   }
 }
 window._saveQuickKey = _saveQuickKey;
+// Bandeau "Ajouter d'autres clés" après la première config
+function _afficherBandeauAutresClés(container, famConfigured) {
+  var allFams = ['groq','gemini','openrouter'];
+  var missing = allFams.filter(function(f){
+    return f !== famConfigured && !localStorage.getItem('pierre-api-key-' + f);
+  });
+  if (missing.length === 0) return; // Toutes configurées
+
+  var banner = document.createElement('div');
+  banner.id = 'vesta-other-keys-banner';
+  banner.style.cssText = 'margin:10px 0;padding:10px 14px;background:var(--gold)11;border:1px solid var(--gold)44;border-radius:8px;font-size:11px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
+
+  var names = {'groq':'Groq ⚡','gemini':'Gemini 🌟','openrouter':'OpenRouter 🔀'};
+    var btnHtml = missing.map(function(f){
+    return '<button data-fam="' + f + '" onclick="window._ajouterCleSupp && window._ajouterCleSupp(this.dataset.fam)" style="background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;color:var(--text);">+ ' + names[f] + '</button>';
+  }).join('');
+
+  var closeBtn = '<button onclick="var b=document.getElementById(\'vesta-other-keys-banner\');if(b)b.remove();" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">×</button>';
+  banner.innerHTML = '<span style="color:var(--gold);font-weight:600;">💡 Ajoutez d\'autres IAs gratuites :</span>'
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + btnHtml + '</div>'
+    + closeBtn;
+
+  // Insérer après ia-messages ou en haut de ia-card
+  var msgs = container && container.querySelector('#ia-messages');
+  if (msgs && msgs.parentNode) {
+    msgs.parentNode.insertBefore(banner, msgs.nextSibling);
+  } else if (container) {
+    container.appendChild(banner);
+  }
+}
+window._afficherBandeauAutresClés = _afficherBandeauAutresClés;
+
+// Ouvrir config pour une famille spécifique
+function _ajouterCleSupp(fam) {
+  var banner = document.getElementById('vesta-other-keys-banner');
+  if (banner) banner.remove();
+  // Afficher le wizard pour ce fam uniquement
+  var el = document.getElementById('ia-card');
+  if (!el) return;
+  var allFams = ['groq','gemini','openrouter'];
+  var remaining = allFams.filter(function(f){ return !localStorage.getItem('pierre-api-key-' + f); });
+  el.innerHTML = '<div style="padding:10px 0;">'
+    + '<div style="font-size:13px;color:var(--text);margin-bottom:14px;font-family:Playfair Display,serif;">Configurer les IAs gratuites restantes</div>'
+    + _renderKeySetupCards()
+    + '<button onclick="ouvrirModalIA()" class="btn gh" style="width:100%;margin-top:12px;">← Retour à la conversation</button>'
+    + '</div>';
+}
+window._ajouterCleSupp = _ajouterCleSupp;
+
 
 
 function getActiveProvider() {
@@ -13381,8 +13432,9 @@ function _selectBestProvider(excludeIds) {
     anthropic: 99999
   };
 
-  for (var i = 0; i < _ROTATION_ORDER.length; i++) {
-    var pid = _ROTATION_ORDER[i];
+  var _rOrder = window._ROTATION_ORDER || _ROTATION_ORDER || [];
+  for (var i = 0; i < _rOrder.length; i++) {
+    var pid = _rOrder[i];
     if (excludeIds.indexOf(pid) >= 0) continue;
 
     // Vérifier clé disponible
@@ -13602,7 +13654,7 @@ function renderIAConversation(el) {
         var cells = row.split('|').filter(function(c){ return c.trim() !== '' || c !== row.split('|')[0]; }).filter(function(c,i,a){ return i>0 && i<a.length-0; });
         // Re-split proprement
         var parts = row.split('|');
-        parts = parts.slice(1, parts.length - (parts[parts.length-1].trim()===''?1:0));
+        parts = (parts||[]).slice(1, parts.length - ((parts.length>0 && parts[parts.length-1].trim()==='')?1:0));
         tbl += '<tr>' + parts.map(function(c, ci){
           return '<td style="padding:5px 8px;border-bottom:1px solid var(--bd);' + (ci===0?'font-weight:600;':'') + '">' + c.trim() + '</td>';
         }).join('') + '</tr>';
@@ -13804,7 +13856,7 @@ function renderIAConversation(el) {
     var isUser = m.role === 'user';
     var rawText = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
     var text = isUser ? rawText.replace(/\[Donnees actuelles\][\s\S]*/,'').trim() : mdToHtml(rawText);
-    var isLast = i === displayConv.length - 1;
+    var isLast = displayConv && i === displayConv.length - 1;
     var hasConfirm = !isUser && isLast && window._pendingAction;
     var toolLinks = (!isUser && isLast) ? injecterLiensOutils(rawText) : '';
 
