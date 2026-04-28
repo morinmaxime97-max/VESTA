@@ -11751,9 +11751,7 @@ try { window.history.replaceState({page: 'dashboard'}, '', '#dashboard'); } catc
     </div>
 
     <!-- Zone conversation (flex:1 pour prendre l'espace disponible) -->
-    <div id="ia-card" style="flex:1;overflow-y:auto;"></div>
-
-    <!-- Zone analyse (cachée par défaut, visible seulement pendant analyse) -->
+    <div id="ia-card" style="flex:1;overflow-y:auto;min-height:200px;"></div>
     <div id="ia-content" style="display:none;min-height:80px;"></div>
   </div>
 </div>
@@ -13111,6 +13109,7 @@ async function callClaudeIA(userMsg, isFirst) {
       if (oaTools.length) { body.tools = oaTools; body.tool_choice = 'auto'; }
 
       var r = await fetch(prov.url, { method:'POST',
+        signal: AbortSignal.timeout(25000),
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
         body:JSON.stringify(body) });
 
@@ -13120,6 +13119,7 @@ async function callClaudeIA(userMsg, isFirst) {
         await new Promise(function(res){ setTimeout(res, wait*1000); });
         delete body.tools; delete body.tool_choice;
         r = await fetch(prov.url, { method:'POST',
+          signal: AbortSignal.timeout(20000),
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
           body:JSON.stringify(body) });
       }
@@ -13152,6 +13152,7 @@ async function callClaudeIA(userMsg, isFirst) {
         if (gl.role==='user') gl.parts[0].text += '\n\n[DONNÉES PATRIMOINE]\n' + patriCtx;
       }
       var r2 = await fetch(prov.url+'?key='+key, { method:'POST',
+        signal: AbortSignal.timeout(25000),
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({ contents:gMsgs,
           systemInstruction:{ parts:[{text:fullSys}] },
@@ -13166,6 +13167,7 @@ async function callClaudeIA(userMsg, isFirst) {
     // ── Anthropic — tools natifs ────────────────────────────
     } else {
       var r3 = await fetch(prov.url, { method:'POST',
+        signal: AbortSignal.timeout(30000),
         headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
         body:JSON.stringify({ model:prov.model, max_tokens:1200, system:fullSys,
           tools:IA_TOOLS, messages:msgs }) });
@@ -13401,7 +13403,31 @@ try {
       .join('');
 
   } catch(e) {
-    return "Erreur connexion : " + e.message;
+    var isTimeout = e.name === 'TimeoutError' || e.name === 'AbortError' || (e.message && e.message.includes('timeout'));
+    var isNetwork = e.name === 'TypeError' || (e.message && (e.message.includes('fetch') || e.message.includes('network') || e.message.includes('Failed')));
+
+    if (isTimeout || isNetwork) {
+      // Essayer le provider suivant automatiquement
+      _incUsage(active.id, true);
+      var fallbackNet = _selectBestProvider([active.id]);
+      if (fallbackNet) {
+        if (window._toast) window._toast('⚡ ' + (IA_PROVIDERS[active.id]||{name:''}).name.split(' ')[0] + ' timeout → ' + fallbackNet.provider.name.split(' ')[0]);
+        try {
+          var dataFallback = await makeReq(messages, true, fallbackNet);
+          if (!dataFallback.error) {
+            active = fallbackNet;
+            _incUsage(fallbackNet.id, false);
+            // Traiter la réponse fallback comme réponse principale
+            var fallbackText = (dataFallback.content||[]).map(function(b){ return b.type==='text'?b.text:''; }).join('');
+            return fallbackText || '(Pas de réponse)';
+          }
+        } catch(e2) {}
+      }
+      return isTimeout
+        ? '⏱️ Vesta n\'a pas reçu de réponse dans le délai imparti. Réessayez ou vérifiez votre connexion internet.'
+        : '📡 Erreur réseau. Vérifiez votre connexion internet et réessayez.';
+    }
+    return '⚠️ Erreur : ' + e.message;
   }
 }
 
@@ -13695,12 +13721,8 @@ function renderIAConversation(el) {
   }, 0);
   var totalEst = sysTokens + convTokens;
 
-  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
-    + '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;" id="vesta-provider-badge">⚡ Auto</div>'
-    + '<div style="display:flex;gap:6px;align-items:center;">'
-    + '<button onclick="toggleVestaMode()" id="btn-vesta-mode" title="Basculer auto/manuel" style="font-size:9px;font-family:JetBrains Mono,monospace;background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:2px 7px;cursor:pointer;color:var(--muted);">⚡ Auto</button>'
+  html += '<div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:6px;">'
     + '<div id="ia-token-indicator" style="margin-top:0;"></div>'
-    + '</div>'
     + '</div>';
 
   el.innerHTML = html;
