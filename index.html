@@ -12749,6 +12749,8 @@ function getSystemPrompt() {
   return [
     "Tu es Vesta, conseillère patrimoniale IA de Maxime (29a, SNCF Limoges, 3x8, TMI 11%, retraite 2057).",
     "Expert : fiscalite FR, patrimoine, immo, marches, succession. Donnees recues en contexte = reelles.",
+    "STYLE : Réponses courtes et structurées. MAX 3-4 lignes pour questions simples. Bullet points courts si liste. Chiffres précis. Pas de blabla. Va droit au but.",
+    "FORMAT : 1) Réponse directe 2) 1-2 points clés max 3) Action concrète si nécessaire. Jamais plus de 200 mots sauf demande explicite.",
     "",
     "PROFIL : PACS Alexia 22/09/2022. Enfant 04/06/2026. 2e enfant 3-4 ans. Conjointe prof des ecoles.",
     "SNCF : Regulateur COGC, Maitrise Qual.E (Niv.5), 9 ans. Promo cadre 7-10 ans. Pas mobilite geo.",
@@ -13282,7 +13284,7 @@ async function callClaudeIA(userMsg, isFirst) {
   var messages = [];
   // Historique tronque a 6 messages (3 echanges) pour economiser tokens
   if (!isFirst && (window._iaConversation||[]).length > 0) {
-    (window._iaConversation||[]).slice(-6).forEach(function(m) { messages.push(m); });
+    (window._iaConversation||[]).slice(-4).forEach(function(m) { messages.push(m); });
   }
   messages.push({role:'user', content: userMsg});
 
@@ -13409,9 +13411,10 @@ async function callClaudeIA(userMsg, isFirst) {
 // ══════════════════════════════════════════════════════════════
 var _ROTATION_ORDER = [
   // ── Gratuits en priorité ─────────────────────────────────────
-  'groq',               // Llama 3.3 70B — rapide, puissant
-  'gemini',             // Gemini 2.0 Flash — contexte énorme
-  'groq_gemma',         // Gemma 2 9B — 14k req/jour
+  'groq_gemma',         // Gemma 2 9B — 14 400 req/jour ★ PRINCIPAL
+  'groq_mixtral',       // Mixtral — 14 400 req/jour
+  'gemini',             // Gemini — 1 500 req/jour
+  'groq',               // Llama 3.3 70B — 1 000 req/jour (qualité)         // Gemma 2 9B — 14k req/jour
   'groq_mixtral',       // Mixtral — bon en français
   'gemini_lite',        // Flash-Lite — plus rapide
   'openrouter',         // Llama 3.1 8B — backup
@@ -13562,7 +13565,8 @@ try {
         _incUsage(active.id, true);
         var fallback = _selectBestProvider([active.id]);
         if (fallback) {
-          if (window._toast) window._toast('⚡ ' + (IA_PROVIDERS[active.id]||{name:''}).name.split(' ')[0] + ' saturé → bascule sur ' + fallback.provider.name.split(' ')[0]);
+          var _remainGroq = Math.max(0, 14400 - (_getUsage('groq_gemma').count||0));
+          if (window._toast) window._toast('⚡ ' + (IA_PROVIDERS[active.id]||{name:''}).name.split(' ')[0] + ' → ' + fallback.provider.name.split('—')[1]?.split('(')[0]?.trim() || fallback.provider.name.split(' ')[0]);
           _refreshProviderBadge(fallback.id, true);
           data = await makeReq(messages, true, fallback);
           active = fallback;
@@ -14065,10 +14069,12 @@ async function envoyerMessageIA() {
   input.disabled = true;
 
   var NL  = String.fromCharCode(10);
-  var TPM_MAP = { groq:6000, openrouter:4000, gemini:8000, anthropic:16000, groq_gemma:15000, groq_mixtral:5000, gemini_lite:8000, openrouter_mistral:8000, openrouter_deepseek:8000 };
-  var ctxBudget = (TPM_MAP[active.id] || 6000) - 1500;
-  var ctx = window.getContexteAdapte ? window.getContexteAdapte(ctxBudget) : (window.getPatrimoineContext ? window.getPatrimoineContext() : '');
-  var fullMsg = msg + NL + NL + '[Donnees actuelles]' + NL + ctx;
+  // Détecter si la question nécessite les données patrimoniales
+  var _needsCtx = /pea|av\b|peg|t2|limoges|loyer|credit|patrimoine|retraite|fiscalit|lmnp|immo|impot|taxe|prime|abond|versement|investiss|epargne|argent|budget|taux|rende|diversif|allocation|bilan|cashflow/i.test(msg);
+  var TPM_MAP = { groq:6000, openrouter:4000, gemini:8000, anthropic:16000, groq_gemma:8000, groq_mixtral:5000, gemini_lite:8000, openrouter_mistral:8000, openrouter_deepseek:8000 };
+  var ctxBudget = _needsCtx ? Math.min((TPM_MAP[active.id] || 6000) - 1500, 1500) : 0;
+  var ctx = ctxBudget > 0 && window.getContexteAdapte ? window.getContexteAdapte(ctxBudget) : '';
+  var fullMsg = ctx ? (msg + NL + NL + '[Données patrimoine]' + NL + ctx) : msg;
 
   if (window.detecterEtChangerAgent) window.detecterEtChangerAgent(msg);
   window._iaConversation.push({role:'user', content: msg});
