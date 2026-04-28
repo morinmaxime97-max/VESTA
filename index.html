@@ -13686,7 +13686,11 @@ async function lancerAnalyseIA() {
   if (!el) return;
 
   el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:40px;color:var(--muted);">'
-    + '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;animation:spin 2s linear infinite;">P</div>'
+    + '<div style="width:56px;height:56px;border-radius:50%;overflow:hidden;border:2.5px solid var(--gold)66;animation:vestaPulse 1.5s ease-in-out infinite;flex-shrink:0;">'
+    + (window.VESTA_AVATAR_IMG
+        ? '<div style="width:100%;height:100%;background-image:url(\'' + window.VESTA_AVATAR_IMG + '\');background-size:cover;background-position:top center;"></div>'
+        : '<div style="width:100%;height:100%;background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:26px;">🔥</div>')
+    + '</div>'
     + '<div style="font-size:13px;">Vesta analyse votre patrimoine...</div></div>';
   if (btn) btn.disabled = true;
 
@@ -15981,7 +15985,12 @@ function afficherBulleApprentissage(text) {
   var b = document.createElement('div');
   b.id = 'learn-bubble';
   b.style.cssText = 'position:fixed;bottom:20px;right:20px;max-width:340px;background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;padding:14px 18px;border-radius:14px;box-shadow:0 8px 32px #00000060;z-index:9998;font-size:12px;line-height:1.6;animation:slideIn .3s;';
-  b.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:24px;height:24px;border-radius:50%;background:#fff;color:#5b8dee;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">P</div><strong>Vesta vous explique</strong><button onclick="document.getElementById(\'learn-bubble\').remove()" style="margin-left:auto;background:none;border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button></div>'
+  b.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+    + '<div style="width:24px;height:24px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1px solid rgba(255,255,255,.4);">'
+    + (window.VESTA_AVATAR_IMG
+        ? '<div style="width:100%;height:100%;background-image:url(\'' + window.VESTA_AVATAR_IMG + '\');background-size:cover;background-position:top center;"></div>'
+        : '<div style="width:100%;height:100%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:12px;">🔥</div>')
+    + '</div><strong>Vesta vous explique</strong><button onclick="document.getElementById(\'learn-bubble\').remove()" style="margin-left:auto;background:none;border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button></div>'
     + '<div>' + text + '</div>';
   document.body.appendChild(b);
   setTimeout(function(){ var x = document.getElementById('learn-bubble'); if (x) x.style.opacity = '0.7'; }, 8000);
@@ -18589,21 +18598,75 @@ function exportPdfRapport() {
   html += '</ul>';
 
   html += '<div class="foot">Document généré par Vesta · ' + date + '<br>Pour usage personnel uniquement. Ne constitue pas un conseil financier ou fiscal.</div>';
-  html += '<script>setTimeout(function(){window.print();}, 800);<' + '/script>';
   html += '</body></html>';
 
-  // Ouvrir dans nouvelle fenêtre
-  var w = window.open('', '_blank');
-  if (!w) {
-    if (window._toast) window._toast('⚠️ Bloqueur popup actif. Autorisez les popups.');
-    return;
-  }
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-  if (window._toast) window._toast('📄 Rapport généré. Imprimez en PDF depuis la fenêtre.');
+  // ── Proposer le choix : Imprimer ou Télécharger PDF ──────────
+  var modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML = '<div style="background:var(--bg);border-radius:14px;padding:28px 32px;max-width:380px;width:90%;border:1px solid var(--bd);text-align:center;">'
+    + '<div style="font-size:40px;margin-bottom:12px;">📄</div>'
+    + '<h2 style="font-family:Playfair Display,serif;font-size:17px;margin-bottom:6px;">Bilan patrimonial prêt</h2>'
+    + '<p style="font-size:12px;color:var(--muted);margin-bottom:20px;">Choisissez comment sauvegarder votre bilan</p>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;">'
+    + '<button id="btn-export-pdf-dl" style="padding:12px 20px;background:var(--gold);color:#1a1a2e;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">⬇ Télécharger en PDF</button>'
+    + '<button id="btn-export-print" style="padding:12px 20px;background:var(--s2);color:var(--text);border:1px solid var(--bd);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">🖨️ Ouvrir pour imprimer</button>'
+    + '<button id="btn-export-cancel" style="padding:8px;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;">Annuler</button>'
+    + '</div></div>';
+  document.body.appendChild(modal);
+
+  // ── Télécharger PDF via Blob ──────────────────────────────────
+  document.getElementById('btn-export-pdf-dl').onclick = function() {
+    document.body.removeChild(modal);
+    // Méthode 1 : jsPDF si chargé
+    if (window.jspdf || window.jsPDF) {
+      _exportViaJsPDF(html);
+      return;
+    }
+    // Méthode 2 : iframe caché + print-to-PDF (Ctrl+P → Enregistrer en PDF)
+    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url;
+    a.download = 'Vesta-Bilan-' + prenom + '-' + new Date().toISOString().slice(0,10) + '.html';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 2000);
+    if (window._toast) window._toast('📥 Bilan téléchargé. Ouvrez-le dans Chrome → Imprimer → Enregistrer en PDF.');
+  };
+
+  // ── Ouvrir pour imprimer ──────────────────────────────────────
+  document.getElementById('btn-export-print').onclick = function() {
+    document.body.removeChild(modal);
+    var printHtml = html.replace('</body></html>', '<script>setTimeout(function(){window.print();},600);<\/script></body></html>');
+    var w = window.open('', '_blank');
+    if (!w) {
+      if (window._toast) window._toast('⚠️ Bloqueur popup actif. Autorisez les popups pour ce site.');
+      return;
+    }
+    w.document.open();
+    w.document.write(printHtml);
+    w.document.close();
+    if (window._toast) window._toast('🖨️ Dialogue d\'impression ouvert. Choisissez "Enregistrer en PDF".');
+  };
+
+  document.getElementById('btn-export-cancel').onclick = function() {
+    document.body.removeChild(modal);
+  };
+
+  modal.addEventListener('click', function(e){ if(e.target===modal) document.body.removeChild(modal); });
 }
 window.exportPdfRapport = exportPdfRapport;
+
+// jsPDF fallback (si disponible)
+function _exportViaJsPDF(html) {
+  try {
+    var w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
+    setTimeout(function(){ w.print(); }, 600);
+  } catch(e) {}
+}
 
 // ══════════════════════════════════════════════════════════════
 // 14. HEATMAP CALENDRIER MENSUEL (mouvements financiers)
