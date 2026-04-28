@@ -12995,7 +12995,7 @@ function ouvrirModalIA() {
   var ov = document.getElementById('ov-ia');
   if (!ov) return;
 
-  // Alimenter l'avatar déesse dans le header du modal
+  // Avatar déesse dans le header
   var avatarEl = document.getElementById('vesta-modal-avatar');
   if (avatarEl && window.VESTA_AVATAR_IMG) {
     avatarEl.style.backgroundImage = 'url("' + window.VESTA_AVATAR_IMG + '")';
@@ -13007,43 +13007,164 @@ function ouvrirModalIA() {
 
   ov.classList.add('on');
 
-  // Vérifier si une clé API est disponible
-  var active = window.getActiveProvider ? window.getActiveProvider() : null;
-  var hasKey = active && active.key;
+  // ── Vérifier quelles familles de clés sont disponibles ────────
+  var families = ['groq', 'gemini', 'openrouter', 'anthropic'];
+  var keysFound = {};
+  families.forEach(function(fam) {
+    keysFound[fam] = !!(localStorage.getItem('pierre-api-key-' + fam) || localStorage.getItem('pierre-api-key'));
+  });
+  var hasFreeKey  = keysFound.groq || keysFound.gemini || keysFound.openrouter;
+  var hasPaidKey  = keysFound.anthropic;
+  var hasAnyKey   = hasFreeKey || hasPaidKey;
 
   var el = document.getElementById('ia-card');
-  if (!hasKey) {
-    // Pas de clé : afficher un message d'accueil avec bouton config
-    if (el) el.innerHTML = '<div style="text-align:center;padding:30px 20px;">'
-      + '<div style="font-size:36px;margin-bottom:12px;">🔑</div>'
-      + '<div style="font-family:Playfair Display,serif;font-size:16px;color:var(--gold);margin-bottom:8px;">Bienvenue sur Vesta IA</div>'
-      + '<div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;">'
-      + 'Pour activer Vesta, configurez au moins une clé API gratuite.<br>'
-      + '<b>Groq</b> est recommandé — gratuit, rapide, sans carte bancaire.<br>'
-      + 'La clé est stockée uniquement dans votre navigateur.</div>'
-      + '<button onclick="demanderCleAPI()" class="btn" style="margin-bottom:10px;width:100%;">⚙️ Configurer une clé API gratuite</button>'
-      + '<div style="font-size:10px;color:var(--muted);">Vous pourrez ensuite dialoguer toute la journée gratuitement</div>'
+  if (!el) return;
+
+  if (!hasAnyKey) {
+    // ── Aucune clé → Wizard de première configuration ────────────
+    el.innerHTML = '<div style="padding:10px 0;">'
+      + '<div style="text-align:center;margin-bottom:20px;">'
+      + '<div style="font-size:40px;margin-bottom:10px;">🔑</div>'
+      + '<div style="font-family:Playfair Display,serif;font-size:17px;color:var(--gold);font-weight:700;margin-bottom:6px;">Activez Vesta IA</div>'
+      + '<div style="font-size:12px;color:var(--muted);line-height:1.7;">Pour dialoguer gratuitement toute la journée,<br>configurez <b>1 à 3 clés API gratuites</b> ci-dessous.</div>'
+      + '</div>'
+      // Les 3 providers gratuits recommandés
+      + _renderKeySetupCards()
+      + '<div style="margin-top:16px;padding:10px 14px;background:var(--s2);border-radius:8px;font-size:10px;color:var(--muted);line-height:1.6;">'
+      + '🔒 Vos clés sont stockées <b>uniquement dans votre navigateur</b>, jamais envoyées à nos serveurs.<br>'
+      + '⚡ En mode Auto, Vesta choisit et alterne entre vos IAs gratuites automatiquement.'
+      + '</div>'
       + '</div>';
     return;
   }
 
-  // Clé disponible : rendre la conversation
-  if (el) {
-    setTimeout(function() {
-      if (window.renderIAConversation) renderIAConversation(el);
-      if (window.refreshTokenBar) refreshTokenBar();
-      if (window._refreshProviderBadge) {
-        window._refreshProviderBadge(active.id, active.auto);
-      }
-    }, 50);
+  if (!hasFreeKey && hasPaidKey) {
+    // Seulement Claude (payant) — informer
+    if (window._toast) window._toast('💳 Seul Claude est configuré — mode payant actif');
   }
 
+  // ── Clé(s) disponible(s) → Ouvrir la conversation ────────────
+  var active = window.getActiveProvider ? window.getActiveProvider() : null;
+  setTimeout(function() {
+    if (window.renderIAConversation) renderIAConversation(el);
+    if (window.refreshTokenBar) refreshTokenBar();
+    if (window._refreshProviderBadge && active) window._refreshProviderBadge(active.id, active.auto);
+  }, 50);
   setTimeout(function() {
     var inp = document.getElementById('ia-user-input');
     if (inp) inp.focus();
   }, 200);
 }
 window.ouvrirModalIA = ouvrirModalIA;
+
+// Cartes de configuration rapide des 3 providers gratuits
+function _renderKeySetupCards() {
+  var providers = [
+    {
+      fam: 'groq', name: 'Groq', emoji: '⚡',
+      desc: 'Recommandé · Llama 3.3 70B · 3 modèles · Très rapide',
+      limit: '~1 000 req/jour gratuites',
+      url: 'https://console.groq.com/keys',
+      urlLabel: 'console.groq.com → API Keys',
+      color: '#f97316'
+    },
+    {
+      fam: 'gemini', name: 'Gemini', emoji: '🌟',
+      desc: 'Google · 2 modèles · Contexte énorme (1M tokens)',
+      limit: '1 500 req/jour gratuites',
+      url: 'https://aistudio.google.com/app/apikey',
+      urlLabel: 'aistudio.google.com → Get API Key',
+      color: '#4285f4'
+    },
+    {
+      fam: 'openrouter', name: 'OpenRouter', emoji: '🔀',
+      desc: 'Llama · Mistral · DeepSeek · 3 modèles gratuits',
+      limit: '200 req/jour gratuites',
+      url: 'https://openrouter.ai/settings/keys',
+      urlLabel: 'openrouter.ai → Settings → Keys',
+      color: '#8b5cf6'
+    },
+  ];
+
+  return providers.map(function(p) {
+    var saved = localStorage.getItem('pierre-api-key-' + p.fam) || '';
+    var hasSaved = !!saved;
+    var badge = hasSaved
+      ? '<span style="color:var(--green);font-size:10px;">✅ Clé enregistrée ···' + saved.slice(-4) + '</span>'
+      : '<span style="color:var(--muted);font-size:10px;">○ Non configuré</span>';
+
+    return '<div id="key-card-' + p.fam + '" style="'
+      + 'border:1px solid ' + (hasSaved ? 'var(--green)55' : 'var(--bd)') + ';'
+      + 'border-radius:10px;padding:12px 14px;margin-bottom:10px;'
+      + 'background:' + (hasSaved ? 'var(--green)08' : 'var(--s2)') + ';">'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+      + '<span style="font-size:22px;">' + p.emoji + '</span>'
+      + '<div style="flex:1;">'
+      + '<div style="font-weight:700;font-size:13px;">' + p.name + '</div>'
+      + '<div style="font-size:10px;color:var(--muted);">' + p.desc + '</div>'
+      + '</div>'
+      + badge
+      + '</div>'
+      + '<div style="font-size:10px;color:var(--muted);margin-bottom:8px;">📊 ' + p.limit
+      + ' · <a href="' + p.url + '" target="_blank" style="color:var(--blue);">' + p.urlLabel + '</a></div>'
+      + '<div style="display:flex;gap:6px;">'
+      + '<input type="password" id="key-input-' + p.fam + '" placeholder="Collez votre clé ici..." '
+      + 'style="flex:1;font-family:JetBrains Mono,monospace;font-size:11px;padding:6px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--text);" '
+      + 'autocomplete="off">'
+      + '<button onclick="_saveQuickKey(\'' + p.fam + '\')" style="'
+      + 'background:' + p.color + ';color:#fff;border:none;border-radius:6px;padding:6px 12px;'
+      + 'font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">Enregistrer</button>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+window._renderKeySetupCards = _renderKeySetupCards;
+
+// Enregistrer une clé depuis le wizard rapide
+function _saveQuickKey(fam) {
+  var inp = document.getElementById('key-input-' + fam);
+  if (!inp) return;
+  var key = inp.value.trim();
+  if (!key) { if (window._toast) window._toast('⚠️ Collez votre clé dans le champ'); return; }
+
+  // Déterminer les providers de cette famille
+  var famProviders = { groq:['groq','groq_gemma','groq_mixtral'], gemini:['gemini','gemini_lite'], openrouter:['openrouter','openrouter_mistral','openrouter_deepseek'] };
+  localStorage.setItem('pierre-api-key-' + fam, key);
+  // Sauvegarder pour chaque provider de la famille
+  (famProviders[fam] || [fam]).forEach(function(pid) {
+    localStorage.setItem('pierre-api-key-' + pid, key);
+  });
+  // Sélectionner ce provider en premier
+  if (!localStorage.getItem('pierre-provider')) localStorage.setItem('pierre-provider', fam);
+
+  if (window._toast) window._toast('✅ Clé ' + fam + ' enregistrée — Vesta peut maintenant utiliser ' + (famProviders[fam]||[fam]).length + ' modèle(s) gratuits');
+
+  // Rafraîchir le wizard
+  var el = document.getElementById('ia-card');
+  if (el) {
+    // Vérifier si toutes les clés gratuites sont configurées → ouvrir conversation
+    var hasFree = ['groq','gemini','openrouter'].some(function(f){ return !!localStorage.getItem('pierre-api-key-' + f); });
+    if (hasFree) {
+      setTimeout(function() {
+        if (window.renderIAConversation) renderIAConversation(el);
+        if (window.refreshTokenBar) refreshTokenBar();
+        var active = window.getActiveProvider ? window.getActiveProvider() : null;
+        if (window._refreshProviderBadge && active) window._refreshProviderBadge(active.id, !!active.auto);
+        setTimeout(function(){ var i=document.getElementById('ia-user-input'); if(i) i.focus(); }, 100);
+      }, 300);
+    } else {
+      // Mettre à jour juste la carte
+      var card = document.getElementById('key-card-' + fam);
+      if (card) {
+        card.style.border = '1px solid var(--green)55';
+        card.style.background = 'var(--green)08';
+        var badge = card.querySelector('span:last-child');
+        if (badge) { badge.style.color = 'var(--green)'; badge.textContent = '✅ Clé enregistrée ···' + key.slice(-4); }
+      }
+    }
+  }
+}
+window._saveQuickKey = _saveQuickKey;
 
 
 function getActiveProvider() {
@@ -13197,15 +13318,17 @@ async function callClaudeIA(userMsg, isFirst) {
 // Ordre de priorité : qualité → vitesse → disponibilité
 // ══════════════════════════════════════════════════════════════
 var _ROTATION_ORDER = [
-  'anthropic',          // Meilleure qualité (payant — si clé dispo)
-  'groq',               // Llama 3.3 70B rapide et puissant
-  'gemini',             // Gemini 2.0 Flash — énorme contexte
+  // ── Gratuits en priorité ─────────────────────────────────────
+  'groq',               // Llama 3.3 70B — rapide, puissant
+  'gemini',             // Gemini 2.0 Flash — contexte énorme
   'groq_gemma',         // Gemma 2 9B — 14k req/jour
   'groq_mixtral',       // Mixtral — bon en français
   'gemini_lite',        // Flash-Lite — plus rapide
-  'openrouter',         // Llama 3.1 8B backup
+  'openrouter',         // Llama 3.1 8B — backup
   'openrouter_mistral', // Mistral 7B — français
-  'openrouter_deepseek' // DeepSeek R1 — raisonnement
+  'openrouter_deepseek',// DeepSeek R1 — raisonnement
+  // ── Payant en dernier (uniquement si clé dispo) ──────────────
+  'anthropic',          // Claude — meilleure qualité (payant)
 ];
 
 // Compteurs de requêtes en localStorage (reset toutes les 24h)
@@ -13393,19 +13516,20 @@ try {
 
       // For OpenAI format, build tool result messages differently
       if (active.provider.format === 'openai') {
-        // Add assistant message with tool_calls + tool results
-        var oaAssistMsg = { role:'assistant', content: data.content.find(function(b){return b.type==='text';})?.text || null };
-        var toolCallBlocks = data.content.filter(function(b){return b.type==='tool_use';});
+        var safeContent = data.content || [];
+        var textBlock = safeContent.find(function(b){return b.type==='text';});
+        var oaAssistMsg = { role:'assistant', content: textBlock ? textBlock.text : null };
+        var toolCallBlocks = safeContent.filter(function(b){return b.type==='tool_use';});
         oaAssistMsg.tool_calls = toolCallBlocks.map(function(b) {
-          return { id:b.id, type:'function', function:{name:b.name, arguments:JSON.stringify(b.input)} };
+          return { id:b.id, type:'function', function:{name:b.name, arguments:JSON.stringify(b.input||{})} };
         });
         messages = messages.concat([oaAssistMsg]);
         toolResults.forEach(function(tr) {
-          messages.push({ role:'tool', tool_call_id: tr.tool_use_id, content: tr.content });
+          messages.push({ role:'tool', tool_call_id: tr.tool_use_id, content: String(tr.content||'') });
         });
       } else {
         messages = messages.concat([
-          {role:'assistant', content: data.content},
+          {role:'assistant', content: data.content || []},
           {role:'user', content: toolResults}
         ]);
       }
