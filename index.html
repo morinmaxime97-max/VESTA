@@ -712,14 +712,14 @@ body {
   <!-- Vesta — Conseil du jour -->
   <div class="card mb" id="card-ia-conseil" style="border-left:3px solid #9b72cf;">
     <div class="chd" style="justify-content:space-between;">
-      <span>&#129302; Pierre — Conseil patrimonial</span>
+      <span>&#129302; Vesta — Conseil patrimonial</span>
       <div style="display:flex;gap:6px;">
         <button class="btn sm" id="btn-ia-quick" style="background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;font-size:11px;" onclick="lancerConseilRapide()">Actualiser</button>
         <button class="btn gh sm" style="font-size:11px;" onclick="document.getElementById('ov-ia').classList.add('on');lancerAnalyseIA()">Chat complet</button>
       </div>
     </div>
     <div id="ia-conseil-content" style="font-size:12px;color:var(--muted);line-height:1.6;min-height:60px;">
-      Cliquez "Actualiser" pour obtenir un conseil personnalise de Pierre.
+      Cliquez "Actualiser" pour obtenir un conseil personnalisé de Vesta.
     </div>
   </div>
 </div>
@@ -1528,7 +1528,7 @@ body {
     </button>
     <div id="acc-lecture-pdf-body" style="display:none;padding:14px 16px 16px;background:var(--bg);">
       <div style="font-size:12px;line-height:1.6;color:var(--muted);margin-bottom:14px;">
-        Pierre analyse votre document et extrait automatiquement les données importantes. Types supportés :
+        Vesta analyse votre document et extrait automatiquement les données importantes. Types supportés :
         <strong style="color:var(--text);">avis d'imposition, taxe foncière, relevé bancaire, relevé PEA/AV, fiche de paie.</strong>
       </div>
       <div class="fg"><label>Type de document</label>
@@ -1539,7 +1539,7 @@ body {
           <option value="releve_pea">Relevé PEA / CTO</option>
           <option value="releve_av">Relevé Assurance Vie</option>
           <option value="fiche_paie">Fiche de paie</option>
-          <option value="autre">Autre (Pierre détecte)</option>
+          <option value="autre">Autre (Vesta détecte)</option>
         </select>
       </div>
       <div class="fg"><label>Fichier PDF</label>
@@ -1548,7 +1548,7 @@ body {
       <div id="pdf-status-outils" style="font-size:10px;font-family:'JetBrains Mono',monospace;min-height:18px;margin-bottom:8px;"></div>
       <div id="pdf-result-outils" style="margin-bottom:10px;"></div>
       <div class="brow">
-        <button class="btn" id="pdf-analyze-outils">🔍 Analyser avec Pierre</button>
+        <button class="btn" id="pdf-analyze-outils">🔍 Analyser avec Vesta</button>
       </div>
     </div>
   </div>
@@ -2188,7 +2188,7 @@ body {
       </p>
     </div>
     <div class="brow">
-      <button class="btn sm" id="btn-search-opp" style="background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;">🔍 Rechercher avec Pierre</button>
+      <button class="btn sm" id="btn-search-opp" style="background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;">🔍 Rechercher avec Vesta</button>
     </div>
   </div>
 
@@ -2265,7 +2265,7 @@ body {
       </div>
     </div>
     <div style="margin-top:14px;padding:10px 14px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--muted);">
-      💡 Pierre cherchera des opportunités correspondant à votre profil (PEA-friendly, situation fiscale, horizon retraite 2057). Score multi-critères : croissance · valuation · qualité · momentum.
+      💡 Vesta cherchera des opportunités correspondant à votre profil (PEA-friendly, situation fiscale, horizon retraite 2057). Score multi-critères : croissance · valuation · qualité · momentum.
     </div>
   </div>
 
@@ -2341,7 +2341,7 @@ body {
   <!-- Résumé marché IA -->
 <div class="card mb" id="card-marche-resume" style="border-left:3px solid var(--blue);">
   <div class="chd" style="justify-content:space-between;">
-    <span>&#128202; Résumé marché & préconisations <span class="chd-sub">Généré par Pierre · Corrélé à vos actifs</span></span>
+    <span>&#128202; Résumé marché & préconisations <span class="chd-sub">Généré par Vesta · Corrélé à vos actifs</span></span>
     <button class="btn sm" id="btn-marche-refresh" onclick="genererResumeMarche()" style="font-size:11px;">&#8635; Actualiser</button>
   </div>
   <div id="marche-resume-content" style="font-size:12px;color:var(--muted);line-height:1.7;min-height:80px;">
@@ -3786,7 +3786,7 @@ function initOutils() {
         if (texte.length > 12000) texte = texte.slice(0, 12000) + '\n[... tronqué]';
         if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold);">⏳ Vesta analyse...</span>';
         if (!window.callClaudeIA) {
-          if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Configurez votre clé API Pierre</span>';
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Configurez votre clé API Vesta</span>';
           return;
         }
         var typeDoc = typeEl ? typeEl.value : 'autre';
@@ -10235,7 +10235,7 @@ var _actuFeedCache={};
 var _actuFeedLoading={};
 var _actuGridBuilt=false;
 
-// ── Pierre génère les actus quand RSS échoue ──────────────────
+// ── Vesta génère les actus quand RSS échoue ──────────────────
 async function genererActuParPierre(feed) {
   var apiKey = localStorage.getItem('pierre-api-key') || '';
   if (!apiKey) return null;
@@ -10274,7 +10274,7 @@ async function genererActuParPierre(feed) {
     if (!match) return null;
     var items = JSON.parse(match[0]);
     return Array.isArray(items) ? items.map(function(i) {
-      return { title:i.title||'', source:i.source||'Pierre IA', ageLabel:i.ageLabel||'Récent', link:'#', ageDays:i.ageDays||1, dateObj:new Date() };
+      return { title:i.title||'', source:i.source||'Vesta IA', ageLabel:i.ageLabel||'Récent', link:'#', ageDays:i.ageDays||1, dateObj:new Date() };
     }) : null;
   } catch(e) { return null; }
 }
@@ -10344,8 +10344,8 @@ async function renderFeedCard(feedId,forceRefresh){
     _actuFeedCache[feedId]={items:items,ts:Date.now()};
     renderFeedItems(body,items,feed,lbl);
   }catch(e){
-    // RSS failed — try Pierre as fallback
-    body.innerHTML='<div style="color:var(--muted);font-size:11px;padding:8px 0;">Génération par Pierre...</div>';
+    // RSS failed — try Vesta as fallback
+    body.innerHTML='<div style="color:var(--muted);font-size:11px;padding:8px 0;">Génération par Vesta...</div>';
     var pierreOk = false;
     try {
       var pierreItems = await genererActuParPierre(feed);
@@ -10888,7 +10888,7 @@ async function genererResumeMarche() {
   var el = document.getElementById('marche-resume-content');
   var btn = document.getElementById('btn-marche-refresh');
   if (!el) return;
-  el.innerHTML = '<span style="color:var(--muted);">&#129302; Pierre analyse les marchés...</span>';
+  el.innerHTML = '<span style="color:var(--muted);">&#129302; Vesta analyse les marchés...</span>';
   if (btn) btn.disabled = true;
 
   var S = window._pState ? window._pState() : null;
@@ -10932,7 +10932,7 @@ async function genererResumeMarche() {
 
   el.innerHTML = '<div style="line-height:1.8;">' + html + '</div>'
     + '<div style="font-size:9px;color:var(--muted);margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);">'
-    + 'Pierre &mdash; Analyse au ' + today.toLocaleDateString('fr-FR') + ' &mdash; Basé sur les tendances connues, non sur des données temps réel'
+    + 'Vesta &mdash; Analyse au ' + today.toLocaleDateString('fr-FR') + ' &mdash; Basé sur les tendances connues, non sur des données temps réel'
     + '</div>';
 
   if (btn) btn.disabled = false;
@@ -11459,7 +11459,7 @@ window.refreshTokenBar = refreshTokenBar;
         if (window.closePwaMore) window.closePwaMore();
         return;
       }
-      // P → ouvrir Pierre
+      // P → ouvrir Vesta
       if (e.key === 'p' || e.key === 'P') {
         var iaOv = document.getElementById('ov-ia');
         if (iaOv && !iaOv.classList.contains('on')) {
@@ -11495,7 +11495,7 @@ window.refreshTokenBar = refreshTokenBar;
       ['Alt+R', 'Retraite'],['Alt+S', 'Stratégie'],['Alt+A', 'Analyse'],
       ['Alt+H', 'Historique'],['Alt+P', 'Opportunités'],
       ['Ctrl+S', 'Snapshot rapide'],['Ctrl+E', 'Exporter JSON'],
-      ['P', 'Ouvrir Pierre'],['Échap', 'Fermer modal'],['?', 'Cette aide'],
+      ['P', 'Ouvrir Vesta'],['Échap', 'Fermer modal'],['?', 'Cette aide'],
     ];
     var rows = shortcuts.map(function(s) {
       return '<tr><td style="padding:4px 10px 4px 0;font-family:JetBrains Mono,monospace;font-size:11px;color:var(--gold);">' + s[0] + '</td>'
@@ -11814,10 +11814,10 @@ async function sauvegarderCleAPI() {
   localStorage.setItem('pierre-api-key-' + provId, key); // clé spécifique provider
   localStorage.setItem('pierre-api-key', key); // fallback
   localStorage.setItem('pierre-provider', provId);
-  if (st) { st.textContent = 'Enregistré ! Pierre utilise ' + (IA_PROVIDERS[provId]||{name:'IA'}).name; st.style.color='var(--green)'; }
+  if (st) { st.textContent = 'Enregistré ! Vesta utilise ' + (IA_PROVIDERS[provId]||{name:'IA'}).name; st.style.color='var(--green)'; }
   setTimeout(function(){
     var ov=document.getElementById('ov-api-key');if(ov)ov.classList.remove('on');
-    if(window._toast)window._toast('Pierre actif via ' + (IA_PROVIDERS[provId]||{name:'IA'}).name);
+    if(window._toast)window._toast('Vesta active via ' + (IA_PROVIDERS[provId]||{name:'IA'}).name);
   }, 1200);
 }
 window.demanderCleAPI = demanderCleAPI;
@@ -11919,7 +11919,7 @@ window._sauvegarderSessionResume = function() {
   // Garder les 3 derniers échanges comme résumé
   var derniers = conv.slice(-6).map(function(m) {
     var txt = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
-    return (m.role === 'user' ? 'Maxime: ' : 'Pierre: ') + txt.slice(0, 200);
+    return (m.role === 'user' ? 'Maxime: ' : 'Vesta: ') + txt.slice(0, 200);
   }).join('\n');
   var resume = '[Dernier échange ' + new Date().toLocaleDateString('fr-FR') + ']\n' + derniers;
   try { localStorage.setItem('pierre-session-resume', resume); } catch(e) {}
@@ -11950,7 +11950,7 @@ window._enregistrerComportement = function(sujet, calcul) {
   try { localStorage.setItem('pierre-comportements', JSON.stringify(c)); } catch(e) {}
 };
 
-// Générer le contexte mémoire comportementale pour Pierre
+// Générer le contexte mémoire comportementale pour Vesta
 window._getComportementContext = function() {
   var c = window._comportements;
   var NL = String.fromCharCode(10);
@@ -12422,7 +12422,7 @@ function executerOutil(toolName, inp) {
   }
 
   // ── lien_outil_vesta ─────────────────────────────────────────
-  // Pierre peut renvoyer vers un outil Vesta en plus de sa réponse
+  // Vesta peut renvoyer vers un outil Vesta en plus de sa réponse
   if (toolName === "lien_outil_vesta") {
     var OUTILS_MAP = {
       'peg':         { page: 'enveloppes', label: 'Optimisateur PEG', emoji: '🔄' },
@@ -12484,7 +12484,7 @@ function executerOutil(toolName, inp) {
       var pos = {
         id: uid(), name: inp.nom, envelope: inp.enveloppe,
         price: inp.prix_achat, priceAvg: inp.prix_achat, qty: inp.quantite,
-        subtype: inp.type_actif || 'ETF', note: 'Ajouté par Pierre IA'
+        subtype: inp.type_actif || 'ETF', note: 'Ajouté par Vesta IA'
       };
       if (!S.positions) S.positions = [];
       S.positions.push(pos);
@@ -12530,7 +12530,7 @@ function executerOutil(toolName, inp) {
       if (!S) return "Erreur";
       if (!S.iaActions) S.iaActions = [];
       var uid = function(){ return Math.random().toString(36).slice(2,10); };
-      S.iaActions.push({ id:'ia-'+uid(), title:inp.titre, desc:inp.description||'', urgence:inp.urgence, echeance:inp.echeance||'', env:inp.env||'Global', yr:new Date().getFullYear(), source:'Pierre IA' });
+      S.iaActions.push({ id:'ia-'+uid(), title:inp.titre, desc:inp.description||'', urgence:inp.urgence, echeance:inp.echeance||'', env:inp.env||'Global', yr:new Date().getFullYear(), source:'Vesta IA' });
       save();
       return "Action ajoutée dans Stratégie : " + inp.titre + " [" + inp.urgence + "]";
     },
@@ -12593,18 +12593,18 @@ function confirmerAction(oui) {
   var result = oui ? pa.fn() : "Modification annulée.";
   window._iaConversation.push({role:'user', content: oui ? '[Confirmé]' : '[Annulé]'});
   window._iaConversation.push({role:'assistant', content: result + (oui ? "\n\nFait ! Votre site est mis à jour en temps réel." : "\nQue souhaitez-vous faire à la place ?")});
-  if (oui && window._toast) window._toast('Pierre : modification effectuée ✓');
+  if (oui && window._toast) window._toast('Vesta : modification effectuée ✓');
   renderIAConversation(el);
 }
 window.confirmerAction = confirmerAction;
 
 // ════════════════════════════════════════════════════════════════
-// SYSTÈME PROMPT — Pierre v3
+// SYSTÈME PROMPT — Vesta v1
 // ════════════════════════════════════════════════════════════════
 function getSystemPrompt() {
   var NL = String.fromCharCode(10);
   return [
-    "Tu es Pierre, conseiller patrimonial IA de Maxime (29a, SNCF Limoges, 3x8, TMI 11%, retraite 2057).",
+    "Tu es Vesta, conseillère patrimoniale IA de Maxime (29a, SNCF Limoges, 3x8, TMI 11%, retraite 2057).",
     "Expert : fiscalite FR, patrimoine, immo, marches, succession. Donnees recues en contexte = reelles.",
     "",
     "PROFIL : PACS Alexia 22/09/2022. Enfant 04/06/2026. 2e enfant 3-4 ans. Conjointe prof des ecoles.",
@@ -12726,7 +12726,7 @@ function getPatrimoineContext() {
     "Salaire : ~30 000 EUR/an | Foyer : 2,5 parts | T2 LMNP Limoges 87000 loyer ~520 EUR/mois | RP Rilhac-Rancon 87570 | Zone 3 IR"
   ];
 
-  // ── AGENDA DU MOIS (priorité haute pour Pierre) ───────────────
+  // ── AGENDA DU MOIS (priorité haute pour Vesta) ───────────────
   if (agenda.length > 0) {
     lines.push("");
     lines.push("=== AGENDA " + nomMois.toUpperCase() + " " + annee + " — ACTIONS À FAIRE ===");
@@ -12842,7 +12842,7 @@ async function callClaudeIA(userMsg, isFirst) {
   var active = getActiveProvider();
   if (!active.key) {
     demanderCleAPI();
-    return "Cle API requise. Configurez Pierre via le bouton IA.";
+    return "Cle API requise. Configurez Vesta via le bouton IA.";
   }
 
   // Detection question simple -> contexte minimal
@@ -13106,42 +13106,98 @@ function renderIAConversation(el) {
   }
 
   // ── Détection liens vers outils Vesta ────────────────────────
-  // ── Mode mini Vesta ───────────────────────────────────────────
-  // Réduit le modal IA en panneau latéral et navigue vers l'onglet
+  // ── Mode mini Vesta — barre du bas ──────────────────────────
   window._vestiaMiniMode = false;
 
   function activerMiniMode(page, onclickExtra) {
-    var ov = document.getElementById('ov-ia');
-    if (!ov) return;
-    // Passer en mini-panneau latéral
-    ov.style.cssText = 'position:fixed;right:0;top:0;bottom:0;width:340px;background:var(--bg);border-left:2px solid var(--gold)44;z-index:200;display:flex;align-items:stretch;padding:0;overflow:hidden;border-radius:0;';
-    var modal = ov.querySelector('.modal');
-    if (modal) modal.style.cssText = 'width:100%;max-width:100%;height:100%;border-radius:0;overflow-y:auto;padding:12px;margin:0;border:none;';
-    window._vestiaMiniMode = true;
-    // Naviguer vers la page
+    // Naviguer vers la page demandée
     if (page && window.showPage) window.showPage(page);
     if (onclickExtra) { try { eval(onclickExtra); } catch(e) {} }
-    // Bouton pour revenir en plein écran
-    var restoreBtn = document.getElementById('vesta-restore-btn');
-    if (!restoreBtn) {
-      restoreBtn = document.createElement('button');
-      restoreBtn.id = 'vesta-restore-btn';
-      restoreBtn.innerHTML = '⤢';
-      restoreBtn.title = 'Agrandir Vesta';
-      restoreBtn.style.cssText = 'position:fixed;right:344px;top:8px;z-index:201;background:var(--bg);border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:4px 8px;font-size:14px;cursor:pointer;';
-      restoreBtn.onclick = function() {
-        if (ov) {
-          ov.style.cssText = '';
-          ov.style.display = 'flex';
-          ov.classList.add('on');
-          if (modal) modal.style.cssText = '';
-        }
-        restoreBtn.remove();
-        window._vestiaMiniMode = false;
-      };
-      document.body.appendChild(restoreBtn);
+
+    var ov = document.getElementById('ov-ia');
+    if (!ov) {
+      // Créer une barre flottante en bas si le modal n'est pas ouvert
+      _creerBarreVestaMini(page);
+      return;
     }
+
+    // Fermer le modal principal
+    ov.classList.remove('on');
+    window._vestiaMiniMode = true;
+
+    // Créer / mettre à jour la barre Vesta mini en bas
+    _creerBarreVestaMini(page);
   }
+
+  function _creerBarreVestaMini(page) {
+    // Supprimer si déjà présente
+    var existingBar = document.getElementById('vesta-mini-bar');
+    if (existingBar) existingBar.remove();
+
+    var bar = document.createElement('div');
+    bar.id = 'vesta-mini-bar';
+    bar.style.cssText = [
+      'position:fixed',
+      'bottom:0', 'left:0', 'right:0',
+      'height:48px',
+      'background:var(--bg)',
+      'border-top:2px solid var(--gold)66',
+      'z-index:500',
+      'display:flex',
+      'align-items:center',
+      'padding:0 16px',
+      'gap:10px',
+      'box-shadow:0 -4px 20px rgba(0,0,0,.25)',
+    ].join(';');
+
+    // Avatar déesse miniature
+    var avatarHtml = window.VESTA_AVATAR_IMG
+      ? '<img src="' + window.VESTA_AVATAR_IMG + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:top;border:1.5px solid var(--gold);">'
+      : '<span style="font-size:18px;">🔥</span>';
+
+    bar.innerHTML = '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">'
+      + avatarHtml
+      + '<span style="font-family:Playfair Display,serif;font-size:13px;color:var(--gold);font-weight:700;letter-spacing:2px;">VESTA</span>'
+      + '</div>'
+      + '<div id="vesta-mini-input-wrap" style="flex:1;display:flex;align-items:center;background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:0 12px;height:34px;cursor:text;" onclick="ouvrirVestaDepuisMini()">'
+      + '<span style="font-size:11px;color:var(--muted);">Continuer la discussion avec Vesta...</span>'
+      + '</div>'
+      + '<button onclick="ouvrirVestaDepuisMini()" style="flex-shrink:0;background:var(--gold);color:#1a1a2e;border:none;border-radius:20px;padding:6px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">Ouvrir ↑</button>'
+      + '<button onclick="fermerVestaMini()" style="flex-shrink:0;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px;line-height:1;" title="Fermer Vesta">×</button>';
+
+    document.body.appendChild(bar);
+
+    // Ajouter padding bas au main pour ne pas cacher le contenu
+    var main = document.querySelector('main');
+    if (main) main.style.paddingBottom = '56px';
+  }
+
+  window.ouvrirVestaDepuisMini = function() {
+    var bar = document.getElementById('vesta-mini-bar');
+    if (bar) {
+      bar.remove();
+      var main = document.querySelector('main');
+      if (main) main.style.paddingBottom = '';
+    }
+    window._vestiaMiniMode = false;
+    // Ré-ouvrir le modal IA
+    var ov = document.getElementById('ov-ia');
+    if (ov) {
+      ov.classList.add('on');
+    } else {
+      // Recréer via le bouton IA
+      var btnIA = document.getElementById('btn-ia');
+      if (btnIA) btnIA.click();
+    }
+  };
+
+  window.fermerVestaMini = function() {
+    var bar = document.getElementById('vesta-mini-bar');
+    if (bar) bar.remove();
+    var main = document.querySelector('main');
+    if (main) main.style.paddingBottom = '';
+    window._vestiaMiniMode = false;
+  };
   window.activerMiniMode = activerMiniMode;
 
   function injecterLiensOutils(txt) {
@@ -13239,7 +13295,7 @@ function renderIAConversation(el) {
 
   // Input bar
   html += '<div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--bd);">';
-  html += '<input id="ia-user-input" type="text" placeholder="Question à Pierre, calcul, analyse..." style="flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:9px 13px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s;" onkeydown="if(event.key===\'Enter\')envoyerMessageIA()" onfocus="this.style.borderColor=\'var(--gold)\'" onblur="this.style.borderColor=\'var(--bd)\'">';
+  html += '<input id="ia-user-input" type="text" placeholder="Question à Vesta, calcul, analyse..." style="flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:9px 13px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s;" onkeydown="if(event.key===\'Enter\')envoyerMessageIA()" onfocus="this.style.borderColor=\'var(--gold)\'" onblur="this.style.borderColor=\'var(--bd)\'">';
   html += '<button class="btn" onclick="envoyerMessageIA()" style="flex-shrink:0;padding:8px 16px;">→</button>';
   html += '</div>';
 
@@ -13305,7 +13361,7 @@ async function lancerAnalyseIA() {
 
   el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:40px;color:var(--muted);">'
     + '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;animation:spin 2s linear infinite;">P</div>'
-    + '<div style="font-size:13px;">Pierre analyse votre patrimoine...</div></div>';
+    + '<div style="font-size:13px;">Vesta analyse votre patrimoine...</div></div>';
   if (btn) btn.disabled = true;
 
   var ctx = window.getContexteAdapte ? window.getContexteAdapte(4000) : getPatrimoineContext();
@@ -13357,8 +13413,16 @@ async function envoyerMessageIA() {
     t.id = 'ia-typing';
     t.style.cssText = 'display:flex;gap:8px;align-items:center;padding:8px 0;';
     var tAvatar = document.createElement('div');
-    tAvatar.style.cssText = 'width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;';
-    tAvatar.textContent = 'P';
+    tAvatar.style.cssText = 'width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--gold)44;';
+    if (window.VESTA_AVATAR_IMG) {
+      var img = document.createElement('img');
+      img.src = window.VESTA_AVATAR_IMG;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top center;';
+      tAvatar.appendChild(img);
+    } else {
+      tAvatar.style.background = 'linear-gradient(135deg,#5b8dee,#9b72cf)';
+      tAvatar.innerHTML = '<span style="font-size:14px;">🔥</span>';
+    }
     var tBubble = document.createElement('div');
     tBubble.style.cssText = 'padding:10px 14px;background:var(--s2);border-radius:2px 12px 12px 12px;border:1px solid var(--bd);font-size:12px;color:var(--muted);';
     tBubble.textContent = 'Vesta réfléchit...';
@@ -13443,7 +13507,7 @@ async function lancerConseilRapide() {
   html = html.split('\n\n').join('<br>').split('\n').join(' ');
 
   el.innerHTML = '<div style="line-height:1.75;">' + html + '</div>'
-    + '<div style="font-size:9px;color:var(--muted);margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);">Pierre — ' + new Date().toLocaleString('fr-FR') + '</div>';
+    + '<div style="font-size:9px;color:var(--muted);margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);">Vesta — ' + new Date().toLocaleString('fr-FR') + '</div>';
   if (btn) btn.disabled = false;
 }
 window.lancerConseilRapide = lancerConseilRapide;
@@ -13965,7 +14029,7 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 
 // ══════════════════════════════════════════════════════════════
-// 3. SUIVI MENSUEL — Dialogue guidé avec Pierre
+// 3. SUIVI MENSUEL — Dialogue guidé avec Vesta
 // ══════════════════════════════════════════════════════════════
 function lancerSuiviMensuel() {
   var ov = document.getElementById('ov-ia');
@@ -14043,7 +14107,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.className = 'btn gh sm';
     btn.style.cssText = 'font-size:10px;flex-shrink:0;';
     btn.textContent = '📋 Suivi mensuel';
-    btn.title = 'Mise à jour guidée par Pierre';
+    btn.title = 'Mise à jour guidée par Vesta';
     btn.addEventListener('click', function() { lancerSuiviMensuel(); });
     // Insert before IA button
     var iaBtn = hdr.querySelector('button[title*="patrimonial"]') || hdr.firstChild;
@@ -14090,7 +14154,7 @@ async function traiterFichierImport(file) {
     }
   });
 
-  // Envoi à Pierre pour analyse
+  // Envoi à Vesta pour analyse
   var NL = String.fromCharCode(10);
   var ctx = window.getPatrimoineContext ? window.getPatrimoineContext() : '';
   var msg = [
@@ -14118,7 +14182,7 @@ async function traiterFichierImport(file) {
   setTimeout(async function() {
     var elIa = document.getElementById('ia-content');
     if (elIa) {
-      elIa.innerHTML = '<div style="padding:20px;color:var(--muted);text-align:center;">Pierre analyse votre fichier...</div>';
+      elIa.innerHTML = '<div style="padding:20px;color:var(--muted);text-align:center;">Vesta analyse votre fichier...</div>';
     }
     var response = window.callClaudeIA ? await window.callClaudeIA(msg, true) : 'IA non disponible';
     if (window._iaConversation !== undefined) {
@@ -14733,7 +14797,7 @@ document.addEventListener('DOMContentLoaded', function() {
     '<button onclick="closeOv(\'ov-import\')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);">&#x2715;</button>',
     '</div>',
     '<p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6;">',
-    'Pierre lit votre export (CSV, relevé PDF, export Boursorama/Linxea/Amundi) et met à jour vos données automatiquement après confirmation.',
+    'Vesta lit votre export (CSV, relevé PDF, export Boursorama/Linxea/Amundi) et met à jour vos données automatiquement après confirmation.',
     '</p>',
     '<div style="border:2px dashed var(--bd);border-radius:10px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;" id="import-dropzone">',
     '<div style="font-size:32px;margin-bottom:8px;">📁</div>',
@@ -15155,7 +15219,7 @@ window.updateProjectionInteractive = updateProjectionInteractive;
 
 <script>
 // ══════════════════════════════════════════════════════════════
-// 1. OPPORTUNITÉS — recherche via Pierre
+// 1. OPPORTUNITÉS — recherche via Vesta
 // ══════════════════════════════════════════════════════════════
 
 async function rechercherOpportunites() {
@@ -15180,14 +15244,14 @@ async function rechercherOpportunites() {
   card.style.display = 'block';
   content.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">'
     + '<div style="font-size:24px;animation:spin 2s linear infinite;display:inline-block;">🔍</div>'
-    + '<div style="margin-top:10px;font-size:13px;">Pierre recherche les meilleures opportunités...</div>'
+    + '<div style="margin-top:10px;font-size:13px;">Vesta recherche les meilleures opportunités...</div>'
     + '<div style="font-size:10px;color:var(--dim);margin-top:6px;">Analyse multi-critères en cours</div>'
     + '</div>';
   btn.disabled = true;
 
   var apiKey = localStorage.getItem('pierre-api-key') || '';
   if (!apiKey) {
-    content.innerHTML = '<div style="padding:20px;color:var(--red);">Clé API Pierre requise. Configurez via le bouton IA.</div>';
+    content.innerHTML = '<div style="padding:20px;color:var(--red);">Clé API Vesta requise. Configurez via le bouton IA.</div>';
     btn.disabled = false;
     return;
   }
@@ -15200,7 +15264,7 @@ async function rechercherOpportunites() {
 
   var NL = String.fromCharCode(10);
   var prompt = [
-    "Tu es Pierre, conseiller patrimoine expert. Recherche pour Maxime (29 ans, agent maîtrise SNCF, horizon retraite 2057) :",
+    "Tu es Vesta, conseillère patrimoine experte. Recherche pour Maxime (29 ans, agent maîtrise SNCF, horizon retraite 2057) :",
     "",
     "CRITÈRES :",
     "- Type : " + (typeLabels[crit.type] || crit.type),
@@ -15223,7 +15287,7 @@ async function rechercherOpportunites() {
   try {
     var active = window.getActiveProvider ? window.getActiveProvider() : null;
     if (!active || !active.key) {
-      content.innerHTML = '<div style="padding:20px;color:var(--red);">Configurez Pierre via le bouton IA.</div>';
+      content.innerHTML = '<div style="padding:20px;color:var(--red);">Configurez Vesta via le bouton IA.</div>';
       btn.disabled = false;
       return;
     }
@@ -15529,7 +15593,7 @@ window.lancerBacktest = lancerBacktest;
 function toggleLearnMode() {
   var enabled = sessionStorage.getItem('pierre-learn-mode') === '1';
   sessionStorage.setItem('pierre-learn-mode', enabled ? '0' : '1');
-  if (window._toast) window._toast(enabled ? '🎓 Mode apprentissage désactivé' : '🎓 Mode apprentissage activé — Pierre vous expliquera vos actions');
+  if (window._toast) window._toast(enabled ? '🎓 Mode apprentissage désactivé' : '🎓 Mode apprentissage activé — Vesta vous expliquera vos actions');
   updateLearnButton();
 }
 window.toggleLearnMode = toggleLearnMode;
@@ -15589,7 +15653,7 @@ function afficherBulleApprentissage(text) {
   var b = document.createElement('div');
   b.id = 'learn-bubble';
   b.style.cssText = 'position:fixed;bottom:20px;right:20px;max-width:340px;background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;padding:14px 18px;border-radius:14px;box-shadow:0 8px 32px #00000060;z-index:9998;font-size:12px;line-height:1.6;animation:slideIn .3s;';
-  b.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:24px;height:24px;border-radius:50%;background:#fff;color:#5b8dee;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">P</div><strong>Pierre vous explique</strong><button onclick="document.getElementById(\'learn-bubble\').remove()" style="margin-left:auto;background:none;border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button></div>'
+  b.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:24px;height:24px;border-radius:50%;background:#fff;color:#5b8dee;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">P</div><strong>Vesta vous explique</strong><button onclick="document.getElementById(\'learn-bubble\').remove()" style="margin-left:auto;background:none;border:none;color:#fff;cursor:pointer;font-size:14px;">✕</button></div>'
     + '<div>' + text + '</div>';
   document.body.appendChild(b);
   setTimeout(function(){ var x = document.getElementById('learn-bubble'); if (x) x.style.opacity = '0.7'; }, 8000);
@@ -15630,7 +15694,7 @@ function getAgentSystemPrompt(agentId) {
   var EXPERT_PROMPTS = {
 
     pierre: [
-      "Tu es Pierre, conseiller patrimonial senior de Maxime. Généraliste expert, tu coordonnes tous les domaines.",
+      "Tu es Vesta, conseillère patrimoniale senior de Maxime. Généraliste expert, tu coordonnes tous les domaines.",
       "Tu analyses la situation globale et orientes vers le bon expert si nécessaire.",
       "Approche : vision 360° (fiscal + immo + marchés + succession + protection).",
       "Quand une question touche un domaine pointu, précise que Maître Dubois (succession), Sophie Bercy (fiscal) ou Marc Stratège (marchés) peuvent approfondir.",
@@ -16161,7 +16225,7 @@ function verifierAlertes() {
     var hour = now.getHours();
     var weekKey = now.getFullYear() + '-W' + Math.floor(now.getDate()/7);
     if (dayOfWeek === 0 && hour >= 18 && S.notifsLastCheck.hebdo !== weekKey) {
-      envoyerNotif('🎓 Conseil hebdo de Pierre',
+      envoyerNotif('🎓 Conseil hebdo de Vesta',
         'C\'est dimanche ! Ouvrez Vesta pour votre suivi hebdomadaire.',
         { tag: 'hebdo' });
       S.notifsLastCheck.hebdo = weekKey;
@@ -16562,8 +16626,8 @@ function ouvrirMemoirePierre() {
   }
 
   modal.innerHTML = '<div class="modal" style="max-width:560px;max-height:90vh;overflow-y:auto;">'
-    + '<h2>🧠 Mémoire long terme de Pierre</h2>'
-    + '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Pierre se souvient de ces éléments pour personnaliser ses conseils.</div>'
+    + '<h2>🧠 Mémoire long terme de Vesta</h2>'
+    + '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Vesta se souvient de ces éléments pour personnaliser ses conseils.</div>'
     + renderCategorie('styleVie', 'Style de vie / situation', '👨‍👩‍👧')
     + renderCategorie('preferences', 'Préférences', '❤️')
     + renderCategorie('refus', 'Refus / Aversions', '🚫')
@@ -16577,7 +16641,7 @@ function ouvrirMemoirePierre() {
   modal.addEventListener('click', function(e){ if(e.target === modal) document.body.removeChild(modal); });
   document.getElementById('btn-mem-close').onclick = function() { document.body.removeChild(modal); };
   document.getElementById('btn-mem-clear-all').onclick = function() {
-    if (!confirm('Effacer toute la mémoire de Pierre ?')) return;
+    if (!confirm('Effacer toute la mémoire de Vesta ?')) return;
     var s = window._pState();
     s.memoirePierre = null;
     if (window._saveState) window._saveState();
@@ -16675,7 +16739,7 @@ function ouvrirLecteurPdf() {
   modal.innerHTML = '<div class="modal" style="max-width:560px;">'
     + '<h2>📄 Lecture intelligente de document</h2>'
     + '<div style="font-size:11px;color:var(--muted);margin-bottom:12px;">'
-    + 'Pierre lit votre document PDF (avis imposition, taxe foncière, relevé bancaire, fiche de paie, attestation AV...) et extrait automatiquement les données importantes.'
+    + 'Vesta lit votre document PDF (avis imposition, taxe foncière, relevé bancaire, fiche de paie, attestation AV...) et extrait automatiquement les données importantes.'
     + '</div>'
     + '<div class="fg"><label>Type de document</label>'
     + '<select id="pdf-type">'
@@ -16685,7 +16749,7 @@ function ouvrirLecteurPdf() {
     + '<option value="releve_pea">Relevé PEA / CTO</option>'
     + '<option value="releve_av">Relevé Assurance Vie</option>'
     + '<option value="fiche_paie">Fiche de paie</option>'
-    + '<option value="autre">Autre (laisser Pierre détecter)</option>'
+    + '<option value="autre">Autre (laisser Vesta détecter)</option>'
     + '</select></div>'
     + '<div class="fg"><label>Fichier PDF</label>'
     + '<input type="file" id="pdf-file" accept="application/pdf">'
@@ -16694,7 +16758,7 @@ function ouvrirLecteurPdf() {
     + '<div id="pdf-result" style="margin-bottom:10px;"></div>'
     + '<div class="brow" style="justify-content:space-between;">'
     + '<button class="btn dn sm" id="btn-pdf-cancel">Annuler</button>'
-    + '<button class="btn" id="pdf-analyze">🔍 Analyser avec Pierre</button>'
+    + '<button class="btn" id="pdf-analyze">🔍 Analyser avec Vesta</button>'
     + '</div></div>';
   document.body.appendChild(modal);
   modal.addEventListener('click', function(e){ if(e.target === modal) document.body.removeChild(modal); });
@@ -16722,13 +16786,13 @@ function ouvrirLecteurPdf() {
         return;
       }
       if (texte.length > 12000) texte = texte.slice(0, 12000) + '\n[... document tronqué]';
-      statusEl.innerHTML = '<span style="color:var(--gold);">⏳ Analyse par Pierre en cours...</span>';
+      statusEl.innerHTML = '<span style="color:var(--gold);">⏳ Analyse par Vesta en cours...</span>';
 
       var typeDoc = typeEl.value;
       var prompt = construirePromptAnalyseDoc(typeDoc, texte);
 
       if (!window.callClaudeIA) {
-        statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Pierre indisponible. Configurez votre clé API.</span>';
+        statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Vesta indisponible. Configurez votre clé API.</span>';
         return;
       }
 
@@ -16739,7 +16803,7 @@ function ouvrirLecteurPdf() {
           afficherResultatPdf(resultEl, reponse, donnees, typeDoc);
         })
         .catch(function(err) {
-          statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Erreur Pierre : ' + (err.message||err) + '</span>';
+          statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Erreur Vesta : ' + (err.message||err) + '</span>';
         });
     }).catch(function(err) {
       statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Erreur extraction : ' + (err.message||err) + '</span>';
@@ -16776,7 +16840,7 @@ function parserReponseDoc(reponse) {
 function afficherResultatPdf(resultEl, reponseTexte, donnees, typeDoc) {
   var analyseTexte = reponseTexte.replace(/```json[\s\S]*?```/g, '').trim();
   var html = '<div style="background:var(--bg2);border:1px solid var(--gold);padding:12px;border-radius:6px;margin-top:10px;">';
-  html += '<div style="font-family:Playfair Display,serif;font-size:13px;color:var(--gold);margin-bottom:8px;">📋 Analyse de Pierre</div>';
+  html += '<div style="font-family:Playfair Display,serif;font-size:13px;color:var(--gold);margin-bottom:8px;">📋 Analyse de Vesta</div>';
   html += '<div style="font-size:12px;line-height:1.5;white-space:pre-wrap;">' + analyseTexte + '</div>';
 
   if (donnees && Object.keys(donnees).length) {
@@ -16846,7 +16910,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.className = 'btn gh sm';
     btn.id = 'btn-learn-mode';
     btn.style.cssText = 'font-size:10px;flex-shrink:0;';
-    btn.title = 'Mode apprentissage : Pierre explique vos actions';
+    btn.title = 'Mode apprentissage : Vesta explique vos actions';
     btn.textContent = '🎓 OFF';
     btn.addEventListener('click', toggleLearnMode);
     hdr.insertBefore(btn, hdr.firstChild);
@@ -16867,7 +16931,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btnM.className = 'btn gh sm';
     btnM.id = 'btn-memoire';
     btnM.style.cssText = 'font-size:11px;flex-shrink:0;';
-    btnM.title = 'Mémoire long terme de Pierre';
+    btnM.title = 'Mémoire long terme de Vesta';
     btnM.textContent = '🧠';
     btnM.addEventListener('click', ouvrirMemoirePierre);
     hdr.insertBefore(btnM, hdr.firstChild);
@@ -16877,7 +16941,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btnP.className = 'btn gh sm';
     btnP.id = 'btn-pdf-reader';
     btnP.style.cssText = 'font-size:11px;flex-shrink:0;';
-    btnP.title = 'Lire un document PDF avec Pierre';
+    btnP.title = 'Lire un document PDF avec Vesta';
     btnP.textContent = '📄';
     btnP.addEventListener('click', ouvrirLecteurPdf);
     hdr.insertBefore(btnP, hdr.firstChild);
@@ -17410,7 +17474,7 @@ function renderNextAction() {
   }
 
   // Mise à jour mensuelle
-  actions.push({ prio: 5, text: '🔄 Suivi mensuel avec Pierre', sub: 'Mettre à jour les données et recevoir les conseils du mois', btn: null });
+  actions.push({ prio: 5, text: '🔄 Suivi mensuel avec Vesta', sub: 'Mettre à jour les données et recevoir les conseils du mois', btn: null });
 
   if (!actions.length) { if (banner) banner.style.display = 'none'; return; }
 
@@ -17879,7 +17943,7 @@ var ACADEMIE_COURS = [
       { titre: 'PACS et succession : les limites', contenu: 'Le PACS ne crée PAS d\'héritage automatique. Sans testament, votre partenaire ne reçoit rien (ce sont vos parents et enfant qui héritent). L\'exonération fiscale entre partenaires PACSÉS s\'applique uniquement si vous avez rédigé un testament. OBLIGATOIRE : testaments croisés chez un notaire.' },
       { titre: 'L\'enfant change tout', contenu: 'Avec la naissance de votre enfant (06/06/2026), il devient héritier réservataire. Sa réserve = 1/2 de votre patrimoine net. La quotité disponible (ce que vous pouvez léguer librement) = 1/2 seulement. Avec 2 enfants : quotité disponible = 1/3. Planifier avec notaire avant le 2ème enfant.' },
       { titre: 'L\'assurance vie hors succession', contenu: 'Vos versements AV Linxea Spirit 2 AVANT 70 ans : 152 500€ par bénéficiaire en franchise totale. Désignez NOMMÉMENT : "Alexia [nom prénom], partenaire PACSÉE, née le..." et "[prénom enfant], né le...". Évitez "mes héritiers" qui crée de l\'ambiguïté et peut déclencher des droits.' },
-      { titre: 'Actions immédiates Maxime', contenu: '1. Rédiger un testament olographe (manuscrit, daté, signé) léguer tout à Alexia en cas de décès. 2. Mettre à jour la clause bénéficiaire AV Linxea après la naissance (inclure l\'enfant). 3. Consulter Maître Dubois (agent IA notaire dans Pierre) pour simulation succession. 4. Vérifier mutuelle SNCF : prévoyance décès + maintien de salaire ?' }
+      { titre: 'Actions immédiates Maxime', contenu: '1. Rédiger un testament olographe (manuscrit, daté, signé) léguer tout à Alexia en cas de décès. 2. Mettre à jour la clause bénéficiaire AV Linxea après la naissance (inclure l\'enfant). 3. Consulter Maître Dubois (agent IA notaire dans Vesta) pour simulation succession. 4. Vérifier mutuelle SNCF : prévoyance décès + maintien de salaire ?' }
     ]
   }
 ];
@@ -17949,9 +18013,9 @@ function ouvrirCours(coursId) {
   });
 
   html += '<div style="background:rgba(212,175,55,0.05);border:1px solid var(--gold);padding:12px;border-radius:6px;margin-bottom:14px;">';
-  html += '<div style="font-family:Playfair Display,serif;font-size:13px;color:var(--gold);margin-bottom:6px;">💬 Discuter avec Pierre</div>';
-  html += '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Une question sur ce cours ? Pierre peut développer un point ou l\'appliquer à votre situation.</div>';
-  html += '<button class="btn sm" id="btn-cours-pierre">🤖 Poser une question à Pierre</button>';
+  html += '<div style="font-family:Playfair Display,serif;font-size:13px;color:var(--gold);margin-bottom:6px;">💬 Discuter avec Vesta</div>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Une question sur ce cours ? Vesta peut développer un point ou l\'appliquer à votre situation.</div>';
+  html += '<button class="btn sm" id="btn-cours-vesta">🤖 Poser une question à Vesta</button>';
   html += '</div>';
 
   html += '<div class="brow" style="justify-content:space-between;">';
@@ -17973,12 +18037,12 @@ function ouvrirCours(coursId) {
     document.body.removeChild(modal);
     ouvrirAcademie();
   };
-  document.getElementById('btn-cours-pierre').onclick = function() {
+  document.getElementById('btn-cours-vesta').onclick = function() {
     document.body.removeChild(modal);
     if (window.demanderIA) {
       window.demanderIA('Je viens de lire votre cours "' + c.titre + '". Pouvez-vous me l\'appliquer concrètement à ma situation, en chiffrant les impacts ?');
     } else if (window._toast) {
-      window._toast('Pierre indisponible. Configurez votre clé API.');
+      window._toast('Vesta indisponible. Configurez votre clé API.');
     }
   };
 }
@@ -18057,9 +18121,29 @@ function exportPdfRapport() {
       + '<td class="r" style="color:' + (cf>=0?'#0a7':'#c33') + '">' + (cf>=0?'+':'') + Math.round(cf) + ' €</td></tr>';
   }).join('');
 
+  var totalIntLiv = 0;
   var livRows = (S.livrets||[]).map(function(l){
-    return '<tr><td>' + (l.name||'') + '</td><td class="r">' + Math.round(l.balance||0).toLocaleString('fr-FR') + ' €</td><td class="r">' + (l.taux||0).toFixed(2) + '%</td></tr>';
+    var solde = l.balance || 0;
+    var taux  = l.rate || l.taux || 0;
+    var intAnn = Math.round(solde * taux / 100);
+    totalIntLiv += intAnn;
+    return '<tr>'
+      + '<td>' + (l.name||'') + '</td>'
+      + '<td>' + (l.type||'—') + '</td>'
+      + '<td>' + (l.bank||'—') + '</td>'
+      + '<td class="r"><b>' + Math.round(solde).toLocaleString('fr-FR') + ' €</b></td>'
+      + '<td class="r" style="color:var(--gold);">' + taux.toFixed(2) + ' %</td>'
+      + '<td class="r" style="color:#2a7a2a;">+' + intAnn.toLocaleString('fr-FR') + ' €/an</td>'
+      + '</tr>';
   }).join('');
+  if ((S.livrets||[]).length > 1) {
+    livRows += '<tr style="border-top:2px solid #b8941f;font-weight:600;">'
+      + '<td colspan="3">TOTAL</td>'
+      + '<td class="r">' + Math.round(totalLiv).toLocaleString('fr-FR') + ' €</td>'
+      + '<td class="r">—</td>'
+      + '<td class="r" style="color:#2a7a2a;">+' + totalIntLiv.toLocaleString('fr-FR') + ' €/an</td>'
+      + '</tr>';
+  }
 
   var anos = window.detecterAnomalies ? window.detecterAnomalies() : [];
   var anosRows = anos.map(function(a){
@@ -18137,7 +18221,7 @@ function exportPdfRapport() {
 
   if ((S.livrets||[]).length) {
     html += '<h2>Livrets et épargne</h2>';
-    html += '<table><tr><th>Livret</th><th>Solde</th><th>Taux</th></tr>' + livRows + '</table>';
+    html += '<table><thead><tr><th>Livret</th><th>Type</th><th>Banque</th><th>Solde</th><th>Taux</th><th>Intérêts/an</th></tr></thead><tbody>' + livRows + '</tbody></table>';
   }
 
   if (anos.length) {
