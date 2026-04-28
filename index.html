@@ -709,7 +709,7 @@ body {
 
 
 
-  <!-- Pierre — Conseil IA du jour -->
+  <!-- Vesta — Conseil du jour -->
   <div class="card mb" id="card-ia-conseil" style="border-left:3px solid #9b72cf;">
     <div class="chd" style="justify-content:space-between;">
       <span>&#129302; Pierre — Conseil patrimonial</span>
@@ -3784,7 +3784,7 @@ function initOutils() {
           return;
         }
         if (texte.length > 12000) texte = texte.slice(0, 12000) + '\n[... tronqué]';
-        if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold);">⏳ Pierre analyse...</span>';
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold);">⏳ Vesta analyse...</span>';
         if (!window.callClaudeIA) {
           if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">⚠️ Configurez votre clé API Pierre</span>';
           return;
@@ -11673,22 +11673,25 @@ function demanderCleAPI() {
   }).join('');
 
   box.innerHTML = [
-    '<h2 style="font-family:Playfair Display,serif;font-size:17px;margin-bottom:12px;">⚙️ Configuration de Pierre</h2>',
+    '<h2 style="font-family:Playfair Display,serif;font-size:17px;margin-bottom:4px;">⚙️ Configuration Vesta IA</h2>',
+    '<p style="font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-bottom:12px;">Les clés sont sauvegardées par fournisseur — changez sans re-saisir</p>',
     '<div class="fg" style="margin-bottom:10px;">',
     '  <label>Fournisseur IA</label>',
     '  <select id="pierre-provider-sel" onchange="updateProviderHint()" style="font-size:12px;">'+provOptions+'</select>',
     '</div>',
     '<div id="pierre-provider-hint" style="font-size:11px;padding:10px 12px;background:var(--s2);border-radius:8px;margin-bottom:12px;line-height:1.6;"></div>',
     '<div class="fg">',
-    '  <label>Clé API</label>',
+    '  <label>Clé API <span id="key-saved-badge" style="font-size:9px;font-family:JetBrains Mono,monospace;"></span></label>',
     '  <div style="position:relative;display:flex;align-items:center;">',
     '    <input type="password" id="api-key-input" placeholder="..." style="font-family:JetBrains Mono,monospace;font-size:12px;flex:1;padding-right:38px;" autocomplete="off">',
     '    <button type="button" id="eye-btn" onclick="toggleKeyVisibility()" title="Afficher la clé" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:0;">&#128065;</button>',
     '  </div>',
     '</div>',
+    // Affichage de l'état de toutes les clés sauvées
+    '<div style="margin-top:10px;padding:8px 12px;background:var(--s3);border-radius:6px;font-size:10px;font-family:JetBrains Mono,monospace;" id="all-keys-status"></div>',
     '<div style="display:flex;gap:8px;margin-top:14px;">',
     '  <button class="btn" onclick="sauvegarderCleAPI()" style="flex:1;">Enregistrer</button>',
-    '  <button class="btn gh" onclick="document.getElementById(\'ov-api-key\').classList.remove(\'on\')" style="flex-shrink:0;">Annuler</button>',
+    '  <button class="btn gh" onclick="document.getElementById(\'ov-api-key\').classList.remove(\'on\')" style="flex-shrink:0;">Fermer</button>',
     '</div>',
     '<div id="api-key-status" style="font-size:11px;color:var(--muted);margin-top:8px;font-family:JetBrains Mono,monospace;min-height:16px;"></div>'
   ].join('');
@@ -11705,7 +11708,36 @@ function updateProviderHint() {
   var sel  = document.getElementById('pierre-provider-sel');
   var hint = document.getElementById('pierre-provider-hint');
   var inp  = document.getElementById('api-key-input');
+  var badge = document.getElementById('key-saved-badge');
+  var allKeys = document.getElementById('all-keys-status');
   if (!sel || !hint) return;
+  var provId = sel.value;
+
+  // Auto-remplir la clé sauvegardée pour ce provider
+  var savedKey = localStorage.getItem('pierre-api-key-' + provId) || '';
+  if (inp) {
+    inp.value = savedKey ? savedKey.slice(0,6) + '••••••••••••' + savedKey.slice(-4) : '';
+    inp._realKey = savedKey;
+    inp.placeholder = savedKey ? '(clé enregistrée — modifiez pour changer)' : 'Collez votre clé API...';
+  }
+  if (badge) {
+    badge.innerHTML = savedKey
+      ? '<span style="color:var(--green);">✅ Clé enregistrée</span>'
+      : '<span style="color:var(--red);">❌ Aucune clé</span>';
+  }
+
+  // Afficher le statut de toutes les clés
+  if (allKeys) {
+    var provNames = { groq:'Groq (Llama3)', gemini:'Gemini', openrouter:'OpenRouter', anthropic:'Anthropic' };
+    var rows = Object.keys(provNames).map(function(pid) {
+      var k = localStorage.getItem('pierre-api-key-' + pid) || '';
+      var active = pid === provId ? ' style="font-weight:700;color:var(--gold);"' : '';
+      return '<span' + active + '>' + (k ? '✅' : '○ ') + ' ' + provNames[pid] + (k ? ' ···' + k.slice(-4) : '') + '</span>';
+    });
+    allKeys.innerHTML = '<div style="font-size:9px;color:var(--muted);margin-bottom:4px;">CLÉS SAUVEGARDÉES :</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + rows.join('') + '</div>';
+  }
+
   var guides = {
     groq:       { placeholder:'gsk_...', html:'<strong style="color:var(--green);">🆓 100% GRATUIT</strong> · Llama 3.3 70B · Très rapide · Sans carte bancaire<br><a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue);">1. Créer un compte Groq → Créer une clé API</a>' },
     gemini:     { placeholder:'AIza...', html:'<strong style="color:var(--green);">🆓 GRATUIT</strong> · Gemini 1.5 Flash · 1 500 req/jour<br><a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue);">1. Google AI Studio → Get API Key</a>' },
@@ -11733,6 +11765,10 @@ async function sauvegarderCleAPI() {
   var st  = document.getElementById('api-key-status');
   if (!inp || !inp.value.trim()) return;
   var key = inp.value.trim();
+  // Si le champ contient la clé masquée et que l'utilisateur n'a pas modifié → garder l'ancienne
+  if (key.includes('••••') && inp._realKey) {
+    key = inp._realKey;
+  }
   var provSel2 = document.getElementById('pierre-provider-sel');
   var provId2 = provSel2 ? provSel2.value : 'groq';
   var prov2 = IA_PROVIDERS[provId2] || IA_PROVIDERS.groq;
@@ -11775,7 +11811,8 @@ async function sauvegarderCleAPI() {
   } catch(e) { /* ignore test errors, save anyway */ }
   var provSel = document.getElementById('pierre-provider-sel');
   var provId = provSel ? provSel.value : 'groq';
-  localStorage.setItem('pierre-api-key', key);
+  localStorage.setItem('pierre-api-key-' + provId, key); // clé spécifique provider
+  localStorage.setItem('pierre-api-key', key); // fallback
   localStorage.setItem('pierre-provider', provId);
   if (st) { st.textContent = 'Enregistré ! Pierre utilise ' + (IA_PROVIDERS[provId]||{name:'IA'}).name; st.style.color='var(--green)'; }
   setTimeout(function(){
@@ -12794,7 +12831,10 @@ var IA_PROVIDERS = {
 
 function getActiveProvider() {
   var provId = localStorage.getItem('pierre-provider') || 'groq';
-  var apiKey  = localStorage.getItem('pierre-api-key') || '';
+  // Clé spécifique au provider, fallback sur la clé générique
+  var apiKey = localStorage.getItem('pierre-api-key-' + provId)
+            || localStorage.getItem('pierre-api-key')
+            || '';
   return { provider: IA_PROVIDERS[provId] || IA_PROVIDERS.groq, key: apiKey, id: provId };
 }
 
@@ -13160,7 +13200,7 @@ function renderIAConversation(el) {
 
   // Agent actuel
   var agentId = window._currentAgent || 'pierre';
-  var agentInfo = (window._pierreAgents || {})[agentId] || { nom:'Pierre', emoji:'🎯' };
+  var agentInfo = (window._pierreAgents || {})[agentId] || { nom:'Vesta', emoji:'🎯' };
 
   displayConv.forEach(function(m, i) {
     var isUser = m.role === 'user';
@@ -13362,7 +13402,7 @@ async function lancerConseilRapide() {
   var el  = document.getElementById('ia-conseil-content');
   var btn = document.getElementById('btn-ia-quick');
   if (!el) return;
-  el.innerHTML = '<div style="color:var(--muted);font-size:12px;display:flex;align-items:center;gap:8px;"><div style="animation:spin 1s linear infinite;font-size:16px;">↻</div> Pierre analyse...</div>';
+  el.innerHTML = '<div style="color:var(--muted);font-size:12px;display:flex;align-items:center;gap:8px;"><div style="animation:spin 1s linear infinite;font-size:16px;">↻</div> Vesta analyse...</div>';
   if (btn) btn.disabled = true;
 
   var ctx = window.getContexteAdapte ? window.getContexteAdapte(2500) : getPatrimoineContext();
@@ -15560,7 +15600,7 @@ function afficherBulleApprentissage(text) {
 // 5. MULTI-AGENTS PIERRE
 // ══════════════════════════════════════════════════════════════
 window._pierreAgents = {
-  pierre: { nom:'Pierre', emoji:'🎯', role:'Conseiller patrimonial généraliste', specialite:'gestion patrimoine, allocation, fiscalité' },
+  pierre: { nom:'Vesta', emoji:'🔥', role:'Conseiller patrimonial généraliste', specialite:'gestion patrimoine, allocation, fiscalité' },
   notaire: { nom:'Maître Dubois', emoji:'⚖️', role:'Notaire IA', specialite:'succession, donation, transmission, démembrement' },
   fiscaliste: { nom:'Sophie Bercy', emoji:'📋', role:'Fiscaliste IA', specialite:'optimisation fiscale, déclarations, IFI, plus-values' },
   coach: { nom:'Coach Léa', emoji:'💪', role:'Coach épargne', specialite:'budget, motivation, automatisation, discipline' },
@@ -16266,7 +16306,7 @@ function ouvrirCentreNotifs() {
     + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-fiscal"' + (S.notifsConfig.fiscal?' checked':'') + '> 📅 Échéances fiscales</label>'
     + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-wl"' + (S.notifsConfig.watchlist?' checked':'') + '> 🎯 Alertes watchlist</label>'
     + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-peg"' + (S.notifsConfig.peg !== false?' checked':'') + '> 🔄 PEG SNCF (prime avril + retrait 5 ans)</label>'
-    + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-hebdo"' + (S.notifsConfig.hebdo?' checked':'') + '> 🎓 Conseil hebdo Pierre</label>'
+    + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-hebdo"' + (S.notifsConfig.hebdo?' checked':'') + '> 🎓 Conseil hebdo Vesta</label>'
     + '<label style="display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;"><input type="checkbox" id="nc-mvt"' + (S.notifsConfig.mouvements?' checked':'') + '> 📈 Mouvements importants (≥5%)</label>'
     + '</div>'
     + '<h3 style="font-family:Playfair Display,serif;font-size:14px;margin-bottom:8px;">Historique (' + logs.length + ')</h3>'
@@ -18074,7 +18114,7 @@ function exportPdfRapport() {
   html += '<h2>Répartition par enveloppe</h2>';
   html += '<table>';
   html += '<tr><th>Enveloppe</th><th>Montant</th><th>%</th></tr>';
-  var totalBrut = (calc.brut||1);
+  var totalBrut = patriBrut || 1; // recalculé depuis données brutes
   function row(label, val) {
     return '<tr><td>' + label + '</td><td class="r">' + Math.round(val).toLocaleString('fr-FR') + ' €</td><td class="r">' + (val/totalBrut*100).toFixed(1) + '%</td></tr>';
   }
@@ -18092,7 +18132,7 @@ function exportPdfRapport() {
 
   if ((S.immo||[]).length) {
     html += '<h2>Patrimoine immobilier</h2>';
-    html += '<table><tr><th>Bien</th><th>Type</th><th>Valeur</th><th>Crédit restant</th><th>Loyer/m</th><th>Cashflow</th></tr>' + immoRows + '</table>';
+    html += '<table><thead><tr><th>Bien</th><th>Type</th><th>DPE</th><th>Valeur estimée</th><th>Crédit restant (CRD)</th><th>Loyer mensuel</th><th>Mensualité crédit</th><th>Charges/mois</th><th>Cashflow net</th></tr></thead><tbody>' + immoRows + '</tbody></table>';
   }
 
   if ((S.livrets||[]).length) {
