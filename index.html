@@ -11433,7 +11433,8 @@ function ouvrirSelecteurProvider() {
     anthropic:99999
   };
 
-  var rows = _ROTATION_ORDER.map(function(pid) {
+  var rotOrder = (typeof _ROTATION_ORDER !== 'undefined' ? _ROTATION_ORDER : Object.keys(IA_PROVIDERS));
+  var rows = rotOrder.map(function(pid) {
     var prov = IA_PROVIDERS[pid];
     if (!prov) return '';
     var key    = _getProviderKey(pid);
@@ -11735,22 +11736,32 @@ try { window.history.replaceState({page: 'dashboard'}, '', '#dashboard'); } catc
 
 <!-- ══ IA MODAL ══ -->
 <div id="ov-ia" class="ov">
-  <div class="modal" style="width:620px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;">
-    <!-- Header -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0;">
-      <div style="width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1.5px solid var(--gold)66;"
-           id="vesta-modal-avatar">
-        <!-- Alimenté par JS -->
-      </div>
-      <div style="flex:1;">
-        <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--gold);">Vesta</div>
+  <div class="modal" style="width:640px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;">
+    <!-- Header Vesta -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-shrink:0;">
+      <!-- Avatar -->
+      <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--gold)66;" id="vesta-modal-avatar"></div>
+      <!-- Nom + badge provider -->
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--gold);line-height:1.2;">Vesta</div>
         <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;" id="vesta-provider-badge">⚡ Auto</div>
       </div>
-      <button id="btn-vesta-mode" onclick="toggleVestaMode()" title="Mode IA" style="font-size:9px;font-family:'JetBrains Mono',monospace;background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:2px 7px;cursor:pointer;color:var(--muted);">⚡ Auto</button>
-      <button onclick="closeOv('ov-ia')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);">&#x2715;</button>
-    </div>
-
-    <!-- Zone conversation (flex:1 pour prendre l'espace disponible) -->
+      <!-- Boutons action visibles -->
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+        <!-- Sélecteur IA / clés -->
+        <button onclick="ouvrirSelecteurProvider()" id="btn-vesta-mode"
+          style="display:flex;align-items:center;gap:5px;background:var(--s2);border:1px solid var(--gold)55;border-radius:20px;padding:5px 12px;cursor:pointer;font-size:11px;font-weight:600;color:var(--gold);font-family:inherit;white-space:nowrap;">
+          <span style="font-size:13px;">⚡</span> <span id="vesta-mode-label">Changer d'IA</span>
+        </button>
+        <!-- Clés API -->
+        <button onclick="demanderCleAPI()"
+          style="display:flex;align-items:center;gap:4px;background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:5px 10px;cursor:pointer;font-size:11px;color:var(--muted);font-family:inherit;white-space:nowrap;">
+          🔑 <span>Clés</span>
+        </button>
+        <!-- Fermer -->
+        <button onclick="closeOv('ov-ia')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:2px;line-height:1;">&#x2715;</button>
+      </div>
+    </div> (flex:1 pour prendre l'espace disponible) -->
     <div id="ia-card" style="flex:1;overflow-y:auto;min-height:200px;"></div>
     <div id="ia-content" style="display:none;min-height:80px;"></div>
   </div>
@@ -13477,12 +13488,19 @@ window.getActiveProvider = getActiveProvider;
 // Afficher l'indicateur de provider actif dans l'UI
 function _refreshProviderBadge(provId, isAuto) {
   var el = document.getElementById('vesta-provider-badge');
-  if (!el) return;
+  var btnLabel = document.getElementById('vesta-mode-label');
   var prov = IA_PROVIDERS[provId];
   if (!prov) return;
-  var name = prov.name.replace(' (Gratuit)','').replace(' (Payant — Meilleure qualité)','');
-  el.innerHTML = (isAuto ? '⚡ ' : '📌 ') + name;
-  el.title = isAuto ? 'Mode automatique — Vesta choisit la meilleure IA disponible' : 'Mode manuel — ' + name;
+  var shortName = prov.name.split(' (')[0].split(' — ')[0].split(' ·')[0];
+  // Badge sous le nom Vesta
+  if (el) {
+    el.innerHTML = (isAuto ? '⚡ Auto · ' : '📌 ') + shortName;
+    el.style.color = isAuto ? 'var(--muted)' : 'var(--gold)';
+  }
+  // Label du bouton principal
+  if (btnLabel) {
+    btnLabel.textContent = isAuto ? 'Changer d\'IA' : shortName;
+  }
 }
 window._refreshProviderBadge = _refreshProviderBadge;
 
