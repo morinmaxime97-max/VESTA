@@ -12950,20 +12950,20 @@ var IA_PROVIDERS = {
     tip: '30 req/min · 1 000 req/jour · Très rapide'
   },
   groq_gemma: {
-    name: 'Groq — Gemma 2 9B (Gratuit)',
+    name: 'Groq — Llama 3.1 8B Instant (Gratuit)',
     url: 'https://api.groq.com/openai/v1/chat/completions',
-    model: 'gemma2-9b-it',
+    model: 'llama-3.1-8b-instant',
     key_prefix: 'gsk_', free: true, format: 'openai',
     rpm: 30, rpd: 14400, tpm: 15000,
-    tip: '30 req/min · 14 400 req/jour · Rapide'
+    tip: '30 req/min · 14 400 req/jour · Ultra rapide'
   },
   groq_mixtral: {
-    name: 'Groq — Mixtral 8x7B (Gratuit)',
+    name: 'Groq — Llama 3.1 8B #2 (Gratuit)',
     url: 'https://api.groq.com/openai/v1/chat/completions',
-    model: 'mixtral-8x7b-32768',
+    model: 'llama-3.1-8b-instant',
     key_prefix: 'gsk_', free: true, format: 'openai',
     rpm: 30, rpd: 14400, tpm: 5000,
-    tip: '30 req/min · 14 400 req/jour · Bon contexte'
+    tip: '30 req/min · 14 400 req/jour · Backup rapide'
   },
   gemini: {
     name: 'Google Gemini 2.0 Flash (Gratuit)',
@@ -13284,7 +13284,7 @@ async function callClaudeIA(userMsg, isFirst) {
   var messages = [];
   // Historique tronque a 6 messages (3 echanges) pour economiser tokens
   if (!isFirst && (window._iaConversation||[]).length > 0) {
-    (window._iaConversation||[]).slice(-4).forEach(function(m) { messages.push(m); });
+    (window._iaConversation||[]).slice(-2).forEach(function(m) { messages.push(m); });
   }
   messages.push({role:'user', content: userMsg});
 
@@ -13320,7 +13320,7 @@ async function callClaudeIA(userMsg, isFirst) {
       if (htok > 2000) hist = hist.slice(-4);
 
       var body = {
-        model: prov.model, max_tokens: 1200,
+        model: prov.model, max_tokens: 600,
         messages: [{role:'system', content:fullSys}].concat(hist.map(function(m){
           return { role:m.role, content:typeof m.content==='string'?m.content:JSON.stringify(m.content) };
         }))
@@ -13377,7 +13377,7 @@ async function callClaudeIA(userMsg, isFirst) {
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({ contents:gMsgs,
           systemInstruction:{ parts:[{text:fullSys}] },
-          generationConfig:{ maxOutputTokens:1500 } }) });
+          generationConfig:{ maxOutputTokens:600 } }) });
 
       // Gérer les erreurs HTTP Gemini explicitement
       if (!r2.ok) {
@@ -13399,7 +13399,7 @@ async function callClaudeIA(userMsg, isFirst) {
       var r3 = await fetch(prov.url, { method:'POST',
         signal: AbortSignal.timeout(30000),
         headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
-        body:JSON.stringify({ model:prov.model, max_tokens:1200, system:fullSys,
+        body:JSON.stringify({ model:prov.model, max_tokens: 600, system:fullSys,
           tools:IA_TOOLS, messages:msgs }) });
       return await r3.json();
     }
@@ -13545,7 +13545,7 @@ try {
       // 1. Rate limit / quota / indisponibilité → rotation automatique
       var isRateErr = /rate.limit|Rate.limit|TPM|429|overloaded|quota|exceeded|billing|Provider returned error|provider.*error|upstream|service.*unavailable|503|502|504/i.test(errMsg);
       // 2. Modèle introuvable → rotation
-      var isModelErr2 = /No endpoints found|model.*not.*available|not found|endpoint/i.test(errMsg);
+      var isModelErr2 = /No endpoints found|model.*not.*available|not found|endpoint|decommissioned|no longer supported|deprecated/i.test(errMsg);
       // 3. Erreur Gemini spécifique (RESOURCE_EXHAUSTED, USER_LOCATION, etc.) → rotation
       var isGeminiErr = /RESOURCE_EXHAUSTED|USER_LOCATION_INVALID|PERMISSION_DENIED|SERVICE_UNAVAILABLE|UNAVAILABLE/i.test(errMsg);
       // 4. Auth invalide → UNIQUEMENT si PAS un problème de dispo/quota
@@ -14072,7 +14072,7 @@ async function envoyerMessageIA() {
   // Détecter si la question nécessite les données patrimoniales
   var _needsCtx = /pea|av\b|peg|t2|limoges|loyer|credit|patrimoine|retraite|fiscalit|lmnp|immo|impot|taxe|prime|abond|versement|investiss|epargne|argent|budget|taux|rende|diversif|allocation|bilan|cashflow/i.test(msg);
   var TPM_MAP = { groq:6000, openrouter:4000, gemini:8000, anthropic:16000, groq_gemma:8000, groq_mixtral:5000, gemini_lite:8000, openrouter_mistral:8000, openrouter_deepseek:8000 };
-  var ctxBudget = _needsCtx ? Math.min((TPM_MAP[active.id] || 6000) - 1500, 1500) : 0;
+  var ctxBudget = _needsCtx ? 600 : 0; // ultra-limité
   var ctx = ctxBudget > 0 && window.getContexteAdapte ? window.getContexteAdapte(ctxBudget) : '';
   var fullMsg = ctx ? (msg + NL + NL + '[Données patrimoine]' + NL + ctx) : msg;
 
