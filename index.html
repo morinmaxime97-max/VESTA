@@ -19161,4 +19161,50 @@ function showMoisDetail(monthIdx, year) {
   html += '</div>';
   modal.innerHTML = html;
   document.body.appendChild(modal);
-  modal.addEventListener('click', function(e){ i
+  modal.addEventListener('click', function(e){ if(e.target === modal) document.body.removeChild(modal); });
+  document.getElementById('btn-mois-close').onclick = function(){ document.body.removeChild(modal); };
+}
+window.showMoisDetail = showMoisDetail;
+
+// ══════════════════════════════════════════════════════════════
+// DISPATCHER CENTRALISÉ showPage (unique, remplace tous les wrappers)
+// ══════════════════════════════════════════════════════════════
+(function(){
+  var _origShowPage = window.showPage;
+  if (!_origShowPage) return;
+  window.showPage = function(id) {
+    _origShowPage.apply(this, arguments);
+    setTimeout(function() {
+      try {
+        // Dashboard
+        if (id === 'dashboard') {
+          if (window.renderScorePatrimonial) renderScorePatrimonial();
+          if (window.renderAnomaliesCard) renderAnomaliesCard();
+          if (window.renderPEGDashboard) renderPEGDashboard();
+          if (window.renderT2Dashboard) renderT2Dashboard();
+          if (window.renderNextAction) renderNextAction();
+        }
+        // Historique
+        if (id === 'history') {
+          if (window.renderSnapshots) renderSnapshots();
+          if (window.renderHeatmapCalendrier) renderHeatmapCalendrier();
+        }
+        // Retraite
+        if (id === 'retraite') {
+          if (window.updateProjectionInteractive) updateProjectionInteractive();
+          if (window.renderProgressionRetraite) renderProgressionRetraite();
+        }
+        // Opportunités
+        if (id === 'opportunites') {
+          if (window.renderWatchlist) renderWatchlist();
+        }
+      } catch(e) {
+        console.warn('[showPage dispatcher]', id, e);
+      }
+    }, 220);
+  };
+})();
+</script>
+
+</body>
+</html>
