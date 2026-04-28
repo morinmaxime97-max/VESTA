@@ -11938,10 +11938,15 @@ async function sauvegarderCleAPI() {
     }
     if (testData && testData.error) {
       var errMsg = testData.error.message || JSON.stringify(testData.error);
-      if (!errMsg.includes('overload')) {
+      // Rejeter SEULEMENT si c'est vraiment une clé invalide (401, API_KEY_INVALID)
+      // Quota/rate limit/overload = clé valide mais limite atteinte → accepter quand même
+      var isRealAuthError = /API_KEY_INVALID|invalid.api.key|401|Unauthorized|invalid.*key/i.test(errMsg)
+        && !/quota|exceeded|RESOURCE_EXHAUSTED|rate.limit|overload|billing|SERVICE_UNAVAILABLE/i.test(errMsg);
+      if (isRealAuthError) {
         if (st) { st.textContent = 'Clé invalide : ' + errMsg.slice(0,80); st.style.color='var(--red)'; }
         return;
       }
+      // Autres erreurs (quota, rate limit...) = clé valide, on continue
     }
   } catch(e) { /* ignore test errors, save anyway */ }
   var provSel = document.getElementById('pierre-provider-sel');
