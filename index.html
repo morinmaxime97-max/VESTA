@@ -13007,20 +13007,37 @@ function ouvrirModalIA() {
 
   ov.classList.add('on');
 
-  // Rendre la conversation immédiatement
+  // Vérifier si une clé API est disponible
+  var active = window.getActiveProvider ? window.getActiveProvider() : null;
+  var hasKey = active && active.key;
+
   var el = document.getElementById('ia-card');
+  if (!hasKey) {
+    // Pas de clé : afficher un message d'accueil avec bouton config
+    if (el) el.innerHTML = '<div style="text-align:center;padding:30px 20px;">'
+      + '<div style="font-size:36px;margin-bottom:12px;">🔑</div>'
+      + '<div style="font-family:Playfair Display,serif;font-size:16px;color:var(--gold);margin-bottom:8px;">Bienvenue sur Vesta IA</div>'
+      + '<div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;">'
+      + 'Pour activer Vesta, configurez au moins une clé API gratuite.<br>'
+      + '<b>Groq</b> est recommandé — gratuit, rapide, sans carte bancaire.<br>'
+      + 'La clé est stockée uniquement dans votre navigateur.</div>'
+      + '<button onclick="demanderCleAPI()" class="btn" style="margin-bottom:10px;width:100%;">⚙️ Configurer une clé API gratuite</button>'
+      + '<div style="font-size:10px;color:var(--muted);">Vous pourrez ensuite dialoguer toute la journée gratuitement</div>'
+      + '</div>';
+    return;
+  }
+
+  // Clé disponible : rendre la conversation
   if (el) {
     setTimeout(function() {
       if (window.renderIAConversation) renderIAConversation(el);
       if (window.refreshTokenBar) refreshTokenBar();
       if (window._refreshProviderBadge) {
-        var active = window.getActiveProvider ? window.getActiveProvider() : null;
-        if (active) window._refreshProviderBadge(active.id, active.auto);
+        window._refreshProviderBadge(active.id, active.auto);
       }
     }, 50);
   }
 
-  // Focus sur le champ de saisie
   setTimeout(function() {
     var inp = document.getElementById('ia-user-input');
     if (inp) inp.focus();
@@ -13801,43 +13818,45 @@ async function envoyerMessageIA() {
   var input = document.getElementById('ia-user-input');
   if (!input || !input.value.trim()) return;
   var msg = input.value.trim();
+
+  // ── Vérifier qu'une clé est disponible AVANT tout ────────────
+  var active = window.getActiveProvider ? window.getActiveProvider() : null;
+  if (!active || !active.key) {
+    // Afficher le configurateur de clé
+    if (window.demanderCleAPI) window.demanderCleAPI();
+    return;
+  }
+
   input.value = '';
   input.disabled = true;
 
-  // Contexte adapté à la limite tokens du provider actif
-  var active = window.getActiveProvider ? window.getActiveProvider() : null;
-  var TPM_MAP = { groq: 6000, openrouter: 4000, gemini: 8000, anthropic: 16000 };
-  var ctxBudget = (TPM_MAP[(active && active.id) || 'groq'] || 6000) - 1500;
-  var ctx = window.getContexteAdapte ? window.getContexteAdapte(ctxBudget) : (window.getPatrimoineContext ? window.getPatrimoineContext() : '');
   var NL  = String.fromCharCode(10);
+  var TPM_MAP = { groq:6000, openrouter:4000, gemini:8000, anthropic:16000, groq_gemma:15000, groq_mixtral:5000, gemini_lite:8000, openrouter_mistral:8000, openrouter_deepseek:8000 };
+  var ctxBudget = (TPM_MAP[active.id] || 6000) - 1500;
+  var ctx = window.getContexteAdapte ? window.getContexteAdapte(ctxBudget) : (window.getPatrimoineContext ? window.getPatrimoineContext() : '');
   var fullMsg = msg + NL + NL + '[Donnees actuelles]' + NL + ctx;
 
-  // Auto-détection de l'agent selon le contenu du message
   if (window.detecterEtChangerAgent) window.detecterEtChangerAgent(msg);
-
   window._iaConversation.push({role:'user', content: msg});
-  var el = document.getElementById('ia-content');
+
+  // Utiliser ia-card (toujours visible) et non ia-content (caché)
+  var el = document.getElementById('ia-card') || document.getElementById('ia-content');
   renderIAConversation(el);
 
-  // Typing indicator
+  // Spinner dans ia-messages (qui est dans ia-card)
   var msgs = document.getElementById('ia-messages');
   if (msgs) {
     var t = document.createElement('div');
     t.id = 'ia-typing';
     t.style.cssText = 'display:flex;gap:8px;align-items:center;padding:8px 0;';
     var tAvatar = document.createElement('div');
-    // Utiliser background-image pour éviter les problèmes de timing chargement
     var vestaSrc = window.VESTA_AVATAR_IMG || '';
-    if (vestaSrc) {
-      tAvatar.style.cssText = 'width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--gold)66;'
-        + 'background-image:url("' + vestaSrc + '");background-size:cover;background-position:top center;'
-        + 'animation:vestaPulse 1.5s ease-in-out infinite;';
-    } else {
-      tAvatar.style.cssText = 'width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--gold)66;'
-        + 'background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:16px;'
-        + 'animation:vestaPulse 1.5s ease-in-out infinite;';
-      tAvatar.textContent = '🔥';
-    }
+    tAvatar.style.cssText = 'width:30px;height:30px;border-radius:50%;flex-shrink:0;border:2px solid var(--gold)66;'
+      + (vestaSrc
+          ? 'background-image:url("' + vestaSrc + '");background-size:cover;background-position:top center;'
+          : 'background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:16px;')
+      + 'animation:vestaPulse 1.5s ease-in-out infinite;';
+    if (!vestaSrc) tAvatar.textContent = '🔥';
     var tBubble = document.createElement('div');
     tBubble.style.cssText = 'padding:10px 14px;background:var(--s2);border-radius:2px 12px 12px 12px;border:1px solid var(--bd);font-size:12px;color:var(--muted);';
     tBubble.textContent = 'Vesta réfléchit...';
@@ -13847,32 +13866,22 @@ async function envoyerMessageIA() {
     msgs.scrollTop = msgs.scrollHeight;
   }
 
-  var response = await callClaudeIA(fullMsg, false);
-
-  var typing = document.getElementById('ia-typing');
-  if (typing) typing.remove();
-
-  // Si rate limit, la réponse brute est stockée (pas de HTML inline)
-  window._iaConversation.push({role:'assistant', content: response || ''});
-  renderIAConversation(el);
-  // Mettre à jour la barre de tokens APRÈS avoir ajouté la réponse
-  setTimeout(function(){ if (window.refreshTokenBar) window.refreshTokenBar(); }, 100);
-
-  // Ajouter bouton config si rate limit
-  if (response && (response.includes('Limite Groq') || response.includes('Rate limit') || response.includes('⏳'))) {
-    var msgEls = document.querySelectorAll('#ia-messages > div');
-    var lastMsg = msgEls[msgEls.length - 1];
-    if (lastMsg) {
-      var cfgBtn = document.createElement('button');
-      cfgBtn.className = 'btn gh sm';
-      cfgBtn.style.cssText = 'font-size:10px;margin-top:8px;';
-      cfgBtn.textContent = '⚙️ Changer de provider IA';
-      cfgBtn.onclick = function(){ if(window.demanderCleAPI) window.demanderCleAPI(); };
-      lastMsg.appendChild(cfgBtn);
-    }
+  var response = '';
+  try {
+    response = await callClaudeIA(fullMsg, false);
+  } catch(e) {
+    response = '⚠️ Erreur inattendue : ' + e.message;
+  } finally {
+    // Toujours retirer le spinner et réactiver l'input
+    var typing = document.getElementById('ia-typing');
+    if (typing) typing.remove();
+    if (input) input.disabled = false;
+    setTimeout(function(){ if(input) input.focus(); }, 100);
   }
 
-  if (input) input.disabled = false;
+  window._iaConversation.push({role:'assistant', content: response || ''});
+  renderIAConversation(el);
+  setTimeout(function(){ if (window.refreshTokenBar) window.refreshTokenBar(); }, 100);
 }
 window.envoyerMessageIA = envoyerMessageIA;
 
