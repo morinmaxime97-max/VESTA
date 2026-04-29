@@ -2376,7 +2376,19 @@ body {
       <span>📊 Opportunités identifiées</span>
       <span id="opp-results-meta" style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;"></span>
     </div>
+    <!-- Onglets Statique / Live -->
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--bd);margin-bottom:14px;">
+      <button id="opp-tab-static" onclick="switchOppTab('static')"
+        style="flex:1;padding:8px;font-size:11px;font-weight:600;background:none;border:none;border-bottom:2px solid var(--gold);color:var(--gold);cursor:pointer;font-family:inherit;">
+        📋 Base Vesta
+      </button>
+      <button id="opp-tab-live" onclick="switchOppTab('live')"
+        style="flex:1;padding:8px;font-size:11px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;font-family:inherit;">
+        🌐 Recherche Live <span style="font-size:9px;background:var(--gold)22;color:var(--gold);border-radius:10px;padding:1px 6px;border:1px solid var(--gold)44;">IA</span>
+      </button>
+    </div>
     <div id="opp-results-content"></div>
+    <div id="opp-live-content" style="display:none;"></div>
   </div>
 
   <!-- Watchlist -->
@@ -16084,13 +16096,14 @@ function rechercherOpportunites() {
   };
 
   card.style.display = 'block';
+  switchOppTab('static');
   content.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);"><div style="font-size:24px;animation:spin 2s linear infinite;display:inline-block;">🔍</div><div style="margin-top:10px;font-size:13px;">Analyse multi-critères en cours...</div></div>';
   if (btn) btn.disabled = true;
   if (btn2) btn2.disabled = true;
 
   setTimeout(function() {
     var results = filtrerEtScorerOpportunites(crit);
-    if (meta) meta.textContent = results.length + ' résultats · ' + Object.keys(crit).filter(function(k){ return crit[k] && crit[k]!=='any'; }).length + ' filtres actifs';
+    if (meta) meta.textContent = results.length + ' résultats · Cliquez "Recherche Live" pour aller plus loin';
     renderOpportunites(results, crit);
     if (btn) btn.disabled = false;
     if (btn2) btn2.disabled = false;
@@ -16098,128 +16111,392 @@ function rechercherOpportunites() {
 }
 window.rechercherOpportunites = rechercherOpportunites;
 
+// ── Basculer entre onglets Statique / Live ──────────────────
+function switchOppTab(tab) {
+  var staticContent = document.getElementById('opp-results-content');
+  var liveContent   = document.getElementById('opp-live-content');
+  var tabStatic = document.getElementById('opp-tab-static');
+  var tabLive   = document.getElementById('opp-tab-live');
+
+  if (tab === 'static') {
+    if (staticContent) staticContent.style.display = '';
+    if (liveContent)   liveContent.style.display   = 'none';
+    if (tabStatic) { tabStatic.style.borderBottomColor = 'var(--gold)'; tabStatic.style.color = 'var(--gold)'; }
+    if (tabLive)   { tabLive.style.borderBottomColor   = 'transparent'; tabLive.style.color   = 'var(--muted)'; }
+  } else {
+    if (staticContent) staticContent.style.display = 'none';
+    if (liveContent)   liveContent.style.display   = '';
+    if (tabLive)   { tabLive.style.borderBottomColor   = 'var(--gold)'; tabLive.style.color   = 'var(--gold)'; }
+    if (tabStatic) { tabStatic.style.borderBottomColor = 'transparent'; tabStatic.style.color = 'var(--muted)'; }
+    // Lancer la recherche si pas encore fait
+    if (liveContent && liveContent.innerHTML.trim() === '') {
+      rechercherOpportunitesLive();
+    }
+  }
+}
+window.switchOppTab = switchOppTab;
+
+// ── Recherche Live via IA + Web Search ──────────────────────
+async function rechercherOpportunitesLive() {
+  var liveContent = document.getElementById('opp-live-content');
+  if (!liveContent) return;
+
+  // Lire les critères sélectionnés
+  var gv = function(id){ var e=document.getElementById(id); return e?e.value.trim():''; };
+  var secteur  = gv('opp-secteur');
+  var type     = gv('opp-type');
+  var zone     = gv('opp-zone');
+  var horizon  = gv('opp-horizon');
+  var enveloppe = gv('opp-enveloppe');
+  var risque   = gv('opp-risque');
+
+  // Construire une description des critères pour le prompt
+  var critDesc = [
+    type !== 'all' ? type : 'tous types',
+    secteur !== 'any' ? 'secteur ' + secteur : '',
+    zone !== 'any' ? 'zone ' + zone : '',
+    enveloppe !== 'any' ? enveloppe.toUpperCase() + ' eligible' : '',
+    horizon === 'long' ? 'long terme 10+ ans' : horizon,
+  ].filter(Boolean).join(', ');
+
+  liveContent.innerHTML = '<div style="padding:24px;text-align:center;">'
+    + '<div style="font-size:32px;animation:vestaPulse 1.5s infinite;display:inline-block;">'
+    + (window.VESTA_AVATAR_IMG ? '<img src="' + window.VESTA_AVATAR_IMG + '" style="width:48px;height:48px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid var(--gold);">' : '🔥')
+    + '</div>'
+    + '<div style="margin-top:12px;font-size:13px;font-weight:600;color:var(--text);">Vesta recherche sur internet...</div>'
+    + '<div style="margin-top:6px;font-size:11px;color:var(--muted);">Analyse des marchés · Nouvelles tendances · Entreprises émergentes</div>'
+    + '<div style="margin-top:4px;font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;" id="live-search-status">Connexion à l\'IA...</div>'
+    + '</div>';
+
+  var statusEl = function(t) {
+    var el = document.getElementById('live-search-status');
+    if (el) el.textContent = t;
+  };
+
+  // Vérifier clé API disponible
+  var active = window.getActiveProvider ? window.getActiveProvider() : null;
+  if (!active || !active.key) {
+    liveContent.innerHTML = '<div style="padding:20px;text-align:center;">'
+      + '<div style="font-size:36px;margin-bottom:12px;">🔑</div>'
+      + '<div style="font-size:13px;color:var(--text);margin-bottom:8px;">Clé API requise pour la recherche live</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Configurez Groq (gratuit) pour que Vesta recherche de vraies opportunités en temps réel</div>'
+      + '<button onclick="demanderCleAPI()" class="btn">🔑 Configurer une clé API gratuite</button>'
+      + '<div style="margin-top:12px;font-size:10px;color:var(--muted);">Ou utilisez l\'onglet "Base Vesta" ci-dessus</div>'
+      + '</div>';
+    return;
+  }
+
+  try {
+    statusEl('Construction du prompt de recherche...');
+    var NL = String.fromCharCode(10);
+
+    // Prompt ultra-ciblé pour trouver des pépites
+    var prompt = 'Tu es un analyste financier expert en détection de pépites boursières (style early Nvidia, early Tesla).' + NL
+      + 'CRITÈRES DEMANDÉS : ' + critDesc + NL + NL
+      + 'PROFIL INVESTISSEUR : Maxime, 29 ans, France, TMI 11%, PEA ouvert 10/2024, horizon retraite 2057, profil offensif.' + NL + NL
+      + 'MISSION : Trouve 5 à 8 entreprises ou ETF correspondant à ces critères qui ont un fort potentiel de croissance explosive.' + NL
+      + 'Privilégie : quasi-monopoles · marchés en forte croissance · avantages compétitifs durables · catalyseurs récents (2024-2025).' + NL + NL
+      + 'Pour chaque opportunité, fournis EXACTEMENT ce format JSON (tableau) :' + NL
+      + '[{' + NL
+      + '  "nom": "Nom complet",,' + NL
+      + '  "ticker": "TICK.XX",' + NL
+      + '  "type": "pepite|etf|action|dividende",' + NL
+      + '  "pea": true/false,' + NL
+      + '  "secteur": "tech|health|finance|energy|conso|indus|luxe",' + NL
+      + '  "zone": "us|europe|france|emergents|global",' + NL
+      + '  "capitalisation": "mega|large|mid|small",' + NL
+      + '  "per": 25,' + NL
+      + '  "croissance_annuelle": 35,' + NL
+      + '  "dividende_pct": 0,' + NL
+      + '  "risque": "low|med|high",' + NL
+      + '  "monopole": "Description du monopole ou avantage unique",' + NL
+      + '  "these": "Thèse d\'investissement en 2 phrases max",' + NL
+      + '  "catalyseurs": ["cat1", "cat2", "cat3"],' + NL
+      + '  "risques": ["risque1", "risque2"],' + NL
+      + '  "potentiel": "2-5x en 5 ans",' + NL
+      + '  "score_conviction": 8' + NL
+      + '}]' + NL + NL
+      + 'Réponds UNIQUEMENT avec le tableau JSON valide, sans texte avant ou après.';
+
+    statusEl('Vesta analyse les marchés actuels...');
+
+    var resp = await callClaudeIA(prompt, true);
+    statusEl('Traitement des résultats...');
+
+    if (!resp || resp.startsWith('⚠️') || resp.startsWith('⏱️') || resp.startsWith('⏳')) {
+      throw new Error(resp || 'Pas de réponse');
+    }
+
+    // Parser le JSON
+    var jsonMatch = resp.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) throw new Error('Format JSON invalide dans la réponse');
+    var oppsLive = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(oppsLive) || oppsLive.length === 0) throw new Error('Aucune opportunité retournée');
+
+    // Construire les cartes
+    var learn = sessionStorage.getItem('pierre-learn-mode') === '1';
+    var html  = '<div style="margin-bottom:10px;padding:8px 14px;background:linear-gradient(135deg,var(--blue)18,transparent);border:1px solid var(--blue)33;border-radius:8px;display:flex;justify-content:space-between;align-items:center;">'
+      + '<div><span style="font-size:11px;font-weight:700;color:var(--blue);">🌐 ' + oppsLive.length + ' opportunités trouvées par Vesta IA</span>'
+      + '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;">Analyse en temps réel · ' + new Date().toLocaleDateString('fr-FR') + '</div></div>'
+      + '<button onclick="rechercherOpportunitesLive()" style="font-size:9px;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--muted);font-family:inherit;">↻ Relancer</button>'
+      + '</div>';
+
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;">';
+
+    oppsLive.forEach(function(o) {
+      var isPepite = o.type === 'pepite' || (o.croissance_annuelle && o.croissance_annuelle > 25);
+      var score = o.score_conviction || 7;
+      var col = isPepite ? '#f97316' : score >= 8 ? 'var(--green)' : score >= 6 ? 'var(--gold)' : 'var(--blue)';
+
+      html += '<div style="border-radius:12px;padding:14px;border-left:3px solid ' + col + ';background:var(--s2);">';
+
+      // Badge pépite
+      if (isPepite) {
+        html += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">'
+          + '<span style="background:#f97316;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;">🚀 PÉPITE LIVE</span>'
+          + (o.pea ? '<span style="background:var(--gold)22;color:var(--gold);font-size:9px;padding:2px 8px;border-radius:10px;border:1px solid var(--gold)44;">PEA ✓</span>' : '<span style="background:var(--s3);color:var(--muted);font-size:9px;padding:2px 8px;border-radius:10px;">CTO</span>')
+          + '</div>';
+      }
+
+      // Header
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">';
+      html += '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;">' + (o.nom || '?') + '</div>';
+      html += '<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);">' + (o.ticker || '') + ' · ' + (o.zone || '') + ' · ' + (o.secteur || '') + '</div></div>';
+      html += '<div style="text-align:right;flex-shrink:0;margin-left:10px;"><div style="font-size:22px;font-weight:700;color:' + col + ';font-family:JetBrains Mono,monospace;">' + score + '</div><div style="font-size:9px;color:var(--muted);">/10</div></div></div>';
+
+      // Tags
+      html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">';
+      if (o.per)                html += '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:var(--s3);color:var(--muted);font-family:JetBrains Mono,monospace;">PER ' + o.per + '</span>';
+      if (o.croissance_annuelle) html += '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:var(--s3);color:#f97316;font-family:JetBrains Mono,monospace;">+' + o.croissance_annuelle + '%/an</span>';
+      if (o.dividende_pct)      html += '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:var(--s3);color:var(--green);font-family:JetBrains Mono,monospace;">Div ' + o.dividende_pct + '%</span>';
+      if (o.capitalisation)     html += '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:var(--s3);color:var(--muted);font-family:JetBrains Mono,monospace;">' + o.capitalisation + '</span>';
+      if (o.risque)             html += '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:var(--s3);color:var(--muted);font-family:JetBrains Mono,monospace;">' + o.risque + ' risk</span>';
+      html += '</div>';
+
+      // Monopole
+      if (o.monopole) html += '<div style="font-size:10px;color:#8b5cf6;font-weight:600;margin-bottom:6px;">🏆 ' + o.monopole + '</div>';
+
+      // Thèse
+      if (o.these) html += '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;">' + o.these + '</div>';
+
+      // Détails mode apprentissage ou pépite
+      if ((learn || isPepite) && (o.catalyseurs || o.risques)) {
+        html += '<div style="padding:8px;background:var(--s3);border-radius:6px;margin-bottom:8px;font-size:10px;line-height:1.6;">';
+        if (o.catalyseurs && o.catalyseurs.length) {
+          html += '<div style="color:var(--green);font-weight:600;">✅ Catalyseurs</div>';
+          o.catalyseurs.forEach(function(c){ html += '<div style="color:var(--muted);padding-left:8px;">· ' + c + '</div>'; });
+        }
+        if (o.risques && o.risques.length) {
+          html += '<div style="color:var(--red);font-weight:600;margin-top:4px;">⚠️ Risques</div>';
+          o.risques.forEach(function(r){ html += '<div style="color:var(--muted);padding-left:8px;">· ' + r + '</div>'; });
+        }
+        html += '</div>';
+      }
+
+      // Potentiel
+      if (o.potentiel) html += '<div style="font-size:10px;color:#f97316;font-weight:700;margin-bottom:8px;">🎯 ' + o.potentiel + '</div>';
+
+      // Actions
+      html += '<div style="display:flex;gap:6px;">';
+      if (o.ticker) {
+        var yUrl = 'https://finance.yahoo.com/quote/' + o.ticker;
+        html += '<a href="' + yUrl + '" target="_blank" style="flex:1;background:var(--gold)22;border:1px solid var(--gold)55;border-radius:6px;padding:5px;font-size:10px;cursor:pointer;color:var(--gold);text-decoration:none;text-align:center;">📊 Yahoo Finance</a>';
+      }
+      if (o.pea) {
+        html += '<button onclick="if(window._toast)window._toast(\'Ajout watchlist bientot disponible\')" style="background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font-size:10px;cursor:pointer;color:var(--muted);">⭐ Watch</button>';
+      }
+      html += '</div></div>';
+    });
+
+    html += '</div>';
+    liveContent.innerHTML = html;
+
+  } catch(err) {
+    liveContent.innerHTML = '<div style="padding:20px;">'
+      + '<div style="color:var(--red);font-size:13px;margin-bottom:8px;">⚠️ Erreur de recherche live</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-bottom:12px;">' + (err.message || String(err)).slice(0, 200) + '</div>'
+      + '<button onclick="rechercherOpportunitesLive()" class="btn sm">↻ Réessayer</button>'
+      + '<span style="font-size:10px;color:var(--muted);margin-left:10px;">ou consultez l\'onglet "Base Vesta"</span>'
+      + '</div>';
+  }
+}
+window.rechercherOpportunitesLive = rechercherOpportunitesLive;
+
 // ── Base de données enrichie ─────────────────────────────────
 var OPP_DATABASE = [
-  // ETF PEA
-  { nom:'ESE BNP S&P500 PEA', ticker:'ESE.PA', type:'etf', enveloppe:['pea'], cap:'mega', secteur:'any', zone:'us',
-    per:22, pb:4.2, div:1.3, ter:0.15, growth:12, risque:'med', esg:false, momentum:'haussier', strategie:['dca','croissance'],
-    score:{qualite:9,valorisation:7,croissance:9,rendement:5,risque:7,peacompat:10},
-    note:'Ton ETF actuel · S&P500 · PEA eligible · TER ultra-bas · Référence mondiale',
-    lien:'https://www.bnpparibas-am.com/fr/particuliers/nos-fonds/etf/ese-bnp-paribas-easy-sp500-ucits-etf/', star:true },
 
-  { nom:'CW8 Amundi MSCI World PEA', ticker:'CW8.PA', type:'etf', enveloppe:['pea'], cap:'mega', secteur:'any', zone:'global',
-    per:21, pb:3.8, div:1.4, ter:0.12, growth:10, risque:'med', esg:false, momentum:'haussier', strategie:['dca','croissance'],
-    score:{qualite:9,valorisation:7,croissance:9,rendement:5,risque:7,peacompat:10},
-    note:'MSCI World 1600 sociétés · Diversification maximale · TER 0.12% · Complémentaire ESE' },
+  // ═══════════════════════════════════════════════════
+  // 🚀 PÉPITES — CROISSANCE EXPLOSIVE (style early Nvidia)
+  // Entreprises quasi-monopolistiques sur leur marché
+  // ═══════════════════════════════════════════════════
 
-  { nom:'PANX Amundi Nasdaq-100 PEA', ticker:'PANX.PA', type:'etf', enveloppe:['pea'], cap:'mega', secteur:'tech', zone:'us',
-    per:32, pb:7.1, div:0.5, ter:0.22, growth:18, risque:'high', esg:false, momentum:'haussier', strategie:['dca','croissance'],
+  { nom:'Palantir Technologies PLTR', ticker:'PLTR', type:'croissance', enveloppe:['cto'],
+    cap:'large', secteur:'tech', zone:'us',
+    per:180, pb:28, div:0, ter:null, growth:36, risque:'high', esg:false,
+    momentum:'haussier', strategie:['croissance','dca'],
+    score:{qualite:9,valorisation:3,croissance:10,rendement:0,risque:4,peacompat:0},
+    pepite:true, monopole:'IA gouvernementale et défense',
+    catalyseurs:['Contrats CIA/NSA/armée','Plateforme AIP IA déployée par Fortune 500','GAAP profitable depuis 2023'],
+    risques:['Valorisation très élevée','Dépendance contrats gouvernementaux','Concurrence cloud majors'],
+    potentiel:'5-10x en 5-7 ans si déploiement IA massif',
+    note:'Plateforme IA analyse données · Quasi-monopole défense US · Early nvidia-like · Croissance +36%/an · Non PEA' },
+
+  { nom:'Axon Enterprise AXON', ticker:'AXON', type:'croissance', enveloppe:['cto'],
+    cap:'large', secteur:'tech', zone:'us',
+    per:110, pb:20, div:0, ter:null, growth:33, risque:'high', esg:true,
+    momentum:'haussier', strategie:['croissance'],
+    score:{qualite:9,valorisation:3,croissance:10,rendement:0,risque:4,peacompat:0},
+    pepite:true, monopole:'Technologie forces de lordre',
+    catalyseurs:['Taser + caméras bodycam = écosystème fermé','Cloud Evidence.com SaaS récurrent','Expansion internationale'],
+    risques:['Réglementation armes','Concentration marché US'],
+    potentiel:'3-6x en 5 ans',
+    note:'Monopole matériel + logiciel policiers · SaaS récurrent · Croissance 33%/an · Non PEA' },
+
+  { nom:'ASML Holding ASML.AS', ticker:'ASML.AS', type:'croissance', enveloppe:['pea'],
+    cap:'mega', secteur:'tech', zone:'europe',
+    per:30, pb:13, div:1.0, ter:null, growth:20, risque:'med', esg:true,
+    momentum:'baissier', strategie:['croissance','lumpsum'],
+    score:{qualite:10,valorisation:6,croissance:10,rendement:2,risque:6,peacompat:8},
+    pepite:true, monopole:'Machines lithographie EUV — seul au monde',
+    catalyseurs:['Unique fournisseur TSMC/Samsung/Intel','Carnets commandes 2026 pleins','IA = +chips = +ASML'],
+    risques:['Restrictions export Chine','Cycle semi-conducteurs'],
+    potentiel:'2-4x en 5-7 ans · PEA eligible · Correction -40% = opportunité',
+    note:'MONOPOLE ABSOLU — Seul fabricant machines EUV · Tout chip IA passe par ASML · PEA eligible · Correction récente' },
+
+  { nom:'Celsius Holdings CELH', ticker:'CELH', type:'croissance', enveloppe:['cto'],
+    cap:'mid', secteur:'conso', zone:'us',
+    per:45, pb:7, div:0, ter:null, growth:28, risque:'high', esg:false,
+    momentum:'baissier', strategie:['croissance','lumpsum'],
+    score:{qualite:7,valorisation:5,croissance:9,rendement:0,risque:4,peacompat:0},
+    pepite:true, monopole:'Energy drink santé premium',
+    catalyseurs:['Distribution Pepsi exclusive','Part marché US en forte hausse','Expansion Europe Asie'],
+    risques:['Marché saturé energy drinks','Dépendance Pepsi'],
+    potentiel:'2-4x si percée internationale',
+    note:'Challenger Red Bull/Monster sur segment santé · Distribution Pepsi · Correction -70% · Non PEA' },
+
+  { nom:'Duolingo DUOL', ticker:'DUOL', type:'croissance', enveloppe:['cto'],
+    cap:'mid', secteur:'tech', zone:'us',
+    per:120, pb:18, div:0, ter:null, growth:40, risque:'high', esg:true,
+    momentum:'haussier', strategie:['croissance'],
+    score:{qualite:8,valorisation:3,croissance:10,rendement:0,risque:4,peacompat:0},
+    pepite:true, monopole:'App apprentissage langues gamifiée',
+    catalyseurs:['500M utilisateurs · Quasi monopole segment','Abonnement Duolingo Max IA +40% prix','Duolingo English Test = $$$'],
+    risques:['Valorisation élevée','Dépendance Google Play/Apple'],
+    potentiel:'3-5x en 5 ans si monétisation IA',
+    note:'Monopole app langue · IA intégrée (DuoMax) · Croissance 40%/an · Non PEA' },
+
+  { nom:'Cloudflare NET', ticker:'NET', type:'croissance', enveloppe:['cto'],
+    cap:'large', secteur:'tech', zone:'us',
+    per:300, pb:30, div:0, ter:null, growth:28, risque:'high', esg:true,
+    momentum:'haussier', strategie:['croissance','dca'],
+    score:{qualite:9,valorisation:3,croissance:10,rendement:0,risque:4,peacompat:0},
+    pepite:true, monopole:'Infrastructure internet securisee',
+    catalyseurs:['Edge computing + IA + Zero Trust','20% Fortune 1000 clients','Workers AI = nouveau S3 AWS'],
+    risques:['Valorisation extrême','Azure/AWS sur le même terrain'],
+    potentiel:'3-6x en 5-7 ans si Workers s impose',
+    note:'Internet "invisible" · Protection 20% du web · Edge IA · Valorisation pricing croissance · Non PEA' },
+
+  { nom:'Mercado Libre MELI', ticker:'MELI', type:'croissance', enveloppe:['cto'],
+    cap:'mega', secteur:'tech', zone:'emergents',
+    per:60, pb:20, div:0, ter:null, growth:37, risque:'high', esg:false,
+    momentum:'haussier', strategie:['croissance'],
+    score:{qualite:9,valorisation:4,croissance:10,rendement:0,risque:4,peacompat:0},
+    pepite:true, monopole:'Amazon et Visa de Amerique latine',
+    catalyseurs:['700M+ personnes marché adressable','MercadoPago = banque 50M personnes','Logistics propre = moat fort'],
+    risques:['Risque change devise','Instabilité politique Brésil/Argentine'],
+    potentiel:'3-5x en 5-7 ans si inclusion financière',
+    note:'Amazon + PayPal + FedEx Latino · Quasi monopole région · Croissance 37%/an · Non PEA' },
+
+  { nom:'Adyen ADYEN.AS', ticker:'ADYEN.AS', type:'croissance', enveloppe:['pea'],
+    cap:'large', secteur:'finance', zone:'europe',
+    per:55, pb:9, div:0, ter:null, growth:22, risque:'med', esg:true,
+    momentum:'baissier', strategie:['croissance','lumpsum'],
+    score:{qualite:9,valorisation:5,croissance:9,rendement:0,risque:5,peacompat:8},
+    pepite:true, monopole:'Infrastructure paiement global',
+    catalyseurs:['Stripe concurrent mais coté + PEA','Un seul système = McDonald Netflix LVMH','Plateforme unifiée physique + digital'],
+    risques:['Déception croissance 2023','Concurrence Stripe'],
+    potentiel:'3-5x · PEA eligible · Correction -65% depuis sommet',
+    note:'Plomberie financière mondiale · LVMH McDonald Spotify clients · PEA eligible · Correction majeure = opportunité' },
+
+  { nom:'Novo Nordisk NOVOB.CO', ticker:'NOVOB.CO', type:'croissance', enveloppe:['pea'],
+    cap:'mega', secteur:'health', zone:'europe',
+    per:22, pb:25, div:1.2, ter:null, growth:25, risque:'med', esg:true,
+    momentum:'baissier', strategie:['croissance','lumpsum'],
+    score:{qualite:10,valorisation:5,croissance:10,rendement:2,risque:6,peacompat:8},
+    pepite:true, monopole:'Médicaments obésité et diabète GLP-1',
+    catalyseurs:['Ozempic/Wegovy = blockbuster','Indications cardio + Alzheimer en cours','1 adulte sur 4 obèse = marché 1000Md$'],
+    risques:['Concurrence Eli Lilly','Remboursements santé incertains'],
+    potentiel:'2-4x · PEA eligible · Correction -40% depuis ATH',
+    note:'Quasi monopole GLP-1 · Ozempic = phenomene mondial · PEA eligible · Correction = point entree' },
+
+  { nom:'ARM Holdings ARM', ticker:'ARM', type:'croissance', enveloppe:['cto'],
+    cap:'mega', secteur:'tech', zone:'us',
+    per:250, pb:40, div:0, ter:null, growth:48, risque:'high', esg:false,
+    momentum:'haussier', strategie:['croissance'],
+    score:{qualite:10,valorisation:3,croissance:10,rendement:0,risque:4,peacompat:0},
+    pepite:true, monopole:'Architecture CPU mobile mondiale',
+    catalyseurs:['99% smartphones = architecture ARM','Royalties sur chaque chip Apple Samsung Qualcomm','IA edge computing = +royalties'],
+    risques:['IPO récente volatilité','Softbank actionnaire dominant'],
+    potentiel:'3-5x si expansion serveurs IA',
+    note:'Royalties sur 99% chips mobiles · NVIDIA Apple Qualcomm paient ARM · Monopole architecture · Non PEA' },
+
+  // ═══════════════════════════════════════════════════
+  // 🏆 ETF PEA — FONDATION PORTEFEUILLE
+  // ═══════════════════════════════════════════════════
+
+  { nom:'ESE BNP S&P500 PEA', ticker:'ESE.PA', type:'etf', enveloppe:['pea'],
+    cap:'mega', secteur:'any', zone:'us',
+    per:22, pb:4.2, div:1.3, ter:0.15, growth:12, risque:'med', esg:false,
+    momentum:'haussier', strategie:['dca','croissance'],
+    score:{qualite:9,valorisation:7,croissance:9,rendement:5,risque:7,peacompat:10},
+    note:'Ton ETF actuel · S&P500 · PEA · TER ultra-bas · Contient les futures pepites US', star:true },
+
+  { nom:'PANX Amundi Nasdaq-100 PEA', ticker:'PANX.PA', type:'etf', enveloppe:['pea'],
+    cap:'mega', secteur:'tech', zone:'us',
+    per:32, pb:7.1, div:0.5, ter:0.22, growth:18, risque:'high', esg:false,
+    momentum:'haussier', strategie:['dca','croissance'],
     score:{qualite:8,valorisation:5,croissance:10,rendement:3,risque:5,peacompat:10},
-    note:'100 plus grandes valeurs Nasdaq · IA & Tech · PEA eligible · Plus volatil que ESE' },
+    note:'100 valeurs Nasdaq · Expose aux pépites tech · PEA · Plus concentré · Complémentaire ESE' },
 
-  { nom:'PAEEM Amundi MSCI Émergents', ticker:'PAEEM.PA', type:'etf', enveloppe:['pea'], cap:'large', secteur:'any', zone:'emergents',
-    per:12, pb:1.6, div:3.1, ter:0.20, growth:7, risque:'high', esg:false, momentum:'neutre', strategie:['dca','couverture'],
-    score:{qualite:6,valorisation:8,croissance:6,rendement:6,risque:4,peacompat:10},
-    note:'Chine · Inde · Brésil · Valorisation basse · Potentiel long terme · Plus risqué' },
+  { nom:'CW8 Amundi MSCI World PEA', ticker:'CW8.PA', type:'etf', enveloppe:['pea'],
+    cap:'mega', secteur:'any', zone:'global',
+    per:21, pb:3.8, div:1.4, ter:0.12, growth:10, risque:'med', esg:false,
+    momentum:'haussier', strategie:['dca','croissance'],
+    score:{qualite:9,valorisation:7,croissance:9,rendement:5,risque:7,peacompat:10},
+    note:'1600 societes mondiales · Diversification max · TER 0.12% · Alternative a ESE' },
 
-  { nom:'CEUX Amundi Europe ex-UK', ticker:'CEUX.PA', type:'etf', enveloppe:['pea'], cap:'large', secteur:'any', zone:'europe',
-    per:14, pb:2.1, div:3.5, ter:0.15, growth:6, risque:'med', esg:false, momentum:'haussier', strategie:['dca','dividendes'],
-    score:{qualite:7,valorisation:8,croissance:6,rendement:7,risque:7,peacompat:10},
-    note:'Europe hors UK · Dividendes stables · Bonne valorisation · PEA eligible' },
+  // ═══════════════════════════════════════════════════
+  // 💰 DIVIDENDES / REVENUS PASSIFS
+  // ═══════════════════════════════════════════════════
 
-  { nom:'LYXIB iShares Euro Govt Bond', ticker:'LYXIB.PA', type:'obligations', enveloppe:['av','pea'], cap:'any', secteur:'any', zone:'europe',
-    per:null, pb:null, div:3.8, ter:0.09, growth:2, risque:'low', esg:false, momentum:'neutre', strategie:['couverture','dividendes'],
-    score:{qualite:8,valorisation:7,croissance:3,rendement:7,risque:10,peacompat:6},
-    note:'Obligations d\'etat zone euro · Capital protégé · Rendement stable 3.5-4% · Défensif' },
-
-  { nom:'WTEM Amundi World Energy', ticker:'WTEM.PA', type:'etf', enveloppe:['pea'], cap:'large', secteur:'energy', zone:'global',
-    per:13, pb:2.0, div:4.2, ter:0.25, growth:5, risque:'med', esg:false, momentum:'neutre', strategie:['dividendes'],
-    score:{qualite:6,valorisation:8,croissance:5,rendement:8,risque:6,peacompat:10},
-    note:'Énergie mondiale · Dividendes élevés · Shell BP TotalEnergies · Couverture inflation' },
-
-  { nom:'PAASI Amundi MSCI AC Asia', ticker:'PAASI.PA', type:'etf', enveloppe:['pea'], cap:'large', secteur:'any', zone:'asie',
-    per:13, pb:1.7, div:2.8, ter:0.20, growth:9, risque:'high', esg:false, momentum:'neutre', strategie:['dca','croissance'],
-    score:{qualite:6,valorisation:8,croissance:7,rendement:5,risque:4,peacompat:10},
-    note:'Asie Pacifique · Croissance démographique · Japon Corée Taïwan · Long terme' },
-
-  // Actions FR/EU PEA
-  { nom:'TotalEnergies', ticker:'TTE.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'energy', zone:'france',
-    per:9, pb:1.6, div:5.8, ter:null, growth:4, risque:'med', esg:false, momentum:'neutre', strategie:['dividendes'],
+  { nom:'TotalEnergies TTE', ticker:'TTE.PA', type:'dividendes', enveloppe:['pea'],
+    cap:'mega', secteur:'energy', zone:'france',
+    per:9, pb:1.6, div:5.8, ter:null, growth:4, risque:'med', esg:false,
+    momentum:'neutre', strategie:['dividendes'],
     score:{qualite:8,valorisation:9,croissance:5,rendement:9,risque:6,peacompat:10},
-    note:'Dividende 5.8% · PEA eligible · Leader énergie · Renouvelable en croissance · Rachats actions' },
+    note:'Dividende 5.8% · PEA · Valorisation basse · Renouvelable en croissance · Rachat actions' },
 
-  { nom:'LVMH Moët Hennessy', ticker:'MC.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'luxe', zone:'france',
-    per:19, pb:4.5, div:2.1, ter:null, growth:8, risque:'med', esg:false, momentum:'baissier', strategie:['croissance','lumpsum'],
-    score:{qualite:10,valorisation:7,croissance:8,rendement:4,risque:7,peacompat:10},
-    note:'Leader mondial luxe · PEA eligible · Correction récente = opportunité · Marques iconiques' },
-
-  { nom:'Sanofi', ticker:'SAN.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'health', zone:'france',
-    per:14, pb:2.1, div:4.2, ter:null, growth:6, risque:'low', esg:true, momentum:'haussier', strategie:['dividendes','dca'],
-    score:{qualite:8,valorisation:8,croissance:6,rendement:8,risque:8,peacompat:10},
-    note:'Pharma défensif · Dividende 4.2% · ESG · PEA · Pipeline R&D solide' },
-
-  { nom:'BNP Paribas', ticker:'BNP.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'finance', zone:'france',
-    per:7, pb:0.6, div:7.1, ter:null, growth:3, risque:'med', esg:false, momentum:'haussier', strategie:['dividendes'],
+  { nom:'BNP Paribas BNP', ticker:'BNP.PA', type:'dividendes', enveloppe:['pea'],
+    cap:'mega', secteur:'finance', zone:'france',
+    per:7, pb:0.6, div:7.1, ter:null, growth:3, risque:'med', esg:false,
+    momentum:'haussier', strategie:['dividendes'],
     score:{qualite:7,valorisation:10,croissance:4,rendement:10,risque:6,peacompat:10},
-    note:'PER 7 · Dividende 7% · Valorisation très basse · Banque systémique · PEA eligible' },
+    note:'Dividende 7% · PER 7 · Valorisation historiquement basse · PEA · Banque systemique' },
 
-  { nom:'Schneider Electric', ticker:'SU.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'indus', zone:'france',
-    per:27, pb:5.2, div:1.8, ter:null, growth:12, risque:'med', esg:true, momentum:'haussier', strategie:['croissance'],
-    score:{qualite:10,valorisation:6,croissance:9,rendement:4,risque:7,peacompat:10},
-    note:'Leader efficience énergétique · IA & datacenter · ESG leader · Croissance +12%/an' },
+  { nom:'Sanofi SAN', ticker:'SAN.PA', type:'dividendes', enveloppe:['pea'],
+    cap:'mega', secteur:'health', zone:'france',
+    per:14, pb:2.1, div:4.2, ter:null, growth:6, risque:'low', esg:true,
+    momentum:'haussier', strategie:['dividendes','dca'],
+    score:{qualite:8,valorisation:8,croissance:6,rendement:8,risque:8,peacompat:10},
+    note:'Pharma defensif · 4.2% dividende · ESG · PEA · Pipeline R&D solide' },
 
-  { nom:'Air Liquide', ticker:'AI.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'indus', zone:'france',
-    per:24, pb:4.0, div:2.3, ter:null, growth:8, risque:'low', esg:true, momentum:'haussier', strategie:['dca','croissance'],
-    score:{qualite:9,valorisation:6,croissance:8,rendement:5,risque:8,peacompat:10},
-    note:'Aristocrate dividendes 30 ans · Hydrogene · ESG · Qualité premium · PEA eligible' },
-
-  { nom:'Capgemini', ticker:'CAP.PA', type:'actions-fr', enveloppe:['pea'], cap:'large', secteur:'tech', zone:'france',
-    per:18, pb:3.8, div:2.2, ter:null, growth:10, risque:'med', esg:true, momentum:'neutre', strategie:['croissance'],
-    score:{qualite:8,valorisation:7,croissance:9,rendement:4,risque:6,peacompat:10},
-    note:'IT services & IA · PEA · ESG · Valorisation raisonnable · Transition digitale' },
-
-  // Actions EU
-  { nom:'ASML Holding', ticker:'ASML.AS', type:'actions-eu', enveloppe:['pea'], cap:'mega', secteur:'tech', zone:'europe',
-    per:30, pb:13, div:1.0, ter:null, growth:20, risque:'med', esg:true, momentum:'baissier', strategie:['croissance','lumpsum'],
-    score:{qualite:10,valorisation:5,croissance:10,rendement:2,risque:6,peacompat:8},
-    note:'Monopole machines lithographie · Incontournable chips IA · PEA eligible · Correction = achat' },
-
-  { nom:'Novo Nordisk', ticker:'NOVOB.CO', type:'actions-eu', enveloppe:['pea'], cap:'mega', secteur:'health', zone:'europe',
-    per:22, pb:25, div:1.2, ter:null, growth:25, risque:'med', esg:true, momentum:'baissier', strategie:['croissance'],
-    score:{qualite:10,valorisation:5,croissance:10,rendement:2,risque:6,peacompat:8},
-    note:'Ozempic leader · Croissance 25%/an · Correction -40% = opportunité historique · Pharma mondial' },
-
-  { nom:'Hermes International', ticker:'RMS.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'luxe', zone:'france',
-    per:47, pb:15, div:0.8, ter:null, growth:14, risque:'med', esg:true, momentum:'neutre', strategie:['croissance','lumpsum'],
-    score:{qualite:10,valorisation:4,croissance:9,rendement:2,risque:7,peacompat:10},
-    note:'Qualité absolue · Pricing power exceptionnel · Long terme uniquement · PEA eligible' },
-
-  // SCPI / Immobilier
-  { nom:'SCPI Corum Origin', ticker:null, type:'scpi', enveloppe:['av','cto'], cap:'any', secteur:'reit', zone:'europe',
-    per:null, pb:null, div:6.1, ter:null, growth:3, risque:'med', esg:false, momentum:'neutre', strategie:['dividendes'],
+  { nom:'CORUM Origin SCPI', ticker:null, type:'scpi', enveloppe:['av','cto'],
+    cap:'any', secteur:'reit', zone:'europe',
+    per:null, pb:null, div:6.1, ter:null, growth:3, risque:'med', esg:false,
+    momentum:'neutre', strategie:['dividendes'],
     score:{qualite:7,valorisation:7,croissance:4,rendement:9,risque:6,peacompat:0},
-    note:'6%+ rendement · Bureaux et commerces EU · Mutualisation risque · Non éligible PEA' },
+    note:'6%+ rendement · Bureaux et commerces EU · Via ton AV Linxea · Non PEA' },
 
-  { nom:'Amundi Immobilier SCPI', ticker:null, type:'scpi', enveloppe:['av'], cap:'any', secteur:'reit', zone:'france',
-    per:null, pb:null, div:4.2, ter:null, growth:2, risque:'low', esg:false, momentum:'neutre', strategie:['dividendes','couverture'],
-    score:{qualite:7,valorisation:7,croissance:3,rendement:7,risque:7,peacompat:0},
-    note:'AV Linxea · Immobilier bureaux France · Diversification hors bourse' },
-
-  // Actions US (CTO)
-  { nom:'Microsoft MSFT', ticker:'MSFT', type:'actions-us', enveloppe:['cto'], cap:'mega', secteur:'tech', zone:'us',
-    per:33, pb:12, div:0.7, ter:null, growth:16, risque:'med', esg:true, momentum:'haussier', strategie:['croissance'],
-    score:{qualite:10,valorisation:5,croissance:10,rendement:2,risque:7,peacompat:0},
-    note:'Leader IA via Azure+OpenAI · Cloud dominant · Qualité maximale · Non PEA (CTO)' },
-
-  { nom:'Apple AAPL', ticker:'AAPL', type:'actions-us', enveloppe:['cto'], cap:'mega', secteur:'tech', zone:'us',
-    per:30, pb:45, div:0.5, ter:null, growth:8, risque:'med', esg:true, momentum:'neutre', strategie:['croissance','lumpsum'],
-    score:{qualite:10,valorisation:5,croissance:7,rendement:2,risque:7,peacompat:0},
-    note:'Écosystème fermé · Rachat actions massif · Services en croissance · Non PEA (CTO)' },
-
-  { nom:'Nvidia NVDA', ticker:'NVDA', type:'actions-us', enveloppe:['cto'], cap:'mega', secteur:'tech', zone:'us',
-    per:35, pb:30, div:0.0, ter:null, growth:85, risque:'high', esg:false, momentum:'haussier', strategie:['croissance'],
-    score:{qualite:10,valorisation:5,croissance:10,rendement:0,risque:5,peacompat:0},
-    note:'Chips IA · Croissance 85%/an · Valorisation élevée · Très volatil · Non PEA (CTO)' },
 ];
 window.OPP_DATABASE = OPP_DATABASE;
 
@@ -16285,71 +16562,168 @@ window.filtrerEtScorerOpportunites = filtrerEtScorerOpportunites;
 function renderOpportunites(opps, crit) {
   var el = document.getElementById('opp-results-content');
   if (!el) return;
+  var learn = sessionStorage.getItem('pierre-learn-mode') === '1';
+
   if (!opps || !opps.length) {
-    el.innerHTML = '<div class="empty">Aucune opportunité trouvée pour ces critères.</div>';
+    el.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">'
+      + '<div style="font-size:36px;margin-bottom:12px;">🔍</div>'
+      + '<div style="font-size:14px;margin-bottom:6px;">Aucune opportunité trouvée</div>'
+      + '<div style="font-size:11px;">Élargissez vos critères (enveloppe, secteur, type...)</div>'
+      + '</div>';
     return;
   }
-  // Stocker en cache global pour le event listener
+
   window._dernieresOpportunites = opps;
-  // Sort by global score desc
-  opps.sort(function(a,b){ return ((b.score && b.score.global)||0) - ((a.score && a.score.global)||0); });
-  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">';
-  opps.forEach(function(o, i) {
-    var s = o.score || {};
-    var g = s.global || 0;
-    var col = g >= 80 ? 'var(--green)' : g >= 65 ? 'var(--gold)' : g >= 50 ? 'var(--blue)' : 'var(--muted)';
-    html += '<div style="background:var(--s2);border-radius:12px;padding:14px;border-left:3px solid '+col+';">';
-    // Header
-    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">';
-    html += '<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+(o.nom||'?')+'</div>';
-    html += '<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);">'+(o.ticker||'')+(o.isin?' · '+o.isin:'')+'</div></div>';
-    html += '<div style="text-align:right;flex-shrink:0;"><div style="font-size:24px;font-weight:700;color:'+col+';font-family:JetBrains Mono,monospace;">'+g+'</div><div style="font-size:9px;color:var(--muted);">/100</div></div>';
-    html += '</div>';
-    // Tags
-    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">';
-    if (o.secteur) html += '<span class="tag" style="font-size:9px;background:var(--s3);">'+o.secteur+'</span>';
-    if (o.cap) html += '<span class="tag" style="font-size:9px;background:var(--s3);">'+o.cap+'</span>';
-    if (o.per) html += '<span class="tag" style="font-size:9px;background:var(--s3);">PER '+o.per+'</span>';
-    if (o.div) html += '<span class="tag" style="font-size:9px;background:var(--s3);color:var(--green);">'+o.div+'% div</span>';
-    if (o.prix) html += '<span class="tag" style="font-size:9px;background:var(--s3);color:var(--gold);">'+o.prix+'€</span>';
-    html += '</div>';
-    // Score breakdown
-    if (s.croissance || s.valuation || s.qualite || s.momentum) {
-      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;">';
-      [{l:'Crois.',v:s.croissance},{l:'Valu.',v:s.valuation},{l:'Qual.',v:s.qualite},{l:'Mom.',v:s.momentum}].forEach(function(d) {
-        var cc = d.v >= 75 ? 'var(--green)' : d.v >= 50 ? 'var(--gold)' : 'var(--muted)';
-        html += '<div style="text-align:center;background:var(--s3);border-radius:6px;padding:6px 4px;">';
-        html += '<div style="font-size:10px;font-weight:700;color:'+cc+';">'+(d.v||'-')+'</div>';
-        html += '<div style="font-size:8px;color:var(--muted);">'+d.l+'</div>';
-        html += '</div>';
-      });
-      html += '</div>';
-    }
-    // Raison + Risques
-    if (o.raison) html += '<div style="font-size:11px;line-height:1.5;color:var(--text);margin-bottom:6px;">💡 '+o.raison+'</div>';
-    if (o.risques) html += '<div style="font-size:10px;line-height:1.5;color:var(--muted);margin-bottom:8px;">⚠️ '+o.risques+'</div>';
-    // Actions — data-attribute safe (pas de JSON inline)
-    html += '<div style="display:flex;gap:6px;">';
-    html += '<button class="btn sm" data-opp-idx="'+i+'" data-opp-action="watchlist" style="flex:1;font-size:10px;">⭐ Watchlist</button>';
-    if (o.ticker) html += '<a href="https://finance.yahoo.com/quote/'+o.ticker+'" target="_blank" class="btn gh sm" style="font-size:10px;">📊 Yahoo</a>';
-    html += '</div>';
-    html += '</div>';
+  // Pépites en premier, puis score
+  opps.sort(function(a,b){
+    var pa = a.pepite?1:0, pb2 = b.pepite?1:0;
+    if (pa !== pb2) return pb2 - pa;
+    return ((b.score&&b.score.global)||0) - ((a.score&&a.score.global)||0);
   });
-  html += '</div>';
+
+  var html = '';
+
+  // Séparer pépites et classiques
+  var pepites = opps.filter(function(o){ return o.pepite; });
+  var classiques = opps.filter(function(o){ return !o.pepite; });
+
+  if (pepites.length) {
+    html += '<div style="margin-bottom:10px;padding:8px 14px;background:linear-gradient(135deg,#f97316,#ef4444)18;border:1px solid #f9731655;border-radius:8px;font-size:11px;font-weight:700;color:#f97316;">🚀 PÉPITES — Croissance explosive · Style early Nvidia</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;margin-bottom:18px;">';
+    pepites.forEach(function(o) { html += _renderOppCard(o, learn); });
+    html += '</div>';
+  }
+
+  if (classiques.length) {
+    if (pepites.length) html += '<div style="margin-bottom:10px;padding:6px 14px;background:var(--s2);border-radius:6px;font-size:11px;color:var(--muted);">📊 ETF & Valeurs stables</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;">';
+    classiques.forEach(function(o) { html += _renderOppCard(o, learn); });
+    html += '</div>';
+  }
+
   el.innerHTML = html;
-  // Event delegation — gère les clics sur les boutons watchlist
-  el.addEventListener('click', function(e) {
-    var btn = e.target.closest('[data-opp-action="watchlist"]');
-    if (!btn) return;
-    var idx = parseInt(btn.getAttribute('data-opp-idx'), 10);
-    var cache = window._dernieresOpportunites;
-    if (!cache || isNaN(idx) || !cache[idx]) {
-      if (window._toast) window._toast('⚠️ Opportunité introuvable');
-      return;
-    }
-    ajouterWatchlist(cache[idx]);
+
+  // Listeners watchlist
+  el.querySelectorAll('[data-add-watch]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var idx2 = parseInt(btn.dataset.addWatch);
+      var opp = window._dernieresOpportunites && window._dernieresOpportunites[idx2];
+      if (opp && window.ajouterWatchlist) window.ajouterWatchlist(opp);
+    });
   });
 }
+window.renderOpportunites = renderOpportunites;
+
+function _renderOppCard(o, learn) {
+  var s = o.score || {};
+  var g = Math.round(s.global || 0);
+  var col = o.pepite ? '#f97316' : g >= 8 ? 'var(--green)' : g >= 6.5 ? 'var(--gold)' : 'var(--blue)';
+  var border = o.pepite ? '2px solid #f97316' : '1px solid var(--bd)';
+  var bg = o.pepite ? 'background:linear-gradient(135deg,#f9731608,var(--s2))' : 'background:var(--s2)';
+
+  var html = '<div style="border-radius:12px;padding:14px;border-left:3px solid '+col+';'+bg+';border:'+border+';border-left-width:3px;">';
+
+  // Badge pépite
+  if (o.pepite) {
+    html += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">'
+      + '<span style="background:#f97316;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:1px;">🚀 PÉPITE</span>'
+      + (o.monopole ? '<span style="background:#8b5cf622;color:#8b5cf6;font-size:9px;padding:2px 8px;border-radius:10px;border:1px solid #8b5cf633;">🏆 '+o.monopole+'</span>' : '')
+      + '</div>';
+  }
+
+  // Header
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">';
+  html += '<div style="flex:1;min-width:0;">';
+  html += '<div style="font-weight:700;font-size:13px;">'+(o.star?'⭐ ':'')+o.nom+'</div>';
+  html += '<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);">'+(o.ticker||'')+'</div>';
+  html += '</div>';
+  html += '<div style="text-align:right;flex-shrink:0;margin-left:10px;">';
+  html += '<div style="font-size:22px;font-weight:700;color:'+col+';font-family:JetBrains Mono,monospace;">'+g+'</div>';
+  html += '<div style="font-size:9px;color:var(--muted);">/10</div></div></div>';
+
+  // Tags
+  html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">';
+  var tags = [
+    o.enveloppe && o.enveloppe.join('+').toUpperCase(),
+    o.zone, o.secteur !== 'any' ? o.secteur : null,
+    o.per ? 'PER '+o.per : null,
+    o.div ? 'Div '+o.div+'%' : null,
+    o.ter ? 'TER '+o.ter+'%' : null,
+    o.growth ? '+'+o.growth+'%/an' : null,
+    o.risque,
+    o.esg ? 'ESG' : null,
+  ];
+  tags.filter(Boolean).forEach(function(t){
+    var tc = t.includes('PEA') ? 'var(--gold)' : t.includes('Div') ? 'var(--green)' : t.includes('%/an') ? '#f97316' : 'var(--muted)';
+    html += '<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:var(--s3);color:'+tc+';font-family:JetBrains Mono,monospace;">'+t+'</span>';
+  });
+  html += '</div>';
+
+  // Score bars
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px;">';
+  var bars = [
+    {k:'qualite',l:'Qualité',c:'#2a7a2a'},
+    {k:'valorisation',l:'Valeur',c:'#d4a853'},
+    {k:'croissance',l:'Crois.',c:'#f97316'},
+    {k:'rendement',l:'Rendmt',c:'#5b8dee'},
+    {k:'risque',l:'Risque',c:'#9b72cf'},
+    {k:'peacompat',l:'PEA ✓',c:'#d4a853'},
+  ];
+  bars.forEach(function(b) {
+    var v = (s[b.k]||0)*10;
+    html += '<div><div style="font-size:8px;color:var(--muted);margin-bottom:2px;">'+b.l+'</div>'
+      + '<div style="height:4px;background:var(--bd);border-radius:2px;">'
+      + '<div style="height:100%;width:'+v+'%;background:'+b.c+';border-radius:2px;"></div></div>'
+      + '<div style="font-size:8px;color:var(--muted);text-align:right;">'+(s[b.k]||0)+'/10</div></div>';
+  });
+  html += '</div>';
+
+  // Note
+  html += '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;">'+o.note+'</div>';
+
+  // Mode apprentissage : infos détaillées
+  if (learn && o.pepite) {
+    html += '<div style="padding:8px;background:linear-gradient(135deg,#5b8dee11,transparent);border:1px solid #5b8dee33;border-radius:6px;margin-bottom:8px;font-size:10px;line-height:1.6;">';
+    html += '<div style="font-weight:700;color:var(--blue);margin-bottom:4px;">📚 Mode apprentissage</div>';
+    if (o.catalyseurs && o.catalyseurs.length) {
+      html += '<div style="color:var(--green);margin-bottom:2px;">✅ Catalyseurs :</div>';
+      o.catalyseurs.forEach(function(c){ html += '<div style="color:var(--muted);padding-left:8px;">· '+c+'</div>'; });
+    }
+    if (o.risques && o.risques.length) {
+      html += '<div style="color:var(--red);margin-top:4px;margin-bottom:2px;">⚠️ Risques :</div>';
+      o.risques.forEach(function(r){ html += '<div style="color:var(--muted);padding-left:8px;">· '+r+'</div>'; });
+    }
+    if (o.potentiel) {
+      html += '<div style="color:#f97316;margin-top:4px;font-weight:700;">🚀 Potentiel : '+o.potentiel+'</div>';
+    }
+    html += '</div>';
+  } else if (learn) {
+    // Pour les ETF/actions classiques en mode apprentissage
+    html += '<div style="padding:6px 8px;background:#5b8dee11;border-radius:6px;margin-bottom:8px;font-size:10px;color:var(--blue);">';
+    html += '📚 Conseil DCA : investir '+Math.round(150/4)+'€/mois sur longue période réduit le risque de mauvais timing. ';
+    if (o.enveloppe && o.enveloppe.includes('pea')) html += 'PEA = zéro impôt sur les plus-values après 5 ans.';
+    html += '</div>';
+  }
+
+  if (o.pepite && o.potentiel && !learn) {
+    html += '<div style="font-size:10px;color:#f97316;font-weight:700;margin-bottom:8px;">🎯 '+o.potentiel+'</div>';
+  }
+
+  // Actions
+  html += '<div style="display:flex;gap:6px;">';
+  if (o.ticker) {
+    var idx3 = (window._dernieresOpportunites||[]).indexOf(o);
+    html += '<button data-add-watch="'+idx3+'" style="flex:1;background:var(--gold)22;border:1px solid var(--gold)55;border-radius:6px;padding:5px;font-size:10px;cursor:pointer;color:var(--gold);font-family:inherit;">⭐ Watchlist</button>';
+    var url = o.ticker.includes('.') ? 'https://finance.yahoo.com/quote/'+o.ticker : 'https://finance.yahoo.com/quote/'+o.ticker;
+    html += '<a href="'+url+'" target="_blank" style="flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:5px;font-size:10px;cursor:pointer;color:var(--text);text-decoration:none;text-align:center;">📊 Yahoo Finance</a>';
+  }
+  if (o.lien) {
+    html += '<a href="'+o.lien+'" target="_blank" style="background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font-size:10px;cursor:pointer;color:var(--text);text-decoration:none;">ℹ️</a>';
+  }
+  html += '</div></div>';
+  return html;
+}
+window._renderOppCard = _renderOppCard;
 
 // ══════════════════════════════════════════════════════════════
 // 2. WATCHLIST personnalisée
@@ -16537,10 +16911,86 @@ window.lancerBacktest = lancerBacktest;
 // ══════════════════════════════════════════════════════════════
 function toggleLearnMode() {
   var enabled = sessionStorage.getItem('pierre-learn-mode') === '1';
-  sessionStorage.setItem('pierre-learn-mode', enabled ? '0' : '1');
-  if (window._toast) window._toast(enabled ? '🎓 Mode apprentissage désactivé' : '🎓 Mode apprentissage activé — Vesta vous expliquera vos actions');
+  var newState = enabled ? '0' : '1';
+  sessionStorage.setItem('pierre-learn-mode', newState);
+  if (window._toast) window._toast(enabled ? '🎓 Mode apprentissage désactivé' : '🎓 Mode apprentissage activé — Vesta explique tout !');
   updateLearnButton();
+  _applyLearnMode(newState === '1');
 }
+window.toggleLearnMode = toggleLearnMode;
+
+// Bulles info pour les termes clés dans tout Vesta
+var LEARN_GLOSSARY = {
+  "PEA": "Plan Epargne en Actions - Zero impot plus-values apres 5 ans - Plafond 150 000 EUR - Ideal ETF long terme",
+  "ETF": "Exchange Traded Fund - Fonds qui replique un indice (ex: S&P500) - Frais ultra-bas TER < 0.30% - Diversification 500+ entreprises",
+  "TER": "Total Expense Ratio - Frais annuels du fonds en % - Ex: TER 0.15% = 15 EUR/an pour 10 000 EUR - Plus bas = mieux",
+  "PER": "Price-to-Earnings Ratio - Prix action / benefice annuel - PER 20 = tu paies 20 ans de benefices - PER bas = valeur decotee",
+  "DCA": "Dollar Cost Averaging - Investir regulierement la meme somme (ex: 150 EUR/mois) - Reduit risque mauvais timing - Strategie recommandee PEA",
+  "TMI": "Taux Marginal Imposition - Ton dernier euro taxe a ce taux - Ton TMI est 11% - Optimise via PEA ou AV plutot que CTO",
+  "CRD": "Capital Restant Du - Montant encore a rembourser sur ton pret immobilier",
+  "LMNP": "Loueur Meuble Non Professionnel - Regime fiscal T2 Limoges - Permet deduction amortissement - Reduction impots sur loyers",
+  "PEG": "Plan Epargne Groupe SNCF - Abondement employeur 30-20-10% - Bloque 5 ans - Investissement prioritaire grace abondement",
+  "DPE": "Diagnostic Performance Energetique - T2 = DPE E - Renovation obligatoire avant 2034 - Risque depreciation valeur",
+  "IRL": "Indice Reference Loyers - Publie chaque trimestre INSEE - Permet revision annuelle loyer",
+  "SCPI": "Societe Civile Placement Immobilier - Pierre papier - Investir immo sans gerer - Rendement 4-6%/an via AV Linxea",
+};
+
+function _applyLearnMode(active) {
+  // Supprimer les anciens tooltips
+  document.querySelectorAll('.learn-tooltip-trigger').forEach(function(el) {
+    var parent = el.parentNode;
+    if (parent) parent.replaceChild(document.createTextNode(el.textContent), el);
+  });
+  document.querySelectorAll('.learn-mode-block').forEach(function(el){ el.remove(); });
+
+  if (!active) return;
+
+  // Injecter un bandeau en haut de la page courante
+  var banner = document.createElement('div');
+  banner.className = 'learn-mode-block';
+  banner.style.cssText = 'position:fixed;top:52px;left:0;right:0;z-index:100;background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;padding:6px 16px;font-size:11px;display:flex;align-items:center;gap:8px;justify-content:space-between;';
+  banner.innerHTML = '<span>🎓 <b>Mode apprentissage actif</b> · Survolez les termes <u>soulignés</u> pour voir les définitions · Les opportunités montrent catalyseurs et risques</span>'
+    + '<button onclick="toggleLearnMode()" style="background:#fff3;border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:10px;">Désactiver</button>';
+  document.body.appendChild(banner);
+
+  // Ajouter marges pour le bandeau
+  var main = document.querySelector('main');
+  if (main) main.style.paddingTop = '34px';
+
+  // Injecter les tooltips sur les termes du glossaire
+  setTimeout(function() {
+    var walker = document.createTreeWalker(document.querySelector('main') || document.body, NodeFilter.SHOW_TEXT, null, false);
+    var nodes = [];
+    while (walker.nextNode()) {
+      var n = walker.currentNode;
+      if (n.parentNode && n.parentNode.className && n.parentNode.className.toString().includes('learn')) continue;
+      if (n.parentNode && ['SCRIPT','STYLE','INPUT','TEXTAREA','SELECT'].indexOf(n.parentNode.nodeName) >= 0) continue;
+      nodes.push(n);
+    }
+    nodes.forEach(function(node) {
+      var text = node.nodeValue;
+      var changed = false;
+      Object.keys(LEARN_GLOSSARY).forEach(function(term) {
+        if (text && text.includes(term) && !changed) {
+          // Limiter aux nœuds courts pour ne pas ralentir
+          if (text.length < 200) {
+            var span = document.createElement('span');
+            span.innerHTML = text.replace(new RegExp('\\b'+term+'\\b', 'g'),
+              '<span class="learn-tooltip-trigger" title="'+LEARN_GLOSSARY[term]+'" style="border-bottom:1px dotted var(--blue);cursor:help;color:var(--blue);">'+term+'</span>');
+            if (node.parentNode && span.innerHTML !== text) {
+              node.parentNode.replaceChild(span, node);
+              changed = true;
+            }
+          }
+        }
+      });
+    });
+  }, 500);
+}
+window._applyLearnMode = _applyLearnMode;
+
+// Appliquer au chargement si déjà actif
+(function(){ if (sessionStorage.getItem('pierre-learn-mode')==='1') setTimeout(function(){ _applyLearnMode(true); }, 1000); })();
 window.toggleLearnMode = toggleLearnMode;
 
 function updateLearnButton() {
