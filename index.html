@@ -16732,21 +16732,53 @@ function ajouterWatchlist(opp) {
   if (!window._pState) return;
   var S = window._pState();
   if (!S.watchlist) S.watchlist = [];
-  // Check duplicate
   if (S.watchlist.some(function(w){ return w.ticker === opp.ticker; })) {
     if (window._toast) window._toast('Déjà dans la watchlist');
     return;
   }
-  S.watchlist.push({
+
+  // Récupérer un prix estimé depuis la base de données ou la source live
+  var prixEstime = opp.prix || opp.prix_actuel || null;
+  // Pour les opportunités live, le prix peut venir du champ "per" ou être null
+  // On stocke l'entrée sans prix et on va le chercher
+  var entry = {
     id: 'wl-' + Date.now(),
-    nom: opp.nom, ticker: opp.ticker, isin: opp.isin,
-    score: opp.score && opp.score.global, prix_initial: opp.prix,
-    secteur: opp.secteur, ajoute: new Date().toISOString().slice(0,10),
-    alerte_haute: null, alerte_basse: null, raison: opp.raison
-  });
-  if (window._saveState) window._saveState();
+    nom: opp.nom || opp.these || 'Inconnu',
+    ticker: opp.ticker,
+    isin: opp.isin || null,
+    score: opp.score && opp.score.global || opp.score_conviction || null,
+    prix_initial: prixEstime,
+    prix_actuel: prixEstime,
+    secteur: opp.secteur,
+    zone: opp.zone || null,
+    pea: opp.pea !== undefined ? opp.pea : (opp.enveloppe && opp.enveloppe.includes('pea')),
+    monopole: opp.monopole || null,
+    potentiel: opp.potentiel || null,
+    ajoute: new Date().toISOString().slice(0,10),
+    alerte_haute: null, alerte_basse: null,
+    raison: opp.note || opp.these || ''
+  };
+  S.watchlist.push(entry);
+  if (window._syncState) window._syncState(S);
+  if (window._toast) window._toast('⭐ ' + entry.nom + ' ajouté à la watchlist');
   renderWatchlist();
-  if (window._toast) window._toast('✅ ' + opp.nom + ' ajouté à la watchlist');
+
+  // Aller chercher le prix Yahoo Finance en arrière-plan
+  if (opp.ticker && window.fetchPrixTicker) {
+    window.fetchPrixTicker(opp.ticker).then(function(data) {
+      if (data && data.price) {
+        var S2 = window._pState();
+        var item = S2.watchlist.find(function(w){ return w.id === entry.id; });
+        if (item) {
+          item.prix_initial = item.prix_initial || data.price;
+          item.prix_actuel  = data.price;
+          item.devise       = data.currency || 'EUR';
+          if (window._syncState) window._syncState(S2);
+          renderWatchlist();
+        }
+      }
+    }).catch(function(){});
+  }
 }
 window.ajouterWatchlist = ajouterWatchlist;
 
@@ -16765,14 +16797,23 @@ function renderWatchlist() {
     + '<th>Actif</th><th>Score</th><th>Prix actuel</th><th>Variation</th><th>Alertes</th><th></th>'
     + '</tr></thead><tbody>';
   wl.forEach(function(w) {
-    var current = w.prix_actuel || w.prix_initial || 0;
-    var perf = w.prix_initial ? (current - w.prix_initial)/w.prix_initial*100 : 0;
-    var perfCol = perf >= 0 ? 'var(--green)' : 'var(--red)';
+    var current = w.prix_actuel || w.prix_initial || null;
+    var perf = (w.prix_initial && current) ? (current - w.prix_initial)/w.prix_initial*100 : null;
+    var perfCol = !perf ? 'var(--muted)' : perf >= 0 ? 'var(--green)' : 'var(--red)';
+    var prixDisplay = current
+      ? current.toFixed(2).replace('.',',') + ' ' + (w.devise || '€')
+      : '<span style="color:var(--muted);font-style:italic;font-size:10px;">⏳ chargement...</span>';
+    var perfDisplay = perf !== null
+      ? '<span style="color:'+perfCol+';">' + (perf>=0?'+':'') + perf.toFixed(2) + '%</span>'
+      : '<span style="color:var(--muted);">—</span>';
     html += '<tr>';
-    html += '<td><b>'+w.nom+'</b><br><span style="font-family:JetBrains Mono,monospace;font-size:9px;color:var(--muted);">'+(w.ticker||'')+'</span></td>';
+    html += '<td><b>' + (w.nom||'?') + '</b>'
+      + (w.ticker ? '<br><a href="https://finance.yahoo.com/quote/'+w.ticker+'" target="_blank" style="font-family:JetBrains Mono,monospace;font-size:9px;color:var(--blue);text-decoration:none;">' + w.ticker + ' ↗</a>' : '')
+      + (w.pea ? '<span style="font-size:8px;background:var(--gold)22;color:var(--gold);padding:1px 4px;border-radius:4px;margin-left:4px;">PEA</span>' : '')
+      + '</td>';
     html += '<td><span style="font-family:JetBrains Mono,monospace;font-size:13px;font-weight:700;color:'+(w.score>=75?'var(--green)':w.score>=50?'var(--gold)':'var(--muted)')+';">'+(w.score||'-')+'</span></td>';
-    html += '<td class="mono">'+(current ? current.toFixed(2)+' €' : '-')+'</td>';
-    html += '<td class="mono" style="color:'+perfCol+';">'+(perf >= 0 ? '+' : '')+perf.toFixed(1)+'%</td>';
+    html += '<td class="mono">' + prixDisplay + '</td>';
+    html += '<td class="mono" style="color:'+perfCol+';">' + perfDisplay + '</td>';
     html += '<td><div style="display:flex;gap:4px;align-items:center;font-size:10px;">';
     html += '<input type="number" step="0.01" placeholder="Bas" value="'+(w.alerte_basse||'')+'" style="width:55px;font-size:10px;padding:2px 4px;" onchange="updateAlerte(\''+w.id+'\',\'basse\',this.value)" title="Alerte si prix descend sous">';
     html += '<input type="number" step="0.01" placeholder="Haut" value="'+(w.alerte_haute||'')+'" style="width:55px;font-size:10px;padding:2px 4px;" onchange="updateAlerte(\''+w.id+'\',\'haute\',this.value)" title="Alerte si prix dépasse">';
@@ -16803,29 +16844,32 @@ function supprimerWatchlist(wid) {
 window.supprimerWatchlist = supprimerWatchlist;
 
 async function refreshWatchlist() {
-  var S = window._pState();
+  var S = window._pState ? window._pState() : null;
   var wl = (S && S.watchlist) || [];
-  if (!wl.length) return;
+  if (!wl.length) { if(window._toast) window._toast('Watchlist vide'); return; }
+  if (window._toast) window._toast('⏳ Actualisation des cours...');
   var updated = 0;
   for (var i = 0; i < wl.length; i++) {
     var w = wl[i];
-    if (!w.ticker) continue;
-    var r = await window.fetchPrixTicker(w.ticker);
-    if (r && r.price > 0) {
-      w.prix_actuel = r.price;
-      // Check alerts
-      if (w.alerte_basse && r.price <= w.alerte_basse) {
-        if (window._toast) window._toast('🔻 ' + w.nom + ' a touché votre alerte basse : ' + r.price + '€');
+    if (!w.ticker || !window.fetchPrixTicker) continue;
+    try {
+      var r = await window.fetchPrixTicker(w.ticker);
+      if (r && r.price > 0) {
+        if (!w.prix_initial) w.prix_initial = r.price;
+        w.prix_actuel = r.price;
+        w.devise = r.currency || 'EUR';
+        updated++;
+        // Alertes
+        if (w.alerte_basse && r.price <= w.alerte_basse)
+          if (window._toast) window._toast('🔻 ' + w.nom + ' → alerte basse atteinte : ' + r.price);
+        if (w.alerte_haute && r.price >= w.alerte_haute)
+          if (window._toast) window._toast('🔺 ' + w.nom + ' → alerte haute atteinte : ' + r.price);
       }
-      if (w.alerte_haute && r.price >= w.alerte_haute) {
-        if (window._toast) window._toast('🔺 ' + w.nom + ' a touché votre alerte haute : ' + r.price + '€');
-      }
-      updated++;
-    }
+    } catch(e) {}
   }
-  if (window._saveState) window._saveState();
+  if (window._syncState) window._syncState(S);
   renderWatchlist();
-  if (window._toast) window._toast('📊 ' + updated + ' cours mis à jour');
+  if (window._toast) window._toast('✅ ' + updated + '/' + wl.length + ' cours mis à jour');
 }
 window.refreshWatchlist = refreshWatchlist;
 
