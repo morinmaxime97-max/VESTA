@@ -2185,22 +2185,26 @@ body {
     <div>
       <h1 style="font-family:'Playfair Display',serif;font-size:20px;">🔍 Opportunités d'investissement</h1>
       <p style="color:var(--muted);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:2px;">
-        Recherche de pépites · Scoring multi-critères · Watchlist personnalisée
+        Scoring multi-critères · Adapté à ton profil PEA · Watchlist personnalisée
       </p>
     </div>
     <div class="brow">
-      <button class="btn sm" id="btn-search-opp" style="background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;">🔍 Rechercher avec Vesta</button>
+      <button class="btn sm" id="btn-search-opp" style="background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;">🔍 Analyser</button>
+      <button class="btn gh sm" onclick="resetFiltresOpportunites()">↺ Reset</button>
     </div>
   </div>
 
-  <!-- Critères de recherche -->
+  <!-- Critères de recherche enrichis -->
   <div class="card mb">
-    <div class="chd">⚙️ Critères de recherche</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;">
+    <div class="chd">⚙️ Critères de recherche <span class="chd-sub">15 filtres · Scoring adapté à ton profil SNCF/PEA</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+
+      <!-- Type d'actif -->
       <div>
         <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Type d'actif</label>
         <select id="opp-type" style="width:100%;margin-top:6px;font-size:12px;">
-          <option value="etf">ETF / Trackers</option>
+          <option value="all">Tous types</option>
+          <option value="etf" selected>ETF / Trackers</option>
           <option value="actions-fr">Actions France (PEA)</option>
           <option value="actions-eu">Actions Europe (PEA)</option>
           <option value="actions-us">Actions US (CTO)</option>
@@ -2208,69 +2212,165 @@ body {
           <option value="scpi">SCPI (immobilier)</option>
           <option value="croissance">Valeurs de croissance</option>
           <option value="value">Valeurs décotées (value)</option>
+          <option value="obligations">Obligations / Fonds €</option>
+          <option value="crypto">Crypto (spéculatif)</option>
         </select>
       </div>
+
+      <!-- Enveloppe fiscale -->
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Enveloppe cible</label>
+        <select id="opp-enveloppe" style="width:100%;margin-top:6px;font-size:12px;">
+          <option value="any">Toutes</option>
+          <option value="pea" selected>PEA uniquement</option>
+          <option value="av">Assurance Vie</option>
+          <option value="cto">CTO</option>
+          <option value="per">PER</option>
+        </select>
+      </div>
+
+      <!-- Capitalisation -->
       <div>
         <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Capitalisation</label>
         <select id="opp-cap" style="width:100%;margin-top:6px;font-size:12px;">
-          <option value="any">Toutes</option>
-          <option value="large">Large cap (&gt; 10 Md€)</option>
+          <option value="any" selected>Toutes</option>
+          <option value="mega">Mega cap (> 200 Md€)</option>
+          <option value="large">Large cap (10-200 Md€)</option>
           <option value="mid">Mid cap (1-10 Md€)</option>
-          <option value="small">Small cap (&lt; 1 Md€)</option>
+          <option value="small">Small cap (< 1 Md€)</option>
         </select>
       </div>
+
+      <!-- Secteur -->
       <div>
         <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Secteur</label>
         <select id="opp-secteur" style="width:100%;margin-top:6px;font-size:12px;">
-          <option value="any">Tous secteurs</option>
-          <option value="tech">Technologie</option>
-          <option value="health">Santé / Pharma</option>
-          <option value="finance">Banque / Assurance</option>
+          <option value="any" selected>Tous secteurs</option>
+          <option value="tech">Technologie / IA</option>
+          <option value="health">Santé / Pharma / Biotech</option>
+          <option value="finance">Banque / Assurance / Fintech</option>
           <option value="energy">Énergie / Renouvelable</option>
-          <option value="conso">Consommation</option>
-          <option value="indus">Industrie</option>
-          <option value="luxe">Luxe</option>
-          <option value="reit">Immobilier (REITs)</option>
+          <option value="conso">Consommation / Distribution</option>
+          <option value="indus">Industrie / Défense</option>
+          <option value="luxe">Luxe / Premium</option>
+          <option value="reit">Immobilier (REITs / SCPI)</option>
+          <option value="telecom">Télécom / Médias</option>
+          <option value="materiaux">Matériaux / Mines</option>
+          <option value="agri">Agro-alimentaire</option>
         </select>
       </div>
+
+      <!-- Zone géographique -->
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Zone géographique</label>
+        <select id="opp-zone" style="width:100%;margin-top:6px;font-size:12px;">
+          <option value="any" selected>Monde entier</option>
+          <option value="us">États-Unis</option>
+          <option value="europe">Europe</option>
+          <option value="france">France</option>
+          <option value="emergents">Marchés émergents</option>
+          <option value="asie">Asie / Pacifique</option>
+          <option value="global">Global diversifié</option>
+        </select>
+      </div>
+
+      <!-- Horizon -->
       <div>
         <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Horizon investissement</label>
         <select id="opp-horizon" style="width:100%;margin-top:6px;font-size:12px;">
           <option value="long" selected>Long terme (10+ ans)</option>
           <option value="moyen">Moyen terme (5-10 ans)</option>
-          <option value="court">Court terme (&lt; 5 ans)</option>
+          <option value="court">Court terme (1-5 ans)</option>
+          <option value="trading">Trading (< 1 an)</option>
         </select>
       </div>
+
+      <!-- PER max -->
       <div>
         <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">PER max</label>
-        <input type="number" id="opp-per-max" placeholder="ex: 25" step="1" min="0" max="100" style="width:100%;margin-top:6px;font-size:12px;">
+        <input type="number" id="opp-per-max" placeholder="ex: 25 (vide = tous)" step="1" min="0" max="200" style="width:100%;margin-top:6px;font-size:12px;">
       </div>
+
+      <!-- PBR max -->
       <div>
-        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Rendement dividende min</label>
-        <input type="number" id="opp-div-min" placeholder="ex: 3" step="0.5" min="0" max="20" style="width:100%;margin-top:6px;font-size:12px;">
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">P/B (Price/Book) max</label>
+        <input type="number" id="opp-pb-max" placeholder="ex: 3 (vide = tous)" step="0.5" min="0" max="50" style="width:100%;margin-top:6px;font-size:12px;">
       </div>
+
+      <!-- Rendement dividende min -->
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Rendement dividende min (%)</label>
+        <input type="number" id="opp-div-min" placeholder="ex: 3 (vide = tous)" step="0.5" min="0" max="20" style="width:100%;margin-top:6px;font-size:12px;">
+      </div>
+
+      <!-- Croissance CA min -->
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Croissance CA min (%/an)</label>
+        <input type="number" id="opp-growth-min" placeholder="ex: 10 (vide = tous)" step="1" min="-50" max="200" style="width:100%;margin-top:6px;font-size:12px;">
+      </div>
+
+      <!-- TER max (pour ETF) -->
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">TER max % (ETF)</label>
+        <input type="number" id="opp-ter-max" placeholder="ex: 0.30 (vide = tous)" step="0.05" min="0" max="3" style="width:100%;margin-top:6px;font-size:12px;">
+      </div>
+
+      <!-- Risque -->
       <div>
         <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Niveau de risque</label>
         <select id="opp-risque" style="width:100%;margin-top:6px;font-size:12px;">
-          <option value="low">Faible</option>
-          <option value="med" selected>Modéré</option>
-          <option value="high">Élevé</option>
+          <option value="any">Tous niveaux</option>
+          <option value="low">Faible (1-3/7)</option>
+          <option value="med" selected>Modéré (4-5/7)</option>
+          <option value="high">Élevé (6-7/7)</option>
         </select>
       </div>
+
+      <!-- ESG -->
       <div>
-        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Critères ESG</label>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Critères ESG / ISR</label>
         <select id="opp-esg" style="width:100%;margin-top:6px;font-size:12px;">
-          <option value="any">Indifférent</option>
-          <option value="esg">ESG / ISR uniquement</option>
+          <option value="any" selected>Indifférent</option>
+          <option value="esg">ESG / ISR labellisé</option>
+          <option value="no-esg">Sans contrainte ESG</option>
         </select>
       </div>
+
+      <!-- Momentum -->
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Momentum prix</label>
+        <select id="opp-momentum" style="width:100%;margin-top:6px;font-size:12px;">
+          <option value="any" selected>Indifférent</option>
+          <option value="haussier">Haussier (tendance +)</option>
+          <option value="baissier">Baissier / Solde</option>
+          <option value="neutre">Neutre / Consolidation</option>
+        </select>
+      </div>
+
+      <!-- Stratégie -->
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Stratégie</label>
+        <select id="opp-strategie" style="width:100%;margin-top:6px;font-size:12px;">
+          <option value="any" selected>Toutes</option>
+          <option value="dca">DCA mensuel (épargne prog.)</option>
+          <option value="lumpsum">Investissement unique</option>
+          <option value="dividendes">Revenus passifs</option>
+          <option value="croissance">Capitalisation pure</option>
+          <option value="couverture">Couverture / Défensif</option>
+        </select>
+      </div>
+
     </div>
-    <div style="margin-top:14px;padding:10px 14px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--muted);">
-      💡 Vesta cherchera des opportunités correspondant à votre profil (PEA-friendly, situation fiscale, horizon retraite 2057). Score multi-critères : croissance · valuation · qualité · momentum.
+
+    <!-- Résumé profil Maxime -->
+    <div style="margin-top:14px;padding:10px 14px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.7;">
+      👤 <b>Ton profil :</b> PEA BoursoBank ouvert 10/2024 · TMI 11% · Horizon retraite 2057 · Profil dynamique/offensif · ETF ESE S&P500 en cours
+      <br>💡 Score calculé sur 6 dimensions : Qualité · Valorisation · Croissance · Rendement · Risque · Compatibilité PEA
     </div>
+    <button class="btn" id="btn-search-opp-2" onclick="rechercherOpportunites()" style="margin-top:12px;width:100%;background:linear-gradient(135deg,#5b8dee,#9b72cf);color:#fff;">🔍 Analyser les opportunités</button>
   </div>
 
-  <!-- Résultats de recherche -->
+  <!-- Résultats -->
   <div class="card mb" id="card-opp-results" style="display:none;">
     <div class="chd" style="justify-content:space-between;">
       <span>📊 Opportunités identifiées</span>
@@ -2288,24 +2388,24 @@ body {
     <div id="watchlist-content"></div>
   </div>
 
-  <!-- Backtest historique -->
+  <!-- Backtest -->
   <div class="card mb">
     <div class="chd">📈 Backtest — "Si j'avais investi..."</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:14px;">
       <div>
         <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Actif</label>
         <select id="bt-asset" style="width:100%;margin-top:6px;font-size:12px;">
-          <option value="ESE.PA">&#11088; ESE BNP S&amp;P500 PEA (votre ETF)</option>
-          <option value="^GSPC">S&amp;P 500 (USD)</option>
+          <option value="ESE.PA">⭐ ESE BNP S&P500 PEA (ton ETF)</option>
+          <option value="^GSPC">S&P 500 (USD)</option>
           <option value="CW8.PA">CW8 MSCI World PEA</option>
           <option value="^FCHI">CAC 40</option>
-          <option value="PAEEM.PA">MSCI Emergents</option>
+          <option value="PAEEM.PA">MSCI Émergents</option>
           <option value="GLD">Or</option>
         </select>
       </div>
       <div>
         <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Versement mensuel</label>
-        <input type="number" id="bt-monthly" value="200" step="50" min="0" style="width:100%;margin-top:6px;font-size:12px;">
+        <input type="number" id="bt-monthly" value="150" step="50" min="0" style="width:100%;margin-top:6px;font-size:12px;">
       </div>
       <div>
         <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Année de début</label>
@@ -2317,11 +2417,11 @@ body {
         </select>
       </div>
       <div style="display:flex;align-items:flex-end;">
-        <button class="btn sm" onclick="lancerBacktest()" style="width:100%;">🚀 Lancer le backtest</button>
+        <button class="btn sm" onclick="lancerBacktest()" style="width:100%;">🚀 Lancer</button>
       </div>
     </div>
     <div id="bt-result" style="font-size:11px;color:var(--muted);min-height:60px;padding:14px;background:var(--s2);border-radius:8px;">
-      Choisissez un actif et cliquez "Lancer le backtest" pour voir les performances historiques.
+      Choisissez un actif et cliquez "Lancer" pour voir les performances historiques.
     </div>
   </div>
 </div>
@@ -13040,107 +13140,59 @@ function ouvrirModalIA() {
   var el = document.getElementById('ia-card');
   if (!el) return;
 
-  // ── Mode hybride : Claude.ai en priorité + API si clé dispo ──
-  var ctx = window.getContexteAdapte ? window.getContexteAdapte(1200) : '';
+  if (!hasAnyKey) {
+    // Pas de clé → wizard + bouton Claude.ai
+    el.innerHTML = '<div style="padding:6px 0;">'
+      + '<div style="padding:10px 14px;background:var(--gold)11;border:1px solid var(--gold)44;border-radius:10px;margin-bottom:10px;">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:4px;">💬 Option gratuite et illimitée</div>'
+      + '<div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Utilise Claude.ai avec ton contexte Vesta copié automatiquement :</div>'
+      + '<button onclick="_ouvrirClaudeAI(true)" style="width:100%;padding:8px;background:var(--gold);color:#1a1a2e;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">🚀 Copier contexte + Ouvrir Claude.ai</button>'
+      + '</div>'
+      + '<div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-family:JetBrains Mono,monospace;">OU — configurer une clé API pour discuter ici :</div>'
+      + _renderKeySetupCards()
+      + '</div>';
+    return;
+  }
 
-  var suggestions = [
-    "Comment optimiser mon PEA - retraite 2057 ?",
-    "Impact fiscal T2 LMNP reel ?",
-    "Succession pour mon enfant 2026 ?",
-    "Rembourser credit RP ou investir PEA ?",
-    "Strategie epargne salaire SNCF ?",
-    "Optimiser PEG SNCF cette annee ?",
-  ];
+  // Clé disponible → chat direct dans Vesta
+  if (!window._iaConversation) window._iaConversation = [];
+  if (window.renderIAConversation) renderIAConversation(el);
+  if (window.refreshTokenBar) refreshTokenBar();
+  var active = window.getActiveProvider ? window.getActiveProvider() : null;
+  if (window._refreshProviderBadge && active) window._refreshProviderBadge(active.id, !!active.auto);
 
-    var suggHTML = suggestions.map(function(s, si) {
-    return '<button data-si="' + si + '" onclick="(function(b){var i=document.getElementById(\'vesta-q-input\');if(i){i.value=window._vestaSugg[b.dataset.si];i.focus();}})(this)" ' +
-      'style="text-align:left;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;' +
-      'font-size:10px;color:var(--text);cursor:pointer;font-family:inherit;width:100%;">' + s + '</button>';
-  }).join('');
-  window._vestaSugg = suggestions;
-
-  el.innerHTML = '<div style="padding:4px 0;">'
-    // Mode principal : Claude.ai
-    + '<div style="padding:10px 14px;background:linear-gradient(135deg,var(--gold)12,transparent);border:1px solid var(--gold)44;border-radius:10px;margin-bottom:12px;">'
-    + '<div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:4px;">💬 Poser à Claude (recommandé)</div>'
-    + '<div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Ouvre Claude.ai avec ton contexte patrimonial complet — réponses illimitées et de qualité supérieure</div>'
-    + '<textarea id="vesta-q-input" placeholder="Ta question sur ton patrimoine..." '
-    + 'style="width:100%;height:70px;resize:none;border:1px solid var(--bd);border-radius:6px;padding:8px;font-size:11px;background:var(--bg);color:var(--text);font-family:inherit;box-sizing:border-box;"></textarea>'
-    + '<button onclick="_ouvrirClaudeAI()" '
-    + 'style="width:100%;margin-top:6px;padding:9px;background:var(--gold);color:#1a1a2e;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">🚀 Ouvrir dans Claude.ai</button>'
-    + '</div>'
-    // Suggestions rapides
-    + '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-bottom:6px;">QUESTIONS FRÉQUENTES :</div>'
-    + '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">' + suggHTML + '</div>'
-    // Mode API secondaire
-    + (hasAnyKey
-        ? '<div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:2px;">'
-        + '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-bottom:6px;">OU — RÉPONSE RAPIDE VIA API (limitée) :</div>'
-        + '<div style="display:flex;gap:6px;">'
-        + '<input id="vesta-api-q" placeholder="Question rapide..." style="flex:1;font-size:11px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--text);">'
-        + '<button onclick="_envoyerAPIRapide()" style="background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;">→</button>'
-        + '</div>'
-        + '<div id="vesta-api-resp" style="margin-top:8px;font-size:11px;color:var(--text);line-height:1.6;"></div>'
-        + '</div>'
-        : '<div style="border-top:1px solid var(--bd);padding-top:10px;text-align:center;">'
-        + '<button onclick="demanderCleAPI()" style="font-size:10px;color:var(--blue);background:none;border:none;cursor:pointer;">⚙️ Configurer une clé API gratuite (optionnel)</button>'
-        + '</div>')
-    + '</div>';
-
-  setTimeout(function(){ var i=document.getElementById('vesta-q-input'); if(i) i.focus(); }, 100);
+  setTimeout(function() {
+    var inp = document.getElementById('ia-user-input');
+    if (inp) inp.focus();
+  }, 100);
 }
 window.ouvrirModalIA = ouvrirModalIA;
 
-// ── Ouvrir Claude.ai avec le contexte patrimonial ─────────────
-function _ouvrirClaudeAI() {
-  var q = (document.getElementById('vesta-q-input')||{}).value || '';
-  if (!q.trim()) { if(window._toast) window._toast("Ecris ta question d’abord"); return; }
-
+// ── Ouvrir Claude.ai avec contexte copié ─────────────────────
+function _ouvrirClaudeAI(withPrompt) {
+  var q = '';
+  if (withPrompt) {
+    var inp = document.getElementById('ia-user-input') || document.getElementById('vesta-q-input');
+    q = inp ? inp.value.trim() : '';
+  }
   var ctx = window.getContexteAdapte ? window.getContexteAdapte(2000) : '';
-  var NL = '\n';
-
-  var prompt = 'Tu es mon conseiller patrimonial. Voici ma situation Vesta :' + NL + NL
-    + ctx + NL + NL
-    + '---' + NL
-    + 'Ma question : ' + q + NL + NL
-    + 'Donne-moi une réponse structurée, précise et actionnable.';
-
-  // Copier le prompt et ouvrir Claude.ai
+  var NL = String.fromCharCode(10);
+  var prompt = 'Tu es mon conseiller patrimonial. Ma situation Vesta :' + NL + ctx
+    + (q ? (NL + NL + 'Ma question : ' + q) : '');
   try {
     navigator.clipboard.writeText(prompt).then(function() {
-      if (window._toast) window._toast('✅ Contexte copié — colle-le dans Claude.ai (Ctrl+V)');
+      if (window._toast) window._toast('Contexte copie - colle dans Claude.ai (Ctrl+V)');
       window.open('https://claude.ai/new', '_blank');
     });
   } catch(e) {
-    // Fallback : textarea sélectionnable
     var ta = document.createElement('textarea');
-    ta.value = prompt; ta.style.cssText='position:fixed;top:-9999px';
-    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-    document.body.removeChild(ta);
-    if (window._toast) window._toast('✅ Contexte copié — colle dans Claude.ai');
+    ta.value = prompt; ta.style.position = 'fixed'; ta.style.top = '-9999px';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    if (window._toast) window._toast('Contexte copie - colle dans Claude.ai');
     window.open('https://claude.ai/new', '_blank');
   }
 }
 window._ouvrirClaudeAI = _ouvrirClaudeAI;
-
-// ── Réponse rapide via API (mode secondaire) ──────────────────
-async function _envoyerAPIRapide() {
-  var inp = document.getElementById('vesta-api-q');
-  var respEl = document.getElementById('vesta-api-resp');
-  if (!inp || !inp.value.trim()) return;
-  var q = inp.value.trim();
-  if (respEl) respEl.innerHTML = '<span style="color:var(--muted);">⚡ Vesta réfléchit...</span>';
-  inp.disabled = true;
-  try {
-    var rep = await callClaudeIA(q, false);
-    if (respEl) respEl.innerHTML = window.mdToHtml ? window.mdToHtml(rep) : rep;
-  } catch(e) {
-    if (respEl) respEl.textContent = '⚠️ ' + e.message;
-  } finally {
-    inp.disabled = false;
-  }
-}
-window._envoyerAPIRapide = _envoyerAPIRapide;
 
 // Cartes de configuration rapide des 3 providers gratuits
 function _renderKeySetupCards() {
@@ -14064,7 +14116,10 @@ function renderIAConversation(el) {
     html += '<button onclick="demanderIA(this.textContent)" style="font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid var(--bd);background:var(--s2);color:var(--dim);cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">' + s + '</button>';
   });
   html += '</div>';
-  html += '<div style="font-size:9px;color:var(--muted);margin-top:8px;font-family:JetBrains Mono,monospace;">Vesta IA — Conseillère patrimoniale · Modifications sur confirmation · Données locales uniquement</div>';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:4px;">'
+    + '<span style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;">Vesta IA — Conseillère patrimoniale · Modifications sur confirmation · Données locales uniquement</span>'
+    + '<button onclick="window._ouvrirClaudeAI && window._ouvrirClaudeAI(false)" title="Contexte copié automatiquement" style="font-size:9px;background:none;border:1px solid var(--blue)55;border-radius:4px;color:var(--blue);cursor:pointer;padding:2px 6px;white-space:nowrap;">↗ Claude.ai illimité</button>'
+    + '</div>';
 
   // Indicateur tokens — calculé ici et passé directement (pas de script inline)
   var active = window.getActiveProvider ? window.getActiveProvider() : null;
@@ -15985,120 +16040,247 @@ window.updateProjectionInteractive = updateProjectionInteractive;
 // 1. OPPORTUNITÉS — recherche via Vesta
 // ══════════════════════════════════════════════════════════════
 
-async function rechercherOpportunites() {
-  var btn = document.getElementById('btn-search-opp');
+async function resetFiltresOpportunites() {
+  var defs = { 'opp-type':'etf','opp-enveloppe':'pea','opp-cap':'any','opp-secteur':'any',
+    'opp-zone':'any','opp-horizon':'long','opp-risque':'med','opp-esg':'any',
+    'opp-momentum':'any','opp-strategie':'any' };
+  Object.keys(defs).forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value=defs[id];
+  });
+  ['opp-per-max','opp-pb-max','opp-div-min','opp-growth-min','opp-ter-max'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  if(window._toast) window._toast('Filtres réinitialisés');
+}
+window.resetFiltresOpportunites = resetFiltresOpportunites;
+
+function rechercherOpportunites() {
+  var btn  = document.getElementById('btn-search-opp');
+  var btn2 = document.getElementById('btn-search-opp-2');
   var card = document.getElementById('card-opp-results');
   var content = document.getElementById('opp-results-content');
   var meta = document.getElementById('opp-results-meta');
-  if (!btn || !card || !content) return;
+  if (!card || !content) return;
 
-  // Read criteria
+  var gv = function(id){ var e=document.getElementById(id); return e?e.value.trim():''; };
+  var gn = function(id){ var v=gv(id); return v?parseFloat(v):null; };
+
   var crit = {
-    type: document.getElementById('opp-type').value,
-    cap: document.getElementById('opp-cap').value,
-    secteur: document.getElementById('opp-secteur').value,
-    horizon: document.getElementById('opp-horizon').value,
-    perMax: document.getElementById('opp-per-max').value || null,
-    divMin: document.getElementById('opp-div-min').value || null,
-    risque: document.getElementById('opp-risque').value,
-    esg: document.getElementById('opp-esg').value
+    type:      gv('opp-type'),
+    enveloppe: gv('opp-enveloppe'),
+    cap:       gv('opp-cap'),
+    secteur:   gv('opp-secteur'),
+    zone:      gv('opp-zone'),
+    horizon:   gv('opp-horizon'),
+    risque:    gv('opp-risque'),
+    esg:       gv('opp-esg'),
+    momentum:  gv('opp-momentum'),
+    strategie: gv('opp-strategie'),
+    perMax:    gn('opp-per-max'),
+    pbMax:     gn('opp-pb-max'),
+    divMin:    gn('opp-div-min'),
+    growthMin: gn('opp-growth-min'),
+    terMax:    gn('opp-ter-max'),
   };
 
   card.style.display = 'block';
-  content.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">'
-    + '<div style="font-size:24px;animation:spin 2s linear infinite;display:inline-block;">🔍</div>'
-    + '<div style="margin-top:10px;font-size:13px;">Vesta recherche les meilleures opportunités...</div>'
-    + '<div style="font-size:10px;color:var(--dim);margin-top:6px;">Analyse multi-critères en cours</div>'
-    + '</div>';
-  btn.disabled = true;
+  content.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);"><div style="font-size:24px;animation:spin 2s linear infinite;display:inline-block;">🔍</div><div style="margin-top:10px;font-size:13px;">Analyse multi-critères en cours...</div></div>';
+  if (btn) btn.disabled = true;
+  if (btn2) btn2.disabled = true;
 
-  var apiKey = localStorage.getItem('pierre-api-key') || '';
-  if (!apiKey) {
-    content.innerHTML = '<div style="padding:20px;color:var(--red);">Clé API Vesta requise. Configurez via le bouton IA.</div>';
-    btn.disabled = false;
-    return;
-  }
-
-  var typeLabels = {
-    etf:'ETF/Trackers', 'actions-fr':'actions françaises (PEA)', 'actions-eu':'actions européennes (PEA)',
-    'actions-us':'actions américaines (CTO)', dividendes:'actions à dividendes',
-    scpi:'SCPI', croissance:'valeurs de croissance', value:'valeurs décotées (value)'
-  };
-
-  var NL = String.fromCharCode(10);
-  var prompt = [
-    "Tu es Vesta, conseillère patrimoine experte. Recherche pour Maxime (29 ans, agent maîtrise SNCF, horizon retraite 2057) :",
-    "",
-    "CRITÈRES :",
-    "- Type : " + (typeLabels[crit.type] || crit.type),
-    "- Capitalisation : " + crit.cap,
-    "- Secteur : " + crit.secteur,
-    "- Horizon : " + crit.horizon,
-    crit.perMax ? "- PER max : " + crit.perMax : "",
-    crit.divMin ? "- Rendement dividende min : " + crit.divMin + "%" : "",
-    "- Niveau de risque : " + crit.risque,
-    "- ESG : " + crit.esg,
-    "",
-    "Propose 5 à 8 opportunités d'investissement RÉELLES et CONNUES.",
-    "Pour chaque, retourne ce JSON STRICT (sans markdown, sans backticks) :",
-    '[{"nom":"Nom complet","ticker":"XXX.PA","isin":"FR...","secteur":"Tech","cap":"Large","per":15.2,"div":2.5,"score":{"global":85,"croissance":80,"valuation":85,"qualite":90,"momentum":75},"prix":120.50,"raison":"Pourquoi recommandé pour ce profil en 2 phrases","risques":"Principaux risques en 1 phrase","horizon":"long"},...]',
-    "",
-    "Privilégie : éligibilité PEA si possible, qualité bilan, perspectives long terme, frais raisonnables.",
-    "Score sur 100 pour chaque dimension. Score global = moyenne pondérée."
-  ].join(NL);
-
-  try {
-    var active = window.getActiveProvider ? window.getActiveProvider() : null;
-    if (!active || !active.key) {
-      content.innerHTML = '<div style="padding:20px;color:var(--red);">Configurez Vesta via le bouton IA.</div>';
-      btn.disabled = false;
-      return;
-    }
-
-    var prov = active.provider;
-    var resp, data, text;
-    if (prov.format === 'openai') {
-      resp = await fetch(prov.url, {
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+active.key},
-        body: JSON.stringify({ model: prov.model, max_tokens: 2500, messages:[
-          {role:'system', content:'Tu es un expert en investissement. Réponds uniquement en JSON valide.'},
-          {role:'user', content: prompt}
-        ]})
-      });
-      data = await resp.json();
-      if (data.error) throw new Error(data.error.message);
-      text = (data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'';
-    } else if (prov.format === 'gemini') {
-      resp = await fetch(prov.url+'?key='+active.key, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:2500}})
-      });
-      data = await resp.json();
-      text = (data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text)||'';
-    } else {
-      resp = await fetch(prov.url, {
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':active.key,'anthropic-version':'2023-06-01'},
-        body: JSON.stringify({model:prov.model, max_tokens:2500, messages:[{role:'user',content:prompt}]})
-      });
-      data = await resp.json();
-      if (data.error) throw new Error(data.error.message);
-      text = (data.content||[]).map(function(b){return b.text||'';}).join('');
-    }
-
-    text = text.replace(/```json|```/g,'').trim();
-    var match = text.match(/\[[\s\S]*\]/);
-    if (!match) throw new Error('Format de réponse invalide');
-    var opps = JSON.parse(match[0]);
-    renderOpportunites(opps, crit);
-    if (meta) meta.textContent = opps.length + ' résultats · ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-  } catch(e) {
-    content.innerHTML = '<div style="padding:20px;color:var(--red);">Erreur : ' + e.message + '</div>';
-  }
-  btn.disabled = false;
+  setTimeout(function() {
+    var results = filtrerEtScorerOpportunites(crit);
+    if (meta) meta.textContent = results.length + ' résultats · ' + Object.keys(crit).filter(function(k){ return crit[k] && crit[k]!=='any'; }).length + ' filtres actifs';
+    renderOpportunites(results, crit);
+    if (btn) btn.disabled = false;
+    if (btn2) btn2.disabled = false;
+  }, 400);
 }
+window.rechercherOpportunites = rechercherOpportunites;
+
+// ── Base de données enrichie ─────────────────────────────────
+var OPP_DATABASE = [
+  // ETF PEA
+  { nom:'ESE BNP S&P500 PEA', ticker:'ESE.PA', type:'etf', enveloppe:['pea'], cap:'mega', secteur:'any', zone:'us',
+    per:22, pb:4.2, div:1.3, ter:0.15, growth:12, risque:'med', esg:false, momentum:'haussier', strategie:['dca','croissance'],
+    score:{qualite:9,valorisation:7,croissance:9,rendement:5,risque:7,peacompat:10},
+    note:'Ton ETF actuel · S&P500 · PEA eligible · TER ultra-bas · Référence mondiale',
+    lien:'https://www.bnpparibas-am.com/fr/particuliers/nos-fonds/etf/ese-bnp-paribas-easy-sp500-ucits-etf/', star:true },
+
+  { nom:'CW8 Amundi MSCI World PEA', ticker:'CW8.PA', type:'etf', enveloppe:['pea'], cap:'mega', secteur:'any', zone:'global',
+    per:21, pb:3.8, div:1.4, ter:0.12, growth:10, risque:'med', esg:false, momentum:'haussier', strategie:['dca','croissance'],
+    score:{qualite:9,valorisation:7,croissance:9,rendement:5,risque:7,peacompat:10},
+    note:'MSCI World 1600 sociétés · Diversification maximale · TER 0.12% · Complémentaire ESE' },
+
+  { nom:'PANX Amundi Nasdaq-100 PEA', ticker:'PANX.PA', type:'etf', enveloppe:['pea'], cap:'mega', secteur:'tech', zone:'us',
+    per:32, pb:7.1, div:0.5, ter:0.22, growth:18, risque:'high', esg:false, momentum:'haussier', strategie:['dca','croissance'],
+    score:{qualite:8,valorisation:5,croissance:10,rendement:3,risque:5,peacompat:10},
+    note:'100 plus grandes valeurs Nasdaq · IA & Tech · PEA eligible · Plus volatil que ESE' },
+
+  { nom:'PAEEM Amundi MSCI Émergents', ticker:'PAEEM.PA', type:'etf', enveloppe:['pea'], cap:'large', secteur:'any', zone:'emergents',
+    per:12, pb:1.6, div:3.1, ter:0.20, growth:7, risque:'high', esg:false, momentum:'neutre', strategie:['dca','couverture'],
+    score:{qualite:6,valorisation:8,croissance:6,rendement:6,risque:4,peacompat:10},
+    note:'Chine · Inde · Brésil · Valorisation basse · Potentiel long terme · Plus risqué' },
+
+  { nom:'CEUX Amundi Europe ex-UK', ticker:'CEUX.PA', type:'etf', enveloppe:['pea'], cap:'large', secteur:'any', zone:'europe',
+    per:14, pb:2.1, div:3.5, ter:0.15, growth:6, risque:'med', esg:false, momentum:'haussier', strategie:['dca','dividendes'],
+    score:{qualite:7,valorisation:8,croissance:6,rendement:7,risque:7,peacompat:10},
+    note:'Europe hors UK · Dividendes stables · Bonne valorisation · PEA eligible' },
+
+  { nom:'LYXIB iShares Euro Govt Bond', ticker:'LYXIB.PA', type:'obligations', enveloppe:['av','pea'], cap:'any', secteur:'any', zone:'europe',
+    per:null, pb:null, div:3.8, ter:0.09, growth:2, risque:'low', esg:false, momentum:'neutre', strategie:['couverture','dividendes'],
+    score:{qualite:8,valorisation:7,croissance:3,rendement:7,risque:10,peacompat:6},
+    note:'Obligations d\'etat zone euro · Capital protégé · Rendement stable 3.5-4% · Défensif' },
+
+  { nom:'WTEM Amundi World Energy', ticker:'WTEM.PA', type:'etf', enveloppe:['pea'], cap:'large', secteur:'energy', zone:'global',
+    per:13, pb:2.0, div:4.2, ter:0.25, growth:5, risque:'med', esg:false, momentum:'neutre', strategie:['dividendes'],
+    score:{qualite:6,valorisation:8,croissance:5,rendement:8,risque:6,peacompat:10},
+    note:'Énergie mondiale · Dividendes élevés · Shell BP TotalEnergies · Couverture inflation' },
+
+  { nom:'PAASI Amundi MSCI AC Asia', ticker:'PAASI.PA', type:'etf', enveloppe:['pea'], cap:'large', secteur:'any', zone:'asie',
+    per:13, pb:1.7, div:2.8, ter:0.20, growth:9, risque:'high', esg:false, momentum:'neutre', strategie:['dca','croissance'],
+    score:{qualite:6,valorisation:8,croissance:7,rendement:5,risque:4,peacompat:10},
+    note:'Asie Pacifique · Croissance démographique · Japon Corée Taïwan · Long terme' },
+
+  // Actions FR/EU PEA
+  { nom:'TotalEnergies', ticker:'TTE.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'energy', zone:'france',
+    per:9, pb:1.6, div:5.8, ter:null, growth:4, risque:'med', esg:false, momentum:'neutre', strategie:['dividendes'],
+    score:{qualite:8,valorisation:9,croissance:5,rendement:9,risque:6,peacompat:10},
+    note:'Dividende 5.8% · PEA eligible · Leader énergie · Renouvelable en croissance · Rachats actions' },
+
+  { nom:'LVMH Moët Hennessy', ticker:'MC.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'luxe', zone:'france',
+    per:19, pb:4.5, div:2.1, ter:null, growth:8, risque:'med', esg:false, momentum:'baissier', strategie:['croissance','lumpsum'],
+    score:{qualite:10,valorisation:7,croissance:8,rendement:4,risque:7,peacompat:10},
+    note:'Leader mondial luxe · PEA eligible · Correction récente = opportunité · Marques iconiques' },
+
+  { nom:'Sanofi', ticker:'SAN.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'health', zone:'france',
+    per:14, pb:2.1, div:4.2, ter:null, growth:6, risque:'low', esg:true, momentum:'haussier', strategie:['dividendes','dca'],
+    score:{qualite:8,valorisation:8,croissance:6,rendement:8,risque:8,peacompat:10},
+    note:'Pharma défensif · Dividende 4.2% · ESG · PEA · Pipeline R&D solide' },
+
+  { nom:'BNP Paribas', ticker:'BNP.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'finance', zone:'france',
+    per:7, pb:0.6, div:7.1, ter:null, growth:3, risque:'med', esg:false, momentum:'haussier', strategie:['dividendes'],
+    score:{qualite:7,valorisation:10,croissance:4,rendement:10,risque:6,peacompat:10},
+    note:'PER 7 · Dividende 7% · Valorisation très basse · Banque systémique · PEA eligible' },
+
+  { nom:'Schneider Electric', ticker:'SU.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'indus', zone:'france',
+    per:27, pb:5.2, div:1.8, ter:null, growth:12, risque:'med', esg:true, momentum:'haussier', strategie:['croissance'],
+    score:{qualite:10,valorisation:6,croissance:9,rendement:4,risque:7,peacompat:10},
+    note:'Leader efficience énergétique · IA & datacenter · ESG leader · Croissance +12%/an' },
+
+  { nom:'Air Liquide', ticker:'AI.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'indus', zone:'france',
+    per:24, pb:4.0, div:2.3, ter:null, growth:8, risque:'low', esg:true, momentum:'haussier', strategie:['dca','croissance'],
+    score:{qualite:9,valorisation:6,croissance:8,rendement:5,risque:8,peacompat:10},
+    note:'Aristocrate dividendes 30 ans · Hydrogene · ESG · Qualité premium · PEA eligible' },
+
+  { nom:'Capgemini', ticker:'CAP.PA', type:'actions-fr', enveloppe:['pea'], cap:'large', secteur:'tech', zone:'france',
+    per:18, pb:3.8, div:2.2, ter:null, growth:10, risque:'med', esg:true, momentum:'neutre', strategie:['croissance'],
+    score:{qualite:8,valorisation:7,croissance:9,rendement:4,risque:6,peacompat:10},
+    note:'IT services & IA · PEA · ESG · Valorisation raisonnable · Transition digitale' },
+
+  // Actions EU
+  { nom:'ASML Holding', ticker:'ASML.AS', type:'actions-eu', enveloppe:['pea'], cap:'mega', secteur:'tech', zone:'europe',
+    per:30, pb:13, div:1.0, ter:null, growth:20, risque:'med', esg:true, momentum:'baissier', strategie:['croissance','lumpsum'],
+    score:{qualite:10,valorisation:5,croissance:10,rendement:2,risque:6,peacompat:8},
+    note:'Monopole machines lithographie · Incontournable chips IA · PEA eligible · Correction = achat' },
+
+  { nom:'Novo Nordisk', ticker:'NOVOB.CO', type:'actions-eu', enveloppe:['pea'], cap:'mega', secteur:'health', zone:'europe',
+    per:22, pb:25, div:1.2, ter:null, growth:25, risque:'med', esg:true, momentum:'baissier', strategie:['croissance'],
+    score:{qualite:10,valorisation:5,croissance:10,rendement:2,risque:6,peacompat:8},
+    note:'Ozempic leader · Croissance 25%/an · Correction -40% = opportunité historique · Pharma mondial' },
+
+  { nom:'Hermes International', ticker:'RMS.PA', type:'actions-fr', enveloppe:['pea'], cap:'mega', secteur:'luxe', zone:'france',
+    per:47, pb:15, div:0.8, ter:null, growth:14, risque:'med', esg:true, momentum:'neutre', strategie:['croissance','lumpsum'],
+    score:{qualite:10,valorisation:4,croissance:9,rendement:2,risque:7,peacompat:10},
+    note:'Qualité absolue · Pricing power exceptionnel · Long terme uniquement · PEA eligible' },
+
+  // SCPI / Immobilier
+  { nom:'SCPI Corum Origin', ticker:null, type:'scpi', enveloppe:['av','cto'], cap:'any', secteur:'reit', zone:'europe',
+    per:null, pb:null, div:6.1, ter:null, growth:3, risque:'med', esg:false, momentum:'neutre', strategie:['dividendes'],
+    score:{qualite:7,valorisation:7,croissance:4,rendement:9,risque:6,peacompat:0},
+    note:'6%+ rendement · Bureaux et commerces EU · Mutualisation risque · Non éligible PEA' },
+
+  { nom:'Amundi Immobilier SCPI', ticker:null, type:'scpi', enveloppe:['av'], cap:'any', secteur:'reit', zone:'france',
+    per:null, pb:null, div:4.2, ter:null, growth:2, risque:'low', esg:false, momentum:'neutre', strategie:['dividendes','couverture'],
+    score:{qualite:7,valorisation:7,croissance:3,rendement:7,risque:7,peacompat:0},
+    note:'AV Linxea · Immobilier bureaux France · Diversification hors bourse' },
+
+  // Actions US (CTO)
+  { nom:'Microsoft MSFT', ticker:'MSFT', type:'actions-us', enveloppe:['cto'], cap:'mega', secteur:'tech', zone:'us',
+    per:33, pb:12, div:0.7, ter:null, growth:16, risque:'med', esg:true, momentum:'haussier', strategie:['croissance'],
+    score:{qualite:10,valorisation:5,croissance:10,rendement:2,risque:7,peacompat:0},
+    note:'Leader IA via Azure+OpenAI · Cloud dominant · Qualité maximale · Non PEA (CTO)' },
+
+  { nom:'Apple AAPL', ticker:'AAPL', type:'actions-us', enveloppe:['cto'], cap:'mega', secteur:'tech', zone:'us',
+    per:30, pb:45, div:0.5, ter:null, growth:8, risque:'med', esg:true, momentum:'neutre', strategie:['croissance','lumpsum'],
+    score:{qualite:10,valorisation:5,croissance:7,rendement:2,risque:7,peacompat:0},
+    note:'Écosystème fermé · Rachat actions massif · Services en croissance · Non PEA (CTO)' },
+
+  { nom:'Nvidia NVDA', ticker:'NVDA', type:'actions-us', enveloppe:['cto'], cap:'mega', secteur:'tech', zone:'us',
+    per:35, pb:30, div:0.0, ter:null, growth:85, risque:'high', esg:false, momentum:'haussier', strategie:['croissance'],
+    score:{qualite:10,valorisation:5,croissance:10,rendement:0,risque:5,peacompat:0},
+    note:'Chips IA · Croissance 85%/an · Valorisation élevée · Très volatil · Non PEA (CTO)' },
+];
+window.OPP_DATABASE = OPP_DATABASE;
+
+function filtrerEtScorerOpportunites(crit) {
+  var db = window.OPP_DATABASE || [];
+  return db.filter(function(o) {
+    // Type
+    if (crit.type && crit.type !== 'all') {
+      if (o.type !== crit.type) {
+        // Cas croissance/value/dividendes = stratégie
+        if (['croissance','value','dividendes'].includes(crit.type)) {
+          if (!o.strategie || o.strategie.indexOf(crit.type) < 0) return false;
+        } else {
+          return false;
+        }
+      }
+    }
+    // Enveloppe
+    if (crit.enveloppe && crit.enveloppe !== 'any') {
+      if (!o.enveloppe || o.enveloppe.indexOf(crit.enveloppe) < 0) return false;
+    }
+    // Secteur
+    if (crit.secteur && crit.secteur !== 'any' && o.secteur !== 'any' && o.secteur !== crit.secteur) return false;
+    // Zone
+    if (crit.zone && crit.zone !== 'any' && o.zone !== 'global' && o.zone !== crit.zone) return false;
+    // Capitalisation
+    if (crit.cap && crit.cap !== 'any' && o.cap !== 'any' && o.cap !== crit.cap) return false;
+    // ESG
+    if (crit.esg === 'esg' && !o.esg) return false;
+    // Risque
+    if (crit.risque && crit.risque !== 'any' && o.risque !== crit.risque) return false;
+    // Momentum
+    if (crit.momentum && crit.momentum !== 'any' && o.momentum !== crit.momentum) return false;
+    // Stratégie
+    if (crit.strategie && crit.strategie !== 'any') {
+      if (!o.strategie || o.strategie.indexOf(crit.strategie) < 0) return false;
+    }
+    // Critères numériques
+    if (crit.perMax !== null && o.per !== null && o.per > crit.perMax) return false;
+    if (crit.pbMax  !== null && o.pb  !== null && o.pb  > crit.pbMax)  return false;
+    if (crit.divMin !== null && (o.div === null || o.div < crit.divMin)) return false;
+    if (crit.growthMin !== null && (o.growth === null || o.growth < crit.growthMin)) return false;
+    if (crit.terMax !== null && o.ter !== null && o.ter > crit.terMax) return false;
+    return true;
+  }).map(function(o) {
+    // Calcul score global pondéré
+    var s = o.score || {};
+    var global = Math.round(
+      (s.qualite||5)*0.25 +
+      (s.valorisation||5)*0.20 +
+      (s.croissance||5)*0.20 +
+      (s.rendement||5)*0.15 +
+      (s.risque||5)*0.10 +
+      (s.peacompat||5)*0.10
+    );
+    // Bonus horizon long terme
+    if (crit.horizon === 'long' && o.strategie && (o.strategie.includes('dca') || o.strategie.includes('croissance'))) global = Math.min(10, global+0.5);
+    return Object.assign({}, o, { score: Object.assign({}, s, { global: global }) });
+  });
+}
+window.filtrerEtScorerOpportunites = filtrerEtScorerOpportunites;
 
 function renderOpportunites(opps, crit) {
   var el = document.getElementById('opp-results-content');
