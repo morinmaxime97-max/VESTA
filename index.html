@@ -13021,69 +13021,126 @@ function ouvrirModalIA() {
   var ov = document.getElementById('ov-ia');
   if (!ov) return;
 
-  // Avatar déesse dans le header
+  // Avatar déesse
   var avatarEl = document.getElementById('vesta-modal-avatar');
-  if (avatarEl && window.VESTA_AVATAR_IMG) {
-    avatarEl.style.backgroundImage = 'url("' + window.VESTA_AVATAR_IMG + '")';
-    avatarEl.style.backgroundSize = 'cover';
-    avatarEl.style.backgroundPosition = 'top center';
-  } else if (avatarEl) {
-    avatarEl.innerHTML = '<div style="width:100%;height:100%;background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:16px;">🔥</div>';
+  if (avatarEl) {
+    if (window.VESTA_AVATAR_IMG) {
+      avatarEl.style.backgroundImage = 'url("' + window.VESTA_AVATAR_IMG + '")';
+      avatarEl.style.backgroundSize = 'cover';
+      avatarEl.style.backgroundPosition = 'top center';
+    } else {
+      avatarEl.innerHTML = '<div style="width:100%;height:100%;background:linear-gradient(135deg,#5b8dee,#9b72cf);display:flex;align-items:center;justify-content:center;font-size:16px;">🔥</div>';
+    }
   }
 
   ov.classList.add('on');
 
-  // ── Vérifier quelles familles de clés sont disponibles ────────
-  var families = ['groq', 'gemini', 'openrouter', 'anthropic'];
-  var keysFound = {};
-  families.forEach(function(fam) {
-    // Utiliser SEULEMENT la clé spécifique à la famille pour le wizard
-    // (ne pas utiliser la clé générique 'pierre-api-key' pour éviter de masquer l'absence de config)
-    keysFound[fam] = !!(localStorage.getItem('pierre-api-key-' + fam));
-  });
-  var hasFreeKey  = keysFound.groq || keysFound.gemini || keysFound.openrouter;
-  var hasPaidKey  = keysFound.anthropic;
-  var hasAnyKey   = hasFreeKey || hasPaidKey;
-
+  var families = ['groq','gemini','openrouter','anthropic'];
+  var hasAnyKey = families.some(function(f){ return !!localStorage.getItem('pierre-api-key-'+f); });
   var el = document.getElementById('ia-card');
   if (!el) return;
 
-  if (!hasAnyKey) {
-    // ── Aucune clé → Wizard de première configuration ────────────
-    el.innerHTML = '<div style="padding:10px 0;">'
-      + '<div style="text-align:center;margin-bottom:20px;">'
-      + '<div style="font-size:40px;margin-bottom:10px;">🔑</div>'
-      + '<div style="font-family:Playfair Display,serif;font-size:17px;color:var(--gold);font-weight:700;margin-bottom:6px;">Activez Vesta IA</div>'
-      + '<div style="font-size:12px;color:var(--muted);line-height:1.7;">Pour dialoguer gratuitement toute la journée,<br>configurez <b>1 à 3 clés API gratuites</b> ci-dessous.</div>'
-      + '</div>'
-      // Les 3 providers gratuits recommandés
-      + _renderKeySetupCards()
-      + '<div style="margin-top:16px;padding:10px 14px;background:var(--s2);border-radius:8px;font-size:10px;color:var(--muted);line-height:1.6;">'
-      + '🔒 Vos clés sont stockées <b>uniquement dans votre navigateur</b>, jamais envoyées à nos serveurs.<br>'
-      + '⚡ En mode Auto, Vesta choisit et alterne entre vos IAs gratuites automatiquement.'
-      + '</div>'
-      + '</div>';
-    return;
-  }
+  // ── Mode hybride : Claude.ai en priorité + API si clé dispo ──
+  var ctx = window.getContexteAdapte ? window.getContexteAdapte(1200) : '';
 
-  if (!hasFreeKey && hasPaidKey) {
-    // Seulement Claude (payant) — informer
-    if (window._toast) window._toast('💳 Seul Claude est configuré — mode payant actif');
-  }
+  var suggestions = [
+    "Comment optimiser mon PEA - retraite 2057 ?",
+    "Impact fiscal T2 LMNP reel ?",
+    "Succession pour mon enfant 2026 ?",
+    "Rembourser credit RP ou investir PEA ?",
+    "Strategie epargne salaire SNCF ?",
+    "Optimiser PEG SNCF cette annee ?",
+  ];
 
-  // ── Clé(s) disponible(s) → Ouvrir la conversation ────────────
-  var active = window.getActiveProvider ? window.getActiveProvider() : null;
-  setTimeout(function() {
-    if (window.renderIAConversation) renderIAConversation(el);
-    if (window.refreshTokenBar) refreshTokenBar();
-    if (window._refreshProviderBadge && active) window._refreshProviderBadge(active.id, active.auto);
-  }, 50);
-  setTimeout(function() {
-    var inp = document.getElementById('ia-user-input');
-    if (inp) inp.focus();
-  }, 200);
+    var suggHTML = suggestions.map(function(s, si) {
+    return '<button data-si="' + si + '" onclick="(function(b){var i=document.getElementById(\'vesta-q-input\');if(i){i.value=window._vestaSugg[b.dataset.si];i.focus();}})(this)" ' +
+      'style="text-align:left;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;' +
+      'font-size:10px;color:var(--text);cursor:pointer;font-family:inherit;width:100%;">' + s + '</button>';
+  }).join('');
+  window._vestaSugg = suggestions;
+
+  el.innerHTML = '<div style="padding:4px 0;">'
+    // Mode principal : Claude.ai
+    + '<div style="padding:10px 14px;background:linear-gradient(135deg,var(--gold)12,transparent);border:1px solid var(--gold)44;border-radius:10px;margin-bottom:12px;">'
+    + '<div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:4px;">💬 Poser à Claude (recommandé)</div>'
+    + '<div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Ouvre Claude.ai avec ton contexte patrimonial complet — réponses illimitées et de qualité supérieure</div>'
+    + '<textarea id="vesta-q-input" placeholder="Ta question sur ton patrimoine..." '
+    + 'style="width:100%;height:70px;resize:none;border:1px solid var(--bd);border-radius:6px;padding:8px;font-size:11px;background:var(--bg);color:var(--text);font-family:inherit;box-sizing:border-box;"></textarea>'
+    + '<button onclick="_ouvrirClaudeAI()" '
+    + 'style="width:100%;margin-top:6px;padding:9px;background:var(--gold);color:#1a1a2e;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">🚀 Ouvrir dans Claude.ai</button>'
+    + '</div>'
+    // Suggestions rapides
+    + '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-bottom:6px;">QUESTIONS FRÉQUENTES :</div>'
+    + '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">' + suggHTML + '</div>'
+    // Mode API secondaire
+    + (hasAnyKey
+        ? '<div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:2px;">'
+        + '<div style="font-size:9px;color:var(--muted);font-family:JetBrains Mono,monospace;margin-bottom:6px;">OU — RÉPONSE RAPIDE VIA API (limitée) :</div>'
+        + '<div style="display:flex;gap:6px;">'
+        + '<input id="vesta-api-q" placeholder="Question rapide..." style="flex:1;font-size:11px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--text);">'
+        + '<button onclick="_envoyerAPIRapide()" style="background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;">→</button>'
+        + '</div>'
+        + '<div id="vesta-api-resp" style="margin-top:8px;font-size:11px;color:var(--text);line-height:1.6;"></div>'
+        + '</div>'
+        : '<div style="border-top:1px solid var(--bd);padding-top:10px;text-align:center;">'
+        + '<button onclick="demanderCleAPI()" style="font-size:10px;color:var(--blue);background:none;border:none;cursor:pointer;">⚙️ Configurer une clé API gratuite (optionnel)</button>'
+        + '</div>')
+    + '</div>';
+
+  setTimeout(function(){ var i=document.getElementById('vesta-q-input'); if(i) i.focus(); }, 100);
 }
 window.ouvrirModalIA = ouvrirModalIA;
+
+// ── Ouvrir Claude.ai avec le contexte patrimonial ─────────────
+function _ouvrirClaudeAI() {
+  var q = (document.getElementById('vesta-q-input')||{}).value || '';
+  if (!q.trim()) { if(window._toast) window._toast("Ecris ta question d’abord"); return; }
+
+  var ctx = window.getContexteAdapte ? window.getContexteAdapte(2000) : '';
+  var NL = '\n';
+
+  var prompt = 'Tu es mon conseiller patrimonial. Voici ma situation Vesta :' + NL + NL
+    + ctx + NL + NL
+    + '---' + NL
+    + 'Ma question : ' + q + NL + NL
+    + 'Donne-moi une réponse structurée, précise et actionnable.';
+
+  // Copier le prompt et ouvrir Claude.ai
+  try {
+    navigator.clipboard.writeText(prompt).then(function() {
+      if (window._toast) window._toast('✅ Contexte copié — colle-le dans Claude.ai (Ctrl+V)');
+      window.open('https://claude.ai/new', '_blank');
+    });
+  } catch(e) {
+    // Fallback : textarea sélectionnable
+    var ta = document.createElement('textarea');
+    ta.value = prompt; ta.style.cssText='position:fixed;top:-9999px';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (window._toast) window._toast('✅ Contexte copié — colle dans Claude.ai');
+    window.open('https://claude.ai/new', '_blank');
+  }
+}
+window._ouvrirClaudeAI = _ouvrirClaudeAI;
+
+// ── Réponse rapide via API (mode secondaire) ──────────────────
+async function _envoyerAPIRapide() {
+  var inp = document.getElementById('vesta-api-q');
+  var respEl = document.getElementById('vesta-api-resp');
+  if (!inp || !inp.value.trim()) return;
+  var q = inp.value.trim();
+  if (respEl) respEl.innerHTML = '<span style="color:var(--muted);">⚡ Vesta réfléchit...</span>';
+  inp.disabled = true;
+  try {
+    var rep = await callClaudeIA(q, false);
+    if (respEl) respEl.innerHTML = window.mdToHtml ? window.mdToHtml(rep) : rep;
+  } catch(e) {
+    if (respEl) respEl.textContent = '⚠️ ' + e.message;
+  } finally {
+    inp.disabled = false;
+  }
+}
+window._envoyerAPIRapide = _envoyerAPIRapide;
 
 // Cartes de configuration rapide des 3 providers gratuits
 function _renderKeySetupCards() {
