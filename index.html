@@ -16196,27 +16196,9 @@ async function rechercherOpportunitesLive() {
       + 'PROFIL INVESTISSEUR : Maxime, 29 ans, France, TMI 11%, PEA ouvert 10/2024, horizon retraite 2057, profil offensif.' + NL + NL
       + 'MISSION : Trouve 5 à 8 entreprises ou ETF correspondant à ces critères qui ont un fort potentiel de croissance explosive.' + NL
       + 'Privilégie : quasi-monopoles · marchés en forte croissance · avantages compétitifs durables · catalyseurs récents (2024-2025).' + NL + NL
-      + 'Pour chaque opportunité, fournis EXACTEMENT ce format JSON (tableau) :' + NL
-      + '[{' + NL
-      + '  "nom": "Nom complet",,' + NL
-      + '  "ticker": "TICK.XX",' + NL
-      + '  "type": "pepite|etf|action|dividende",' + NL
-      + '  "pea": true/false,' + NL
-      + '  "secteur": "tech|health|finance|energy|conso|indus|luxe",' + NL
-      + '  "zone": "us|europe|france|emergents|global",' + NL
-      + '  "capitalisation": "mega|large|mid|small",' + NL
-      + '  "per": 25,' + NL
-      + '  "croissance_annuelle": 35,' + NL
-      + '  "dividende_pct": 0,' + NL
-      + '  "risque": "low|med|high",' + NL
-      + '  "monopole": "Description du monopole ou avantage unique",' + NL
-      + '  "these": "Thèse d\'investissement en 2 phrases max",' + NL
-      + '  "catalyseurs": ["cat1", "cat2", "cat3"],' + NL
-      + '  "risques": ["risque1", "risque2"],' + NL
-      + '  "potentiel": "2-5x en 5 ans",' + NL
-      + '  "score_conviction": 8' + NL
-      + '}]' + NL + NL
-      + 'Réponds UNIQUEMENT avec le tableau JSON valide, sans texte avant ou après.';
+      + 'Pour chaque opportunité, fournis ce format JSON compact (un exemple puis le tableau réel) :' + NL
+      + '[{"nom":"Exemple Corp","ticker":"EXM.PA","type":"pepite","pea":true,"secteur":"tech","zone":"europe","capitalisation":"large","per":25,"croissance_annuelle":35,"dividende_pct":0,"risque":"med","monopole":"Avantage unique","these":"Raison dinvestir","catalyseurs":["cat1","cat2"],"risques":["risque1"],"potentiel":"3-5x en 5 ans","score_conviction":8}]' + NL + NL
+      + 'IMPORTANT: JSON strict, guillemets doubles uniquement, pas de virgule finale, null si inconnu, aucun texte hors du JSON.';
 
     statusEl('Vesta analyse les marchés actuels...');
 
@@ -16228,9 +16210,45 @@ async function rechercherOpportunitesLive() {
     }
 
     // Parser le JSON
+    // ── Parser robuste — corrige les erreurs JSON fréquentes de l'IA ──
     var jsonMatch = resp.match(/\[[\s\S]*\]/);
     if (!jsonMatch) throw new Error('Format JSON invalide dans la réponse');
-    var oppsLive = JSON.parse(jsonMatch[0]);
+
+    var rawJson = jsonMatch[0];
+    // Nettoyages courants :
+    // 1. Apostrophes dans les valeurs string → remplacer par &#39; avant parse
+    // 2. Virgules traînantes avant } ou ]
+    // 3. true/false non quotés → ok, mais "true"/"false" string → convertir
+    // 4. Commentaires JS // ... → supprimer
+    var cleanJson = rawJson
+      .replace(/\/\/[^\n]*/g, '')                    // supprimer commentaires
+      .replace(/,(\s*[}\]])/g, '$1')                 // virgules traînantes
+      .replace(/([{,]\s*)'([^']+)'(\s*:)/g, '$1"$2"$3')  // clés en single quotes
+      .replace(/:\s*'([^']*?)'/g, function(m, val) { // valeurs en single quotes
+        return ': "' + val.replace(/"/g, '\\"') + '"';
+      })
+      .replace(/:\s*True\b/g, ': true')              // Python True
+      .replace(/:\s*False\b/g, ': false')            // Python False
+      .replace(/:\s*None\b/g, ': null')              // Python None
+      .replace(/,\s*,/g, ',');                        // doubles virgules
+
+    var oppsLive;
+    try {
+      oppsLive = JSON.parse(cleanJson);
+    } catch(parseErr) {
+      // Dernier recours : extraire objet par objet avec regex
+      var objMatches = cleanJson.match(/\{[^{}]*\}/g);
+      if (objMatches && objMatches.length > 0) {
+        oppsLive = [];
+        objMatches.forEach(function(objStr) {
+          try { oppsLive.push(JSON.parse(objStr)); } catch(e) {}
+        });
+      }
+      if (!oppsLive || oppsLive.length === 0) {
+        throw new Error('JSON non parseable même après nettoyage : ' + parseErr.message);
+      }
+    }
+
     if (!Array.isArray(oppsLive) || oppsLive.length === 0) throw new Error('Aucune opportunité retournée');
 
     // Construire les cartes
