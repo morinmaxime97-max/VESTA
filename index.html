@@ -567,6 +567,56 @@ body {
 #pg-strategie .g2{align-items:start;}
 #pg-strategie .card{height:auto;}
 #pg-strategie .accordion-item{width:100%;box-sizing:border-box;}
+
+/* ── Mode apprentissage — Tooltips ──────────────────────────────── */
+.learn-tooltip-trigger {
+  border-bottom: 1.5px dotted var(--blue) !important;
+  color: var(--blue) !important;
+  cursor: help;
+  position: relative;
+  display: inline;
+}
+.learn-tooltip-trigger::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a2e;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 8px 12px;
+  border-radius: 8px;
+  white-space: normal;
+  width: 260px;
+  max-width: 90vw;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  border: 1px solid var(--blue)55;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 400;
+  text-align: left;
+}
+.learn-tooltip-trigger::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--blue)55;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 9999;
+}
+.learn-tooltip-trigger:hover::after,
+.learn-tooltip-trigger:hover::before {
+  opacity: 1;
+}
 </style>
 </head>
 <body>
@@ -16141,23 +16191,53 @@ async function rechercherOpportunitesLive() {
   var liveContent = document.getElementById('opp-live-content');
   if (!liveContent) return;
 
-  // Lire les critères sélectionnés
+  // ── Récupérer tous les critères sélectionnés ────────────────
   var gv = function(id){ var e=document.getElementById(id); return e?e.value.trim():''; };
-  var secteur  = gv('opp-secteur');
-  var type     = gv('opp-type');
-  var zone     = gv('opp-zone');
-  var horizon  = gv('opp-horizon');
+  var gn = function(id){ var v=gv(id); return v?parseFloat(v):null; };
+  var secteur   = gv('opp-secteur');
+  var type      = gv('opp-type');
+  var zone      = gv('opp-zone');
+  var horizon   = gv('opp-horizon');
   var enveloppe = gv('opp-enveloppe');
-  var risque   = gv('opp-risque');
+  var risque    = gv('opp-risque');
+  var cap       = gv('opp-cap');
+  var esg       = gv('opp-esg');
+  var momentum  = gv('opp-momentum');
+  var strategie = gv('opp-strategie');
+  var perMax    = gn('opp-per-max');
+  var pbMax     = gn('opp-pb-max');
+  var divMin    = gn('opp-div-min');
+  var growthMin = gn('opp-growth-min');
+  var terMax    = gn('opp-ter-max');
 
-  // Construire une description des critères pour le prompt
-  var critDesc = [
-    type !== 'all' ? type : 'tous types',
-    secteur !== 'any' ? 'secteur ' + secteur : '',
-    zone !== 'any' ? 'zone ' + zone : '',
-    enveloppe !== 'any' ? enveloppe.toUpperCase() + ' eligible' : '',
-    horizon === 'long' ? 'long terme 10+ ans' : horizon,
-  ].filter(Boolean).join(', ');
+  // Description détaillée des critères pour le prompt
+  var criteresDetails = [];
+  if (type && type !== 'all') criteresDetails.push('Type: ' + type);
+  if (enveloppe && enveloppe !== 'any') criteresDetails.push('Enveloppe: ' + enveloppe.toUpperCase() + ' obligatoire');
+  if (secteur && secteur !== 'any') criteresDetails.push('Secteur: ' + secteur);
+  if (zone && zone !== 'any') criteresDetails.push('Zone géographique: ' + zone);
+  if (cap && cap !== 'any') criteresDetails.push('Capitalisation: ' + cap);
+  if (horizon) criteresDetails.push('Horizon: ' + (horizon === 'long' ? '10+ ans' : horizon === 'moyen' ? '5-10 ans' : horizon));
+  if (risque && risque !== 'any') criteresDetails.push('Risque max: ' + risque);
+  if (esg === 'esg') criteresDetails.push('Contrainte ESG/ISR obligatoire');
+  if (momentum && momentum !== 'any') criteresDetails.push('Momentum: ' + momentum);
+  if (strategie && strategie !== 'any') criteresDetails.push('Stratégie: ' + strategie);
+  if (perMax) criteresDetails.push('PER maximum: ' + perMax);
+  if (pbMax)  criteresDetails.push('P/B maximum: ' + pbMax);
+  if (divMin) criteresDetails.push('Dividende minimum: ' + divMin + '%');
+  if (growthMin) criteresDetails.push('Croissance CA minimum: ' + growthMin + '%/an');
+  if (terMax) criteresDetails.push('TER maximum (ETF): ' + terMax + '%');
+  if (criteresDetails.length === 0) criteresDetails.push('Aucun filtre spécifique - recherche large pépites mondiales');
+
+  // Récupérer le contexte de la conversation Vesta IA
+  var iaContext = '';
+  var iaConv = window._iaConversation || [];
+  if (iaConv.length > 0) {
+    var recentMsgs = iaConv.slice(-6).map(function(m) {
+      return (m.role === 'user' ? 'Maxime: ' : 'Vesta: ') + (typeof m.content === 'string' ? m.content.slice(0, 200) : '');
+    }).join('\n');
+    iaContext = '\n\nCONTEXTE DISCUSSION RÉCENTE AVEC VESTA:\n' + recentMsgs + '\n(Utilise ce contexte pour affiner les suggestions si pertinent.)';
+  }
 
   liveContent.innerHTML = '<div style="padding:24px;text-align:center;">'
     + '<div style="font-size:32px;animation:vestaPulse 1.5s infinite;display:inline-block;">'
@@ -16187,18 +16267,26 @@ async function rechercherOpportunitesLive() {
   }
 
   try {
-    statusEl('Construction du prompt de recherche...');
     var NL = String.fromCharCode(10);
+    var peaOk = enveloppe === 'pea';
 
-    // Prompt ultra-ciblé pour trouver des pépites
-    var prompt = 'Tu es un analyste financier expert en détection de pépites boursières (style early Nvidia, early Tesla).' + NL
-      + 'CRITÈRES DEMANDÉS : ' + critDesc + NL + NL
-      + 'PROFIL INVESTISSEUR : Maxime, 29 ans, France, TMI 11%, PEA ouvert 10/2024, horizon retraite 2057, profil offensif.' + NL + NL
-      + 'MISSION : Trouve 5 à 8 entreprises ou ETF correspondant à ces critères qui ont un fort potentiel de croissance explosive.' + NL
-      + 'Privilégie : quasi-monopoles · marchés en forte croissance · avantages compétitifs durables · catalyseurs récents (2024-2025).' + NL + NL
-      + 'Pour chaque opportunité, fournis ce format JSON compact (un exemple puis le tableau réel) :' + NL
-      + '[{"nom":"Exemple Corp","ticker":"EXM.PA","type":"pepite","pea":true,"secteur":"tech","zone":"europe","capitalisation":"large","per":25,"croissance_annuelle":35,"dividende_pct":0,"risque":"med","monopole":"Avantage unique","these":"Raison dinvestir","catalyseurs":["cat1","cat2"],"risques":["risque1"],"potentiel":"3-5x en 5 ans","score_conviction":8}]' + NL + NL
-      + 'IMPORTANT: JSON strict, guillemets doubles uniquement, pas de virgule finale, null si inconnu, aucun texte hors du JSON.';
+    var prompt = 'Tu es un trader et analyste financier expert, spécialisé dans la détection de pépites boursières AVANT leur grande ascension (style early Nvidia 2019, early Tesla 2019, early ASML 2015).' + NL + NL
+      + 'PROFIL INVESTISSEUR :' + NL
+      + '- Maxime, 29 ans, France, agent SNCF, TMI 11%' + NL
+      + '- PEA BoursoBank ouvert octobre 2024 → exonération IR en octobre 2029' + NL
+      + '- Horizon retraite 2057 → investissement long terme privilégié' + NL
+      + '- Profil offensif/dynamique, accepte forte volatilité pour fort potentiel' + NL
+      + '- Déjà investi: ETF ESE S&P500 (PEA), T2 LMNP Limoges' + NL + NL
+      + 'CRITÈRES DE RECHERCHE SÉLECTIONNÉS :' + NL
+      + criteresDetails.map(function(c){ return '- ' + c; }).join(NL) + NL + NL
+      + (peaOk ? 'CONTRAINTE IMPORTANTE: PEA obligatoire → uniquement actions zone UE/EEE ou ETF éligibles PEA.' + NL + NL : '')
+      + iaContext + NL + NL
+      + 'MISSION : Identifie 5 à 7 entreprises ou ETF avec fort potentiel de croissance explosive correspondant EXACTEMENT à ces critères.' + NL
+      + 'Pense comme un trader pro : cherche les avantages compétitifs durables (moat), les marchés en hyper-croissance, les catalyseurs court terme (12-18 mois).' + NL
+      + 'Sois spécifique et concret. Donne des convictions, pas des généralités.' + NL + NL
+      + 'Format JSON strict (array, guillemets doubles, pas de virgule finale) :' + NL
+      + '[{"nom":"Nom Complet","ticker":"TICK.PA","type":"pepite","pea":' + (peaOk ? 'true' : 'false') + ',"secteur":"tech","zone":"europe","capitalisation":"large","per":25,"croissance_annuelle":35,"dividende_pct":0,"risque":"med","monopole":"Avantage concurrentiel unique","these":"Pourquoi maintenant en 2 phrases","catalyseurs":["Catalyseur 1 2025","Catalyseur 2"],"risques":["Risque 1"],"potentiel":"3-6x en 5 ans","score_conviction":8}]' + NL + NL
+      + 'JSON uniquement. Aucun texte avant ou après le tableau.';
 
     statusEl('Vesta analyse les marchés actuels...');
 
@@ -16339,6 +16427,64 @@ async function rechercherOpportunitesLive() {
   }
 }
 window.rechercherOpportunitesLive = rechercherOpportunitesLive;
+
+// ── Détection opportunités dans la conversation Vesta ────────
+// Si Vesta reçoit une question sur les opportunités → propose la recherche
+function _detecterDemandeOpportunite(msg) {
+  var keywords = /opportunit|pépite|investir|action.*acheter|etf.*recom|que.*invest|bonne.*valeur|valeur.*acheter|pepite|ticker|bourse.*conseil|marché.*investir|portefeuille.*améliore|diversif/i;
+  return keywords.test(msg);
+}
+window._detecterDemandeOpportunite = _detecterDemandeOpportunite;
+
+// Surcharger renderIAConversation pour ajouter bouton "Chercher opportunités" si pertinent
+var _origRenderIA = window.renderIAConversation;
+if (_origRenderIA) {
+  window.renderIAConversation = function(el) {
+    _origRenderIA(el);
+    // Après rendu, vérifier si le dernier message Vesta parle d'opportunités
+    var conv = window._iaConversation || [];
+    var lastAssist = conv.filter(function(m){ return m.role === 'assistant'; }).slice(-1)[0];
+    if (lastAssist && lastAssist.content) {
+      var content = typeof lastAssist.content === 'string' ? lastAssist.content : '';
+      if (_detecterDemandeOpportunite(content) || content.includes('ticker') || content.includes('PEA') && content.includes('%')) {
+        // Ajouter bouton "Rechercher ces opportunités" sous la dernière réponse
+        var msgs = el.querySelector('#ia-messages');
+        if (msgs && !msgs.querySelector('.vesta-opp-btn-wrap')) {
+          var btnWrap = document.createElement('div');
+          btnWrap.className = 'vesta-opp-btn-wrap';
+          btnWrap.style.cssText = 'padding:6px 0 0 38px;';
+          btnWrap.innerHTML = '<button onclick="window._lancerRechercheDepuisIA()" style="'
+            + 'display:inline-flex;align-items:center;gap:5px;'
+            + 'background:linear-gradient(135deg,var(--gold)18,transparent);'
+            + 'border:1px solid var(--gold)55;border-radius:6px;'
+            + 'padding:5px 12px;font-size:10px;color:var(--gold);cursor:pointer;'
+            + 'font-family:inherit;font-weight:600;">'
+            + '🔍 Rechercher ces opportunités dans Vesta'
+            + '</button>';
+          msgs.appendChild(btnWrap);
+        }
+      }
+    }
+  };
+}
+
+// Lancer la recherche depuis la conversation IA
+window._lancerRechercheDepuisIA = function() {
+  // Fermer le modal IA
+  var ovIA = document.getElementById('ov-ia');
+  if (ovIA) ovIA.classList.remove('on');
+  // Aller sur l'onglet opportunités
+  if (window.showPage) window.showPage('opportunites');
+  setTimeout(function() {
+    // Déclencher la recherche live (qui utilisera le contexte _iaConversation)
+    var card = document.getElementById('card-opp-results');
+    if (card) card.style.display = 'block';
+    if (window.switchOppTab) window.switchOppTab('live');
+    if (window.rechercherOpportunitesLive) window.rechercherOpportunitesLive();
+    if (window._toast) window._toast('🔍 Vesta analyse les opportunités mentionnées...');
+  }, 300);
+};
+window._lancerRechercheDepuisIA = window._lancerRechercheDepuisIA;
 
 // ── Base de données enrichie ─────────────────────────────────
 var OPP_DATABASE = [
@@ -17038,7 +17184,7 @@ function _applyLearnMode(active) {
           if (text.length < 200) {
             var span = document.createElement('span');
             span.innerHTML = text.replace(new RegExp('\\b'+term+'\\b', 'g'),
-              '<span class="learn-tooltip-trigger" title="'+LEARN_GLOSSARY[term]+'" style="border-bottom:1px dotted var(--blue);cursor:help;color:var(--blue);">'+term+'</span>');
+              '<span class="learn-tooltip-trigger" data-tooltip="'+LEARN_GLOSSARY[term]+'" style="">'+term+'</span>');
             if (node.parentNode && span.innerHTML !== text) {
               node.parentNode.replaceChild(span, node);
               changed = true;
@@ -19633,7 +19779,7 @@ function exportPdfRapport() {
   html += '.foot{margin-top:40px;font-size:10px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:15px;}';
   html += 'ul li{margin-bottom:8px;}';
   html += '@media print{body{margin:0;padding:15mm;} h1{page-break-after:avoid;} h2{page-break-after:avoid;}}';
-  html += '@page{size:A4;margin:15mm;}';
+    html += '@page{size:A4;margin:15mm;}';
   html += '</style></head><body>';
 
   html += '<h1>Bilan patrimonial — ' + prenom + '</h1>';
