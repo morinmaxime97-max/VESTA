@@ -5,6 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<meta name="vesta-version" content="20260430-v2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -10403,42 +10404,83 @@ async function genererActuParPierre(feed) {
   var apiKey = localStorage.getItem('pierre-api-key') || '';
   if (!apiKey) return null;
   var NL = String.fromCharCode(10);
-  var today = new Date().toLocaleDateString('fr-FR');
+
+  // Date réelle d'aujourd'hui
+  var now = new Date();
+  var todayStr = now.toLocaleDateString('fr-FR', {day:'2-digit', month:'long', year:'numeric'});
+  var todayISO = now.toISOString().slice(0,10); // YYYY-MM-DD
+  // Limite 2 mois en arrière
+  var twoMonthsAgo = new Date(now);
+  twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+  var limitStr = twoMonthsAgo.toISOString().slice(0,10);
+
   var prompt = [
-    "Date : " + today + ". Génère 4 brèves d'actualité RÉELLES pour : " + feed.label,
+    "Date du jour : " + todayStr + " (" + todayISO + ").",
+    "Génère 4 brèves d'actualité RÉELLES pour : " + feed.label,
     "Thèmes : " + (feed.queries||[]).slice(0,2).join(', '),
+    "IMPORTANT : utilise uniquement des événements survenus entre " + limitStr + " et " + todayISO + ".",
+    "Pour chaque article, fournis la date réelle de publication au format YYYY-MM-DD.",
     "Réponds UNIQUEMENT avec ce JSON valide (sans markdown ni backticks) :",
-    '[{"title":"Titre informatif réel","source":"Les Echos","ageLabel":"Il y a 2j","ageDays":2},{"title":"...","source":"...","ageLabel":"...","ageDays":1}]',
-    "4 items. Titres concrets, informatifs, basés sur actualité récente de finance/immobilier français."
+    '[{"title":"Titre informatif réel","source":"Les Echos","pubDate":"' + todayISO + '","link":"https://www.lesechos.fr"},{"title":"...","source":"...","pubDate":"YYYY-MM-DD","link":"https://..."}]',
+    "4 items. Titres concrets, informatifs, basés sur actualité réelle finance/immobilier/bourse français."
   ].join(NL);
+
   try {
     var activeP = getActiveProvider ? getActiveProvider() : {provider: IA_PROVIDERS.groq, key: apiKey};
     var provFetch = activeP.provider || IA_PROVIDERS.groq;
     var keyFetch  = activeP.key || apiKey;
-    var fetchResp, fetchData;
+    var fetchResp, fetchData, text = '';
+
     if (provFetch.format === 'openai') {
-      fetchResp = await fetch(provFetch.url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+keyFetch}, body: JSON.stringify({ model:provFetch.model, max_tokens:400, messages:[{role:'system',content:'Tu es un expert financier. Réponds uniquement en JSON valide.'},{role:'user',content:prompt}] }) });
+      fetchResp = await fetch(provFetch.url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+keyFetch}, body: JSON.stringify({ model:provFetch.model, max_tokens:500, messages:[{role:'system',content:'Expert financier. JSON uniquement, dates réelles au format YYYY-MM-DD.'},{role:'user',content:prompt}] }) });
       fetchData = await fetchResp.json();
       if (fetchData.error) return null;
-      var text = (fetchData.choices&&fetchData.choices[0]&&fetchData.choices[0].message&&fetchData.choices[0].message.content)||'';
+      text = (fetchData.choices&&fetchData.choices[0]&&fetchData.choices[0].message&&fetchData.choices[0].message.content)||'';
     } else if (provFetch.format === 'gemini') {
-      fetchResp = await fetch(provFetch.url+'?key='+keyFetch, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:400}}) });
+      fetchResp = await fetch(provFetch.url+'?key='+keyFetch, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:500}}) });
       fetchData = await fetchResp.json();
       if (fetchData.error) return null;
-      var text = (fetchData.candidates&&fetchData.candidates[0]&&fetchData.candidates[0].content&&fetchData.candidates[0].content.parts&&fetchData.candidates[0].content.parts[0]&&fetchData.candidates[0].content.parts[0].text)||'';
+      text = (fetchData.candidates&&fetchData.candidates[0]&&fetchData.candidates[0].content&&fetchData.candidates[0].content.parts&&fetchData.candidates[0].content.parts[0]&&fetchData.candidates[0].content.parts[0].text)||'';
     } else {
-      fetchResp = await fetch(provFetch.url, { method:'POST', headers:{'Content-Type':'application/json','x-api-key':keyFetch,'anthropic-version':'2023-06-01'}, body: JSON.stringify({ model:provFetch.model, max_tokens:400, messages:[{role:'user',content:prompt}] }) });
+      fetchResp = await fetch(provFetch.url, { method:'POST', headers:{'Content-Type':'application/json','x-api-key':keyFetch,'anthropic-version':'2023-06-01'}, body: JSON.stringify({ model:provFetch.model, max_tokens:500, messages:[{role:'user',content:prompt}] }) });
       fetchData = await fetchResp.json();
       if (fetchData.error) return null;
-      var text = (fetchData.content||[]).map(function(b){return b.text||'';}).join('').replace(/```json|```/g,'').trim();
+      text = (fetchData.content||[]).map(function(b){return b.text||'';}).join('').replace(/```json|```/g,'').trim();
     }
-    // Find JSON array
+
     var match = text.match(/\[[\s\S]*\]/);
     if (!match) return null;
-    var items = JSON.parse(match[0]);
-    return Array.isArray(items) ? items.map(function(i) {
-      return { title:i.title||'', source:i.source||'Vesta IA', ageLabel:i.ageLabel||'Récent', link:'#', ageDays:i.ageDays||1, dateObj:new Date() };
-    }) : null;
+    var rawItems = JSON.parse(match[0]);
+    if (!Array.isArray(rawItems)) return null;
+
+    var nowTs = now.getTime();
+    var twoMonthsTs = twoMonthsAgo.getTime();
+
+    return rawItems.map(function(i) {
+      // Calculer l'âge réel depuis pubDate
+      var pubDate = i.pubDate ? new Date(i.pubDate) : new Date();
+      // Valider la date : ni future ni trop ancienne
+      if (isNaN(pubDate.getTime()) || pubDate.getTime() > nowTs) pubDate = new Date();
+      if (pubDate.getTime() < twoMonthsTs) return null; // trop ancien → filtrer
+
+      var ageDays = Math.floor((nowTs - pubDate.getTime()) / 86400000);
+      var ageLabel;
+      if (ageDays === 0)      ageLabel = "Aujourd'hui";
+      else if (ageDays === 1) ageLabel = "Il y a 1 jour";
+      else if (ageDays < 7)   ageLabel = "Il y a " + ageDays + " jours";
+      else if (ageDays < 30)  ageLabel = "Il y a " + Math.floor(ageDays/7) + " sem.";
+      else                    ageLabel = "Il y a " + Math.floor(ageDays/30) + " mois";
+
+      return {
+        title:    i.title || '',
+        source:   i.source || 'Vesta IA',
+        ageLabel: ageLabel,
+        ageDays:  ageDays,
+        link:     i.link || '#',
+        dateObj:  pubDate,
+        pubDate:  pubDate.toLocaleDateString('fr-FR', {day:'2-digit', month:'short'})
+      };
+    }).filter(Boolean); // supprimer les null (articles trop anciens)
   } catch(e) { return null; }
 }
 
@@ -10541,13 +10583,25 @@ async function renderFeedCard(feedId,forceRefresh){
 
 function renderFeedItems(body,items,feed,lbl){
   if(!items||!items.length){body.innerHTML='<div style="color:var(--muted);font-size:11px;padding:16px 0;text-align:center;">Aucun article — cliquer pour reessayer</div>';return;}
+
+  // Filtrer articles > 2 mois
+  var twoMonthsAgo = new Date();
+  twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+  var filtered = items.filter(function(item){
+    if (!item.dateObj) return true; // conserver si pas de date
+    return item.dateObj >= twoMonthsAgo;
+  });
+  if (!filtered.length) filtered = items.slice(0, 4); // fallback
+
   var html='';
-  items.forEach(function(item){
+  filtered.forEach(function(item){
     var ageColor=item.ageDays<=2?'var(--green)':item.ageDays<=14?feed.color:'var(--muted)';
     html+='<a href="'+item.link+'" target="_blank" rel="noopener" style="display:block;text-decoration:none;padding:9px 0;border-bottom:1px solid var(--bd);">';
     html+='<div style="font-size:12px;color:var(--text);line-height:1.4;margin-bottom:3px;font-weight:500;">'+item.title+'</div>';
     html+='<div style="display:flex;gap:8px;font-size:10px;font-family:JetBrains Mono,monospace;color:var(--muted);">';
     if(item.source)html+='<span>'+item.source+'</span>';
+    // Date réelle si disponible
+    if(item.pubDate)html+='<span style="color:var(--muted);">'+item.pubDate+'</span>';
     html+='<span style="color:'+ageColor+';">'+item.ageLabel+'</span>';
     html+='</div></a>';
   });
@@ -13696,7 +13750,7 @@ function getActiveProvider() {
       localStorage.removeItem('pierre-provider-manual');
     }
     localStorage.setItem('vesta-model-version', modelVersion);
-    console.log('[Vesta] Modèles mis à jour, compteurs réinitialisés');
+    console.log('[Vesta v20260430-v2] Modèles mis à jour');
   }
 })();
 window.getActiveProvider = getActiveProvider;
@@ -16270,24 +16324,24 @@ async function rechercherOpportunitesLive() {
     var NL = String.fromCharCode(10);
     var peaOk = enveloppe === 'pea';
 
-    var prompt = 'Tu es un trader et analyste financier expert, spécialisé dans la détection de pépites boursières AVANT leur grande ascension (style early Nvidia 2019, early Tesla 2019, early ASML 2015).' + NL + NL
-      + 'PROFIL INVESTISSEUR :' + NL
-      + '- Maxime, 29 ans, France, agent SNCF, TMI 11%' + NL
-      + '- PEA BoursoBank ouvert octobre 2024 → exonération IR en octobre 2029' + NL
-      + '- Horizon retraite 2057 → investissement long terme privilégié' + NL
-      + '- Profil offensif/dynamique, accepte forte volatilité pour fort potentiel' + NL
-      + '- Déjà investi: ETF ESE S&P500 (PEA), T2 LMNP Limoges' + NL + NL
-      + 'CRITÈRES DE RECHERCHE SÉLECTIONNÉS :' + NL
-      + criteresDetails.map(function(c){ return '- ' + c; }).join(NL) + NL + NL
-      + (peaOk ? 'CONTRAINTE IMPORTANTE: PEA obligatoire → uniquement actions zone UE/EEE ou ETF éligibles PEA.' + NL + NL : '')
-      + iaContext + NL + NL
-      + 'MISSION : Identifie 5 à 7 entreprises ou ETF avec fort potentiel de croissance explosive correspondant EXACTEMENT à ces critères.' + NL
-      + 'Pense comme un trader pro : cherche les avantages compétitifs durables (moat), les marchés en hyper-croissance, les catalyseurs court terme (12-18 mois).' + NL
-      + 'Sois spécifique et concret. Donne des convictions, pas des généralités.' + NL + NL
-      + 'Format JSON strict (array, guillemets doubles, pas de virgule finale) :' + NL
-      + '[{"nom":"Nom Complet","ticker":"TICK.PA","type":"pepite","pea":' + (peaOk ? 'true' : 'false') + ',"secteur":"tech","zone":"europe","capitalisation":"large","per":25,"croissance_annuelle":35,"dividende_pct":0,"risque":"med","monopole":"Avantage concurrentiel unique","these":"Pourquoi maintenant en 2 phrases","catalyseurs":["Catalyseur 1 2025","Catalyseur 2"],"risques":["Risque 1"],"potentiel":"3-6x en 5 ans","score_conviction":8}]' + NL + NL
-      + 'JSON uniquement. Aucun texte avant ou après le tableau.';
+        var NL = String.fromCharCode(10);
+    var peaOk = enveloppe === 'pea';
 
+    var prompt = 'Tu es un trader et analyste financier expert, specialise dans la detection de pepites boursieres AVANT leur grande ascension (style early Nvidia 2019, ASML 2015, Adyen 2018).' + NL
+      + 'PROFIL : Maxime, 29 ans, France, TMI 11%, PEA 10/2024, horizon retraite 2057, profil offensif.' + NL + NL
+      + 'CRITERES :' + NL
+      + criteresDetails.map(function(c){ return '- ' + c; }).join(NL) + NL + NL
+      + (peaOk ? 'PEA OBLIGATOIRE : uniquement actions zone UE/EEE ou ETF eligibles PEA.' + NL : '')
+      + iaContext
+      + 'UNIVERS ELARGI a explorer :' + NL
+      + '- Small caps (50M-1Md EUR) : champions caches, niche monopole, peu suivis' + NL
+      + '- Private equity cote : Eurazeo, Tikehau, EQT, Partners Group - acces PE via bourse' + NL
+      + '- Deep value : decotes injustes, actif net > cours, catalyseur a venir' + NL
+      + '- Secteurs emergents : IA edge, cybersecurite, eau, vieillissement, defense EU' + NL + NL
+      + 'Trouve 5-8 opportunites concretes. Sois un fonds de conviction : cherche le prochain 10-bagger.' + NL + NL
+      + 'JSON strict uniquement :' + NL
+      + '[{"nom":"Nom","ticker":"TICK.PA","type":"pepite","pea":' + (peaOk?'true':'false') + ',"secteur":"tech","zone":"france","capitalisation":"small","per":15,"croissance_annuelle":20,"dividende_pct":0,"risque":"med","monopole":"Avantage unique","these":"Pourquoi maintenant","catalyseurs":["Cat1","Cat2"],"risques":["Risque1"],"potentiel":"3-8x en 5 ans","score_conviction":8}]' + NL
+      + 'Aucun texte hors du JSON.';
     statusEl('Vesta analyse les marchés actuels...');
 
     var resp = await callClaudeIA(prompt, true);
@@ -16661,6 +16715,116 @@ var OPP_DATABASE = [
     score:{qualite:7,valorisation:7,croissance:4,rendement:9,risque:6,peacompat:0},
     note:'6%+ rendement · Bureaux et commerces EU · Via ton AV Linxea · Non PEA' },
 
+  // ═══════════════════════════════════════════════════
+  // 🔬 SMALL CAPS — Pépites cachées, fort potentiel
+  // ═══════════════════════════════════════════════════
+
+  { nom:'Gilles Dessert (IDEX Energies)', ticker:'IDEX.PA', type:'croissance', enveloppe:['pea'],
+    cap:'small', secteur:'energy', zone:'france',
+    per:18, pb:2.1, div:1.5, ter:null, growth:22, risque:'med', esg:true,
+    momentum:'haussier', strategie:['croissance','dca'],
+    score:{qualite:8,valorisation:7,croissance:8,rendement:3,risque:6,peacompat:10},
+    pepite:true, monopole:'Efficience energetique batiments - contrats long terme 20 ans',
+    catalyseurs:['Renovation thermique obligatoire DPE - marche 200Md EUR','Contrats publics securises','Croissance +22%/an'],
+    risques:['Small cap liquidite','Dependance subventions'],
+    potentiel:'3-5x en 5-7 ans si marche DPE accelere',
+    note:'Small cap PEA · Efficience energetique · DPE loi = vent dans le dos · France uniquement' },
+
+  { nom:'Lumibird', ticker:'LBIRD.PA', type:'croissance', enveloppe:['pea'],
+    cap:'small', secteur:'tech', zone:'france',
+    per:25, pb:2.8, div:0, ter:null, growth:18, risque:'high', esg:false,
+    momentum:'neutre', strategie:['croissance'],
+    score:{qualite:8,valorisation:6,croissance:9,rendement:0,risque:5,peacompat:10},
+    pepite:true, monopole:'Lasers medicaux et defense - europeen unique',
+    catalyseurs:['Defense europeenne en hausse','Ophtalmologie laser croissance mondiale','Consolidation secteur lasers'],
+    risques:['Small cap volatil','Execution industrielle'],
+    potentiel:'3-6x en 5-7 ans',
+    note:'Small cap PEA · Champion lasers EU · Defense + medecin · Trop discret = opportunite' },
+
+  { nom:'Lectra', ticker:'LSS.PA', type:'croissance', enveloppe:['pea'],
+    cap:'small', secteur:'tech', zone:'france',
+    per:22, pb:3.5, div:1.8, ter:null, growth:12, risque:'med', esg:true,
+    momentum:'baissier', strategie:['croissance','lumpsum'],
+    score:{qualite:8,valorisation:7,croissance:8,rendement:3,risque:6,peacompat:10},
+    pepite:true, monopole:'Logiciels decoupe tissu et cuir - seul monde',
+    catalyseurs:['LVMH Hermes Toyota = clients','Transition SaaS recurring','Correction -40% = entree'],
+    risques:['Cycle auto/luxe cyclique','Concurrence CN'],
+    potentiel:'2-4x · PEA eligible · Correction = point entree',
+    note:'Small cap PEA · Monopole logiciel decoupe · LVMH client · Correction -40% depuis ATH' },
+
+  { nom:'Esker', ticker:'ESK.PA', type:'croissance', enveloppe:['pea'],
+    cap:'small', secteur:'tech', zone:'france',
+    per:40, pb:6.0, div:0.5, ter:null, growth:15, risque:'med', esg:true,
+    momentum:'neutre', strategie:['croissance'],
+    score:{qualite:9,valorisation:5,croissance:8,rendement:1,risque:6,peacompat:10},
+    pepite:true, monopole:'Automatisation processus financiers PME europeens',
+    catalyseurs:['SaaS recurring 90% revenus','Expansion europe USA','IA document processing'],
+    risques:['Valorisation elevee','Concurrence SAP'],
+    potentiel:'2-4x en 5 ans',
+    note:'Small cap PEA · SaaS B2B · PME europe · Valorisation raisonnable vs US peers' },
+
+  { nom:'Thermador Groupe', ticker:'THEP.PA', type:'dividendes', enveloppe:['pea'],
+    cap:'small', secteur:'indus', zone:'france',
+    per:11, pb:1.9, div:5.2, ter:null, growth:7, risque:'low', esg:false,
+    momentum:'neutre', strategie:['dividendes','value'],
+    score:{qualite:8,valorisation:9,croissance:6,rendement:9,risque:8,peacompat:10},
+    pepite:false,
+    note:'Small cap PEA · Distributeur sanitaire/chauffage · PER 11 · Dividende 5% · Qualite cach ee' },
+
+  // ═══════════════════════════════════════════════════
+  // 🏦 PRIVATE EQUITY & ALTERNATIF
+  // ═══════════════════════════════════════════════════
+
+  { nom:'Eurazeo', ticker:'RF.PA', type:'dividendes', enveloppe:['pea'],
+    cap:'large', secteur:'finance', zone:'france',
+    per:12, pb:0.9, div:3.8, ter:null, growth:8, risque:'med', esg:true,
+    momentum:'neutre', strategie:['dividendes','croissance'],
+    score:{qualite:8,valorisation:9,croissance:7,rendement:7,risque:6,peacompat:10},
+    pepite:true, monopole:'Private equity coute en bourse - acces PE sans min 100k EUR',
+    catalyseurs:['Acces PE democratise via bourse','Decote importante sur actif net','Transition energie dans portefeuille'],
+    risques:['Liquidite PE','Cycle credit'],
+    potentiel:'2-3x + dividendes · Acces PE via PEA',
+    note:'PEA eligible · Acces private equity via bourse · Decote actif net · Leader PE France' },
+
+  { nom:'Tikehau Capital', ticker:'TKO.PA', type:'dividendes', enveloppe:['pea'],
+    cap:'large', secteur:'finance', zone:'france',
+    per:14, pb:1.1, div:3.5, ter:null, growth:18, risque:'med', esg:true,
+    momentum:'haussier', strategie:['dividendes','croissance'],
+    score:{qualite:8,valorisation:7,croissance:9,rendement:6,risque:6,peacompat:10},
+    pepite:true, monopole:'Alternatif actifs - dette privee, private equity, immobilier',
+    catalyseurs:['Actifs sous gestion x3 en 5 ans','Dividende croissant','Transition energetique = deals'],
+    risques:['Dependance marches credit','Regulation'],
+    potentiel:'2-4x · PEA · Dividendes croissants',
+    note:'PEA eligible · Gestionnaire alternatif · Dette privee + PE · Croissance 18%/an AUM' },
+
+  { nom:'Wendel', ticker:'MF.PA', type:'dividendes', enveloppe:['pea'],
+    cap:'large', secteur:'finance', zone:'france',
+    per:9, pb:0.7, div:3.2, ter:null, growth:6, risque:'med', esg:true,
+    momentum:'neutre', strategie:['dividendes','value'],
+    score:{qualite:8,valorisation:10,croissance:5,rendement:6,risque:6,peacompat:10},
+    pepite:false,
+    note:'Holding PE coute · Decote 30% actif net · Bureau Veritas Stahl dans portefeuille · PEA' },
+
+  // ═══════════════════════════════════════════════════
+  // 🎯 DEEP VALUE — Décotées injustement
+  // ═══════════════════════════════════════════════════
+
+  { nom:'Accor Hotels', ticker:'AC.PA', type:'value', enveloppe:['pea'],
+    cap:'large', secteur:'conso', zone:'europe',
+    per:13, pb:2.0, div:3.5, ter:null, growth:10, risque:'med', esg:true,
+    momentum:'haussier', strategie:['value','dividendes'],
+    score:{qualite:7,valorisation:8,croissance:7,rendement:6,risque:6,peacompat:10},
+    pepite:false,
+    note:'PEA · Hotellerie post-COVID · Valorisation 40% sous pairs US · Actif leger · Dividende' },
+
+  { nom:'Compagnie des Alpes CDA', ticker:'CDA.PA', type:'value', enveloppe:['pea'],
+    cap:'mid', secteur:'conso', zone:'france',
+    per:10, pb:1.1, div:4.0, ter:null, growth:8, risque:'med', esg:false,
+    momentum:'neutre', strategie:['value','dividendes'],
+    score:{qualite:7,valorisation:9,croissance:6,rendement:7,risque:6,peacompat:10},
+    pepite:false,
+    note:'PEA · Montagnes France · Disneyland Paris · PER 10 · Valorisation basse · Mid cap' },
+
 ];
 window.OPP_DATABASE = OPP_DATABASE;
 
@@ -16669,13 +16833,18 @@ function filtrerEtScorerOpportunites(crit) {
   return db.filter(function(o) {
     // Type
     if (crit.type && crit.type !== 'all') {
-      if (o.type !== crit.type) {
-        // Cas croissance/value/dividendes = stratégie
-        if (['croissance','value','dividendes'].includes(crit.type)) {
-          if (!o.strategie || o.strategie.indexOf(crit.type) < 0) return false;
-        } else {
-          return false;
-        }
+      var typeAliases = {
+        'croissance': ['croissance','pepite'],
+        'value':      ['value','dividendes'],
+        'dividendes': ['dividendes','value'],
+        'actions-fr': ['actions-fr','dividendes','value','croissance'],
+        'actions-eu': ['actions-eu','croissance'],
+        'scpi':       ['scpi'],
+        'etf':        ['etf'],
+      };
+      var allowed = typeAliases[crit.type] || [crit.type];
+      if (allowed.indexOf(o.type) < 0) {
+        if (!o.strategie || o.strategie.indexOf(crit.type) < 0) return false;
       }
     }
     // Enveloppe
