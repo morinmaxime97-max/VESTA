@@ -1054,6 +1054,109 @@ body {
   <!-- Biens immo dynamiques -->
   <!-- RP Crédits -->
 
+  <!-- ══════════════════════════════════════════════════════
+       🧾 GÉNÉRATEUR DE QUITTANCES DE LOYER
+  ══════════════════════════════════════════════════════ -->
+  <div class="card mb" id="card-quittance" style="margin-top:18px;">
+    <div class="chd">
+      🧾 Générateur de quittances de loyer
+      <span class="chd-sub">T2 · 383 rue François Perrin · Limoges</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:16px;">
+
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.8px;">Bailleur — Nom complet</label>
+        <input id="q-bail-nom" value="MORIN Maxime" style="width:100%;margin-top:5px;font-size:12px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.8px;">Bailleur — Adresse</label>
+        <input id="q-bail-adresse" value="3 rue Louis Jouvet 87570 Rilhac-Rancon" style="width:100%;margin-top:5px;font-size:12px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.8px;">Locataire — Nom complet</label>
+        <input id="q-loc-nom" value="MAURY Lucas" style="width:100%;margin-top:5px;font-size:12px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.8px;">Locataire — Adresse</label>
+        <input id="q-loc-adresse" value="383 rue Francois Perrin 87000 Limoges" style="width:100%;margin-top:5px;font-size:12px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.8px;">Adresse du bien loué</label>
+        <input id="q-bien-adresse" value="383 rue Francois Perrin 87000 Limoges" style="width:100%;margin-top:5px;font-size:12px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.8px;">Loyer (€)</label>
+        <input id="q-loyer" type="number" value="520" min="0" step="1" style="width:100%;margin-top:5px;font-size:12px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.8px;">Charges (€)</label>
+        <input id="q-charges" type="number" value="40" min="0" step="1" style="width:100%;margin-top:5px;font-size:12px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.8px;">Mois concerné</label>
+        <select id="q-mois" style="width:100%;margin-top:5px;font-size:12px;">
+          <option value="1">Janvier</option><option value="2">Février</option>
+          <option value="3">Mars</option><option value="4">Avril</option>
+          <option value="5" selected>Mai</option><option value="6">Juin</option>
+          <option value="7">Juillet</option><option value="8">Août</option>
+          <option value="9">Septembre</option><option value="10">Octobre</option>
+          <option value="11">Novembre</option><option value="12">Décembre</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.8px;">Année</label>
+        <input id="q-annee" type="number" value="2026" min="2020" max="2040" style="width:100%;margin-top:5px;font-size:12px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.8px;">Date de paiement</label>
+        <input id="q-date-paiement" value="5 Mai 2026" style="width:100%;margin-top:5px;font-size:12px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.8px;">Lieu de signature</label>
+        <input id="q-lieu" value="Limoges" style="width:100%;margin-top:5px;font-size:12px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.8px;">Date de signature</label>
+        <input id="q-date-sign" value="5 Mai 2026" style="width:100%;margin-top:5px;font-size:12px;box-sizing:border-box;">
+      </div>
+    </div>
+
+    <!-- Aperçu temps réel -->
+    <div style="border:1.5px solid var(--bd);border-radius:8px;background:#fff;color:#111;padding:32px 36px;font-family:Georgia,serif;font-size:13px;line-height:1.9;margin-bottom:14px;position:relative;" id="q-apercu">
+      <!-- généré par JS -->
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button onclick="genererQuittancePDF()" class="btn"
+        style="background:var(--gold);color:#1a1a2e;font-weight:700;display:flex;align-items:center;gap:6px;">
+        ⬇ Télécharger PDF
+      </button>
+      <button onclick="quittanceMoisSuivant()" class="btn gh">→ Mois suivant</button>
+      <button onclick="quittanceMoisPrecedent()" class="btn gh">← Mois précédent</button>
+      <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-left:4px;">
+        Aperçu mis à jour en temps réel
+      </span>
+    </div>
+
+    <!-- Zone signature -->
+    <div style="margin-top:12px;padding:12px 14px;background:var(--s2);border-radius:8px;border:1px solid var(--bd);">
+      <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">✍️ Signature bailleur — incluse automatiquement dans le PDF</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div id="q-sig-preview"><span style="color:var(--muted);font-size:11px;">Aucune signature chargée — ligne vide dans le PDF</span></div>
+        <label style="display:inline-flex;align-items:center;gap:5px;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;color:var(--text);white-space:nowrap;">
+          📷 Charger ma signature
+          <input type="file" accept="image/*" onchange="chargerSignature(this)" style="display:none;">
+        </label>
+        <button id="q-sig-delete" onclick="supprimerSignature()" style="display:none;background:none;border:1px solid var(--red)44;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;color:var(--red);">🗑</button>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;">Photo/scan de ta signature · Fond blanc ou transparent · Stockée localement dans Vesta</div>
+    </div>
+
+    <div id="q-status" style="font-size:11px;color:var(--muted);margin-top:8px;"></div>
+  </div>
+
 </div>
 
 <div id="pg-fiscalite" class="pg">
@@ -16152,6 +16255,8 @@ window.updateProjectionInteractive = updateProjectionInteractive;
 
 
 <script>
+var SIGNATURE_BAILLEUR_B64 = "data:image/png;base64,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";
+
 // ══════════════════════════════════════════════════════════════
 // 1. OPPORTUNITÉS — recherche via Vesta
 // ══════════════════════════════════════════════════════════════
@@ -16539,6 +16644,257 @@ window._lancerRechercheDepuisIA = function() {
   }, 300);
 };
 window._lancerRechercheDepuisIA = window._lancerRechercheDepuisIA;
+
+// ══════════════════════════════════════════════════════════════
+// 🧾 GÉNÉRATEUR DE QUITTANCES DE LOYER
+// ══════════════════════════════════════════════════════════════
+
+var MOIS_NOMS = ['','Janvier','Février','Mars','Avril','Mai','Juin',
+  'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+var MOIS_JOURS = [0,31,28,31,30,31,30,31,31,30,31,30,31];
+
+function _qVal(id) {
+  var el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function _qDernierJourMois(mois, annee) {
+  var j = MOIS_JOURS[parseInt(mois)];
+  if (parseInt(mois) === 2 && ((annee%4===0&&annee%100!==0)||annee%400===0)) j = 29;
+  return j;
+}
+
+function _qGetData() {
+  var mois   = parseInt(_qVal('q-mois')) || 5;
+  var annee  = parseInt(_qVal('q-annee')) || 2026;
+  var loyer  = parseFloat(_qVal('q-loyer')) || 520;
+  var charges = parseFloat(_qVal('q-charges')) || 40;
+  var total  = loyer + charges;
+  var moisNom = MOIS_NOMS[mois] || 'Mois';
+  var dernier = _qDernierJourMois(mois, annee);
+  return {
+    bailNom:     _qVal('q-bail-nom')      || 'MORIN Maxime',
+    bailAdresse: _qVal('q-bail-adresse')  || '3 rue Louis Jouvet 87570 Rilhac-Rancon',
+    locNom:      _qVal('q-loc-nom')       || 'MAURY Lucas',
+    locAdresse:  _qVal('q-loc-adresse')   || '383 rue Francois Perrin 87000 Limoges',
+    bienAdresse: _qVal('q-bien-adresse')  || '383 rue Francois Perrin 87000 Limoges',
+    loyer:       loyer,
+    charges:     charges,
+    total:       total,
+    mois:        mois,
+    moisNom:     moisNom,
+    annee:       annee,
+    dernier:     dernier,
+    datePaiement: _qVal('q-date-paiement') || ('5 ' + moisNom + ' ' + annee),
+    lieu:        _qVal('q-lieu')           || 'Limoges',
+    dateSign:    _qVal('q-date-sign')      || ('5 ' + moisNom + ' ' + annee),
+    periode:     '1er au ' + dernier + ' ' + moisNom + ' ' + annee,
+  };
+}
+
+function updateQuittanceApercu() {
+  var el = document.getElementById('q-apercu');
+  if (!el) return;
+  var d = _qGetData();
+
+  el.innerHTML = [
+    '<div style="text-align:right;margin-bottom:32px;">',
+    '  <div style="font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">QUITTANCE</div>',
+    '  <div style="font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">DE LOYER</div>',
+    '</div>',
+
+    '<p style="margin:0 0 18px;">',
+    '  Je soussigné(e), <strong>' + d.bailNom + '</strong>,<br>',
+    '  demeurant à ' + d.bailAdresse + ',',
+    '</p>',
+
+    '<p style="margin:0 0 6px;">Certifie avoir reçu de :</p>',
+    '<p style="margin:0 0 18px;"><strong>' + d.locNom + '</strong>, demeurant au ' + d.locAdresse + ',</p>',
+
+    '<p style="margin:0 0 18px;">',
+    '  La somme de <strong>' + d.total + ' EUR</strong> correspondant au paiement complet du :',
+    '</p>',
+
+    '<ul style="margin:0 0 18px;padding-left:24px;list-style:none;">',
+    '  <li>-&nbsp;&nbsp; Loyer : <strong>' + d.loyer + ' EUR</strong></li>',
+    '  <li>-&nbsp;&nbsp; Charges : <strong>' + d.charges + ' EUR</strong></li>',
+    '</ul>',
+
+    '<p style="margin:0 0 18px;">Pour la période du <strong>' + d.periode + '</strong>.</p>',
+
+    '<p style="margin:0 0 28px;">',
+    '  Cette somme a été versée en totalité le <strong>' + d.datePaiement + '</strong>,',
+    '  et aucune somme n\'est due à ce jour pour la période concernée.',
+    '</p>',
+
+    '<p style="margin:0 0 36px;">Fait à <strong>' + d.lieu + '</strong>, le <strong>' + d.dateSign + '</strong></p>',
+
+    '<p style="margin:0;">Signature du bailleur :</p>',
+    '<img src="' + SIGNATURE_BAILLEUR_B64 + '" style="height:65px;width:auto;display:block;margin-top:8px;">',
+  ].join('\n');
+}
+
+// Mise à jour automatique à chaque frappe
+(function() {
+  var ids = ['q-bail-nom','q-bail-adresse','q-loc-nom','q-loc-adresse',
+    'q-bien-adresse','q-loyer','q-charges','q-mois','q-annee',
+    'q-date-paiement','q-lieu','q-date-sign'];
+  function attachListeners() {
+    ids.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('input', updateQuittanceApercu);
+      if (el && el.tagName === 'SELECT') el.addEventListener('change', updateQuittanceApercu);
+    });
+    updateQuittanceApercu();
+  }
+  // Attendre que le DOM soit prêt
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachListeners);
+  } else {
+    setTimeout(attachListeners, 800);
+  }
+})();
+
+// Mois suivant
+function quittanceMoisSuivant() {
+  var moisEl = document.getElementById('q-mois');
+  var anneeEl = document.getElementById('q-annee');
+  if (!moisEl || !anneeEl) return;
+  var m = parseInt(moisEl.value);
+  var a = parseInt(anneeEl.value);
+  if (m === 12) { m = 1; a++; } else { m++; }
+  moisEl.value = m;
+  anneeEl.value = a;
+  // Mettre à jour date paiement et signature automatiquement
+  var moisNom = MOIS_NOMS[m];
+  var dpEl = document.getElementById('q-date-paiement');
+  var dsEl = document.getElementById('q-date-sign');
+  if (dpEl && dpEl.value.match(/^\d/)) dpEl.value = '5 ' + moisNom + ' ' + a;
+  if (dsEl && dsEl.value.match(/^\d/)) dsEl.value = '5 ' + moisNom + ' ' + a;
+  updateQuittanceApercu();
+  if (window._toast) window._toast('Mois suivant : ' + moisNom + ' ' + a);
+}
+window.quittanceMoisSuivant = quittanceMoisSuivant;
+
+// Mois précédent
+function quittanceMoisPrecedent() {
+  var moisEl = document.getElementById('q-mois');
+  var anneeEl = document.getElementById('q-annee');
+  if (!moisEl || !anneeEl) return;
+  var m = parseInt(moisEl.value);
+  var a = parseInt(anneeEl.value);
+  if (m === 1) { m = 12; a--; } else { m--; }
+  moisEl.value = m;
+  anneeEl.value = a;
+  var moisNom = MOIS_NOMS[m];
+  var dpEl = document.getElementById('q-date-paiement');
+  var dsEl = document.getElementById('q-date-sign');
+  if (dpEl && dpEl.value.match(/^\d/)) dpEl.value = '5 ' + moisNom + ' ' + a;
+  if (dsEl && dsEl.value.match(/^\d/)) dsEl.value = '5 ' + moisNom + ' ' + a;
+  updateQuittanceApercu();
+  if (window._toast) window._toast('Mois précédent : ' + moisNom + ' ' + a);
+}
+window.quittanceMoisPrecedent = quittanceMoisPrecedent;
+
+// Génération PDF via API Anthropic (claude-sonnet-4-20250514 + pdf-lib côté client)
+// On génère le PDF en HTML puis on utilise window.print() comme fallback propre
+function genererQuittancePDF() {
+  var d = _qData();
+  var sigImg = localStorage.getItem('vesta-signature-b64') || SIGNATURE_BAILLEUR_B64 || '';
+
+  // Bloc signature : image si dispo, sinon ligne
+  var sigBlock = sigImg
+    ? '<img src="' + sigImg + '" alt="Signature" style="max-width:200px;max-height:80px;display:block;margin-top:10px;">'
+    : '<div style="width:220px;border-bottom:1px solid #111;margin-top:50px;height:1px;"></div>';
+
+  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+    + '<title>Quittance ' + d.nomMois + ' ' + d.annee + ' - ' + d.locNom + '</title>'
+    + '<style>'
+    + '*{box-sizing:border-box;margin:0;padding:0;}'
+    + 'body{font-family:Georgia,serif;font-size:13.5px;line-height:1.9;color:#111;}'
+    + '.page{max-width:680px;margin:0 auto;padding:60px 60px 80px;}'
+    + 'h1{font-size:15px;font-weight:700;text-align:right;letter-spacing:3px;text-transform:uppercase;margin-bottom:48px;}'
+    + 'p{margin:0 0 14px;}'
+    + 'ul{margin:4px 0 14px 28px;padding:0;list-style:none;}'
+    + 'li::before{content:"- ";}'
+    + 'li{margin:2px 0;}'
+    + '.sig-section{margin-top:40px;}'
+    + '@media print{'
+    + '  @page{size:A4;margin:20mm;}'
+    + '  body{font-size:13px;}'
+    + '  .page{padding:0;max-width:100%;}'
+    + '}'
+    + '</style></head><body>'
+    + '<div class="page">'
+    + '<h1>Quittance<br>de loyer</h1>'
+    + '<p>Je soussigné(e), <strong>' + d.bailNom + '</strong>,<br>'
+    + 'demeurant à ' + d.bailAdresse + ',</p>'
+    + '<p>Certifie avoir reçu de :</p>'
+    + '<p><strong>' + d.locNom + '</strong>, demeurant au ' + d.locAdresse + ',</p>'
+    + '<p>La somme de <strong>' + d.total + ' EUR</strong> correspondant au paiement complet du&nbsp;:</p>'
+    + '<ul>'
+    + '<li>Loyer&nbsp;: <strong>' + d.loyer + ' EUR</strong></li>'
+    + '<li>Charges&nbsp;: <strong>' + d.charges + ' EUR</strong></li>'
+    + '</ul>'
+    + '<p>Pour la période du <strong>' + d.periode + '</strong>.</p>'
+    + '<p>Cette somme a été versée en totalité le <strong>' + d.datePaiement + '</strong>,'
+    + ' et aucune somme n\'est due \xe0 ce jour pour la p\xe9riode concern\xe9e.</p>'
+    + '<div class="sig-section">'
+    + '<p>Fait à <strong>' + d.lieu + '</strong>, le ' + d.dateSignature + '</p>'
+    + '<p style="margin-top:12px;">Signature du bailleur&nbsp;:</p>'
+    + sigBlock
+    + '</div>'
+    + '</div>'
+    + '<script>window.onload=function(){setTimeout(function(){window.print();},400);}<\/script>'
+    + '</body></html>';
+
+  var win = window.open('', '_blank');
+  if (!win) { if (window._toast) window._toast('⚠️ Autorisez les popups pour générer le PDF'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+window.genererQuittancePDF = genererQuittancePDF;
+
+// ── Charger / supprimer la signature ──────────────────────────
+function chargerSignature(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  var reader2 = new FileReader();
+  reader2.onload = function(e) {
+    localStorage.setItem('vesta-signature-b64', e.target.result);
+    updateSignaturePreview();
+    if (window._toast) window._toast('✅ Signature enregistrée — sera incluse dans tous les PDFs');
+  };
+  reader2.readAsDataURL(file);
+}
+window.chargerSignature = chargerSignature;
+
+function supprimerSignature() {
+  localStorage.removeItem('vesta-signature-b64');
+  updateSignaturePreview();
+  if (window._toast) window._toast('Signature supprimée');
+}
+window.supprimerSignature = supprimerSignature;
+
+function updateSignaturePreview() {
+  var sig = localStorage.getItem('vesta-signature-b64');
+  var prev = document.getElementById('q-sig-preview');
+  var btnDel = document.getElementById('q-sig-delete');
+  if (prev) {
+    if (sig) {
+      prev.innerHTML = '<img src="' + sig + '" style="max-height:60px;max-width:200px;border-radius:4px;border:1px solid var(--bd);">';
+    } else {
+      prev.innerHTML = '<span style="color:var(--muted);font-size:11px;">Aucune signature — ligne vide dans le PDF</span>';
+    }
+  }
+  if (btnDel) btnDel.style.display = sig ? 'inline-flex' : 'none';
+}
+window.updateSignaturePreview = updateSignaturePreview;
+
+// Init preview au chargement
+setTimeout(updateSignaturePreview, 1000);
+window.genererQuittancePDF = genererQuittancePDF;
+window.updateQuittanceApercu = updateQuittanceApercu;
 
 // ── Base de données enrichie ─────────────────────────────────
 var OPP_DATABASE = [
@@ -20264,7 +20620,175 @@ window.showMoisDetail = showMoisDetail;
         if (id === 'opportunites') {
           if (window.renderWatchlist) renderWatchlist();
         }
-      } catch(e) {
+      // ══════════════════════════════════════════════════
+// GÉNÉRATEUR DE QUITTANCES DE LOYER
+// ══════════════════════════════════════════════════
+
+
+
+var MOIS_NOMS = {
+  '01':'Janvier','02':'Février','03':'Mars','04':'Avril',
+  '05':'Mai','06':'Juin','07':'Juillet','08':'Août',
+  '09':'Septembre','10':'Octobre','11':'Novembre','12':'Décembre'
+};
+
+function _qVal(id) {
+  var el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function _qData() {
+  var mois    = _qVal('q-mois');
+  var annee   = _qVal('q-annee');
+  var loyer   = parseFloat(_qVal('q-loyer')) || 520;
+  var charges = parseFloat(_qVal('q-charges')) || 40;
+  var total   = loyer + charges;
+  var nomMois = MOIS_NOMS[mois] || '';
+  // Dernier jour du mois
+  var lastDay = new Date(parseInt(annee), parseInt(mois), 0).getDate();
+  return {
+    bailNom:        _qVal('q-bail-nom')        || 'MORIN Maxime',
+    bailAdresse:    _qVal('q-bail-adresse')    || '3 rue Louis Jouvet 87570 Rilhac-Rancon',
+    locNom:         _qVal('q-loc-nom')         || 'MAURY Lucas',
+    locAdresse:     _qVal('q-loc-adresse')     || '383 rue François Perrin 87000 Limoges',
+    bienAdresse:    _qVal('q-bien-adresse')    || '383 rue François Perrin 87000 Limoges',
+    loyer:          loyer,
+    charges:        charges,
+    total:          total,
+    mois:           mois,
+    annee:          annee,
+    nomMois:        nomMois,
+    lastDay:        lastDay,
+    periode:        '1er au ' + lastDay + ' ' + nomMois + ' ' + annee,
+    datePaiement:   _qVal('q-date-paiement')   || ('5 ' + nomMois + ' ' + annee),
+    lieu:           _qVal('q-lieu')            || 'Limoges',
+    dateSignature:  _qVal('q-date-signature')  || ('5 ' + nomMois + ' ' + annee),
+  };
+}
+
+function updateQuittanceApercu() {
+  var d = _qData();
+  var el = document.getElementById('q-apercu');
+  if (!el) return;
+  el.innerHTML = [
+    '<div style="text-align:right;font-size:15px;font-weight:700;letter-spacing:1px;margin-bottom:20px;">QUITTANCE DE LOYER</div>',
+    '<p>Je soussigné(e), <strong>' + d.bailNom + '</strong>,<br>demeurant à ' + d.bailAdresse + ',</p>',
+    '<p>Certifie avoir reçu de :</p>',
+    '<p><strong>' + d.locNom + '</strong>, demeurant au ' + d.locAdresse + ',</p>',
+    '<p>La somme de <strong>' + d.total + ' EUR</strong> correspondant au paiement complet du :</p>',
+    '<ul style="margin:6px 0 6px 20px;padding:0;">',
+    '  <li>Loyer : <strong>' + d.loyer + ' EUR</strong></li>',
+    '  <li>Charges : <strong>' + d.charges + ' EUR</strong></li>',
+    '</ul>',
+    '<p>Pour la période du <strong>' + d.periode + '</strong>.</p>',
+    '<p>Pour le bien situé au ' + d.bienAdresse + '.</p>',
+    '<p>Cette somme a été versée en totalité le <strong>' + d.datePaiement + '</strong>, et aucune somme n\'est due à ce jour pour la période concernée.</p>',
+    '<p style="margin-top:20px;">Fait à <strong>' + d.lieu + '</strong>, le ' + d.dateSignature + '</p>',
+    '<div style="margin-top:30px;"><div style="font-size:12px;margin-bottom:4px;">Signature du bailleur :</div><img src="' + SIGNATURE_BAILLEUR_B64 + '" style="height:60px;width:auto;display:block;margin-top:4px;"></div>',
+  ].join('\n');
+}
+window.updateQuittanceApercu = updateQuittanceApercu;
+
+function quittanceMoisSuivant() {
+  var moisEl  = document.getElementById('q-mois');
+  var anneeEl = document.getElementById('q-annee');
+  var datePEl = document.getElementById('q-date-paiement');
+  var dateSEl = document.getElementById('q-date-signature');
+  if (!moisEl || !anneeEl) return;
+
+  var mois  = parseInt(moisEl.value);
+  var annee = parseInt(anneeEl.value);
+  mois++;
+  if (mois > 12) { mois = 1; annee++; }
+  var moisStr = mois < 10 ? '0' + mois : '' + mois;
+  moisEl.value  = moisStr;
+  anneeEl.value = annee;
+
+  var nomMois = MOIS_NOMS[moisStr];
+  if (datePEl) datePEl.value = '5 ' + nomMois + ' ' + annee;
+  if (dateSEl) dateSEl.value = '5 ' + nomMois + ' ' + annee;
+  updateQuittanceApercu();
+  if (window._toast) window._toast('→ ' + nomMois + ' ' + annee);
+}
+window.quittanceMoisSuivant = quittanceMoisSuivant;
+
+function genererQuittancePDF() {
+  var d = _qData();
+  // Construire la quittance en HTML et l'ouvrir en impression
+  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+    + '<title>Quittance ' + d.nomMois + ' ' + d.annee + '</title>'
+    + '<style>'
+    + 'body{font-family:Georgia,serif;font-size:13px;line-height:1.9;color:#111;max-width:600px;margin:60px auto;padding:0 40px;}'
+    + 'h1{font-size:16px;font-weight:700;text-align:right;letter-spacing:2px;text-transform:uppercase;margin-bottom:40px;border-bottom:none;}'
+    + 'p{margin:8px 0;}'
+    + 'ul{margin:6px 0 6px 24px;padding:0;}'
+    + 'li{margin:2px 0;}'
+    + '.signature{margin-top:50px;}'
+    + '.sig-line{display:inline-block;width:220px;border-bottom:1px solid #111;margin-top:40px;}'
+    + '@media print{body{margin:20mm 20mm;} @page{size:A4;margin:20mm;}}'
+    + '</style></head><body>'
+    + '<h1>Quittance de loyer</h1>'
+    + '<p>Je soussigné(e), <strong>' + d.bailNom + '</strong>,<br>'
+    + 'demeurant à ' + d.bailAdresse + ',</p>'
+    + '<p>Certifie avoir reçu de :</p>'
+    + '<p><strong>' + d.locNom + '</strong>, demeurant au ' + d.locAdresse + ',</p>'
+    + '<p>La somme de <strong>' + d.total + ' EUR</strong> correspondant au paiement complet du :</p>'
+    + '<ul>'
+    + '<li>Loyer : <strong>' + d.loyer + ' EUR</strong></li>'
+    + '<li>Charges : <strong>' + d.charges + ' EUR</strong></li>'
+    + '</ul>'
+    + '<p>Pour la période du <strong>' + d.periode + '</strong>.</p>'
+    + '<p>Pour le bien situé au ' + d.bienAdresse + '.</p>'
+    + '<p>Cette somme a été versée en totalité le <strong>' + d.datePaiement + '</strong>,'
+    + ' et aucune somme n\'est due à ce jour pour la période concernée.</p>'
+    + '<p class="signature">Fait à <strong>' + d.lieu + '</strong>, le ' + d.dateSignature + '</p>'
+    + '<p>Signature du bailleur :</p>'
+    + '<p><img src="' + SIGNATURE_BAILLEUR_B64 + '" style="height:70px;width:auto;margin-top:4px;"></p>'
+    + '</body></html>';
+
+  var win = window.open('', '_blank');
+  if (!win) {
+    if (window._toast) window._toast('⚠️ Autorisez les popups pour générer le PDF');
+    return;
+  }
+  win.document.write(html);
+  win.document.close();
+  // Attendre le chargement puis lancer l'impression
+  win.onload = function() {
+    setTimeout(function() {
+      win.focus();
+      win.print();
+    }, 300);
+  };
+  if (win.document.readyState === 'complete') {
+    setTimeout(function() { win.focus(); win.print(); }, 300);
+  }
+}
+window.genererQuittancePDF = genererQuittancePDF;
+
+// Init aperçu au chargement de l'onglet immo
+(function() {
+  function initQuittance() {
+    if (document.getElementById('q-apercu')) {
+      updateQuittanceApercu();
+      // Mise à jour auto quand on change les champs
+      ['q-bail-nom','q-bail-adresse','q-loc-nom','q-loc-adresse','q-bien-adresse',
+       'q-loyer','q-charges','q-mois','q-annee','q-date-paiement','q-lieu','q-date-signature'
+      ].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateQuittanceApercu);
+        if (el) el.addEventListener('change', updateQuittanceApercu);
+      });
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initQuittance);
+  } else {
+    setTimeout(initQuittance, 800);
+  }
+})();
+
+} catch(e) {
         console.warn('[showPage dispatcher]', id, e);
       }
     }, 220);
