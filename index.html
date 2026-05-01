@@ -16812,7 +16812,7 @@ function genererQuittancePDF() {
     : '<div style="width:220px;border-bottom:1px solid #111;margin-top:50px;height:1px;"></div>';
 
   var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
-    + '<title>Quittance ' + d.nomMois + ' ' + d.annee + ' - ' + d.locNom + '</title>'
+    + '<title>Quittance ' + (d.moisNom||d.nomMois||'') + ' ' + d.annee + ' - ' + d.locNom + '</title>'
     + '<style>'
     + '*{box-sizing:border-box;margin:0;padding:0;}'
     + 'body{font-family:Georgia,serif;font-size:13.5px;line-height:1.9;color:#111;}'
@@ -16857,20 +16857,24 @@ function genererQuittancePDF() {
     + '</div>'
     + '</body></html>';
 
+  var moisLabel = d.moisNom || d.nomMois || 'Quittance';
+  var filename   = 'Quittance_' + moisLabel + '_' + d.annee + '_' + d.locNom.replace(/\s+/g, '_') + '.html';
+
   // Méthode Blob — fonctionne sans autorisation popup
   var blob = new Blob([html], {type: 'text/html;charset=utf-8'});
   var url  = URL.createObjectURL(blob);
   var a    = document.createElement('a');
-  a.href   = url;
-  a.target = '_blank';
-  a.rel    = 'noopener';
+  a.href     = url;
+  a.download = filename;
+  a.target   = '_blank';
+  a.rel      = 'noopener';
   document.body.appendChild(a);
   a.click();
   setTimeout(function() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }, 1000);
-  if (window._toast) window._toast('📄 Quittance ouverte — cliquez "Imprimer" puis "Enregistrer en PDF"');
+  if (window._toast) window._toast('📄 Quittance ' + moisLabel + ' ' + d.annee + ' ouverte — Imprimer → Enregistrer en PDF');
 }
 window.genererQuittancePDF = genererQuittancePDF;
 window.genererQuittancePDF = genererQuittancePDF;
