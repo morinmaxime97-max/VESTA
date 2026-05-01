@@ -1058,12 +1058,12 @@ body {
        🧾 GÉNÉRATEUR DE QUITTANCES DE LOYER
   ══════════════════════════════════════════════════════ -->
   <div class="card mb" id="card-quittance" style="margin-top:18px;">
-    <div class="chd" onclick="toggleAccordion('quittance-body','quittance-arrow')"
+    <div class="chd" onclick="toggleAccordion('quittance')"
          style="cursor:pointer;user-select:none;justify-content:space-between;">
       <span>🧾 Générateur de quittances de loyer
         <span class="chd-sub">T2 · 383 rue François Perrin · Limoges</span>
       </span>
-      <span id="quittance-arrow" style="font-size:12px;color:var(--muted);transition:transform .25s;display:inline-block;">▼</span>
+      <span id="quittance-icon" style="font-size:14px;color:var(--muted);">▸</span>
     </div>
     <div id="quittance-body" style="display:none;padding-top:4px;">
 
@@ -16804,7 +16804,7 @@ window.quittanceMoisPrecedent = quittanceMoisPrecedent;
 // Génération PDF via API Anthropic (claude-sonnet-4-20250514 + pdf-lib côté client)
 // On génère le PDF en HTML puis on utilise window.print() comme fallback propre
 function genererQuittancePDF() {
-  var d = _qData();
+  var d = _qGetData();
   var sigImg = localStorage.getItem('vesta-signature-b64') || SIGNATURE_BAILLEUR_B64 || '';
 
   var sigBlock = sigImg
@@ -20657,34 +20657,7 @@ function _qVal(id) {
   return el ? el.value.trim() : '';
 }
 
-function _qData() {
-  var mois    = _qVal('q-mois');
-  var annee   = _qVal('q-annee');
-  var loyer   = parseFloat(_qVal('q-loyer')) || 520;
-  var charges = parseFloat(_qVal('q-charges')) || 40;
-  var total   = loyer + charges;
-  var nomMois = MOIS_NOMS[mois] || '';
-  // Dernier jour du mois
-  var lastDay = new Date(parseInt(annee), parseInt(mois), 0).getDate();
-  return {
-    bailNom:        _qVal('q-bail-nom')        || 'MORIN Maxime',
-    bailAdresse:    _qVal('q-bail-adresse')    || '3 rue Louis Jouvet 87570 Rilhac-Rancon',
-    locNom:         _qVal('q-loc-nom')         || 'MAURY Lucas',
-    locAdresse:     _qVal('q-loc-adresse')     || '383 rue François Perrin 87000 Limoges',
-    bienAdresse:    _qVal('q-bien-adresse')    || '383 rue François Perrin 87000 Limoges',
-    loyer:          loyer,
-    charges:        charges,
-    total:          total,
-    mois:           mois,
-    annee:          annee,
-    nomMois:        nomMois,
-    lastDay:        lastDay,
-    periode:        '1er au ' + lastDay + ' ' + nomMois + ' ' + annee,
-    datePaiement:   _qVal('q-date-paiement')   || ('5 ' + nomMois + ' ' + annee),
-    lieu:           _qVal('q-lieu')            || 'Limoges',
-    dateSignature:  _qVal('q-date-signature')  || ('5 ' + nomMois + ' ' + annee),
-  };
-}
+
 
 function updateQuittanceApercu() {
   var d = _qData();
