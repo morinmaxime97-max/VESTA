@@ -16805,76 +16805,115 @@ window.quittanceMoisPrecedent = quittanceMoisPrecedent;
 // On génère le PDF en HTML puis on utilise window.print() comme fallback propre
 function genererQuittancePDF() {
   var d = _qGetData();
-  var sigImg = localStorage.getItem('vesta-signature-b64') || SIGNATURE_BAILLEUR_B64 || '';
+  var moisLabel = d.moisNom || 'Quittance';
+  var filename  = 'Quittance_' + moisLabel + '_' + d.annee + '_' + d.locNom.replace(/\s+/g,'_') + '.pdf';
 
-  var sigBlock = sigImg
-    ? '<img src="' + sigImg + '" alt="Signature" style="max-width:200px;max-height:80px;display:block;margin-top:10px;">'
-    : '<div style="width:220px;border-bottom:1px solid #111;margin-top:50px;height:1px;"></div>';
+  function _build(jsPDFLib) {
+    var doc = new jsPDFLib({ unit:'mm', format:'a4', orientation:'portrait' });
+    var W = 210, ml = 22, mr = 22, y = 28;
 
-  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
-    + '<title>Quittance ' + (d.moisNom||d.nomMois||'') + ' ' + d.annee + ' - ' + d.locNom + '</title>'
-    + '<style>'
-    + '*{box-sizing:border-box;margin:0;padding:0;}'
-    + 'body{font-family:Georgia,serif;font-size:13.5px;line-height:1.9;color:#111;}'
-    + '.page{max-width:680px;margin:0 auto;padding:60px 60px 80px;}'
-    + 'h1{font-size:15px;font-weight:700;text-align:right;letter-spacing:3px;text-transform:uppercase;margin-bottom:48px;}'
-    + 'p{margin:0 0 14px;}'
-    + 'ul{margin:4px 0 14px 28px;padding:0;list-style:none;}'
-    + 'li::before{content:"- ";}'
-    + 'li{margin:2px 0;}'
-    + '.sig-section{margin-top:40px;}'
-    + '@media print{'
-    + '  @page{size:A4;margin:20mm;}'
-    + '  body{font-size:13px;}'
-    + '  .page{padding:0;max-width:100%;}'
-    + '  .no-print{display:none;}'
-    + '}'
-    + '</style></head><body>'
-    + '<div class="page">'
-    + '<h1>Quittance<br>de loyer</h1>'
-    + '<p>Je soussigné(e), <strong>' + d.bailNom + '</strong>,<br>'
-    + 'demeurant à ' + d.bailAdresse + ',</p>'
-    + '<p>Certifie avoir reçu de :</p>'
-    + '<p><strong>' + d.locNom + '</strong>, demeurant au ' + d.locAdresse + ',</p>'
-    + '<p>La somme de <strong>' + d.total + ' EUR</strong> correspondant au paiement complet du&nbsp;:</p>'
-    + '<ul>'
-    + '<li>Loyer&nbsp;: <strong>' + d.loyer + ' EUR</strong></li>'
-    + '<li>Charges&nbsp;: <strong>' + d.charges + ' EUR</strong></li>'
-    + '</ul>'
-    + '<p>Pour la période du <strong>' + d.periode + '</strong>.</p>'
-    + '<p>Cette somme a été versée en totalité le <strong>' + d.datePaiement + '</strong>,'
-    + ' et aucune somme n\'est due à ce jour pour la période concernée.</p>'
-    + '<div class="sig-section">'
-    + '<p>Fait à <strong>' + d.lieu + '</strong>, le ' + d.dateSign + '</p>'
-    + '<p style="margin-top:12px;">Signature du bailleur&nbsp;:</p>'
-    + sigBlock
-    + '</div>'
-    + '</div>'
-    // Bouton imprimer visible dans le navigateur
-    + '<div class="no-print" style="text-align:center;padding:20px;font-family:sans-serif;">'
-    + '<p style="margin-bottom:12px;font-size:13px;color:#555;">Cliquez sur Imprimer et choisissez <strong>Enregistrer en PDF</strong></p>'
-    + '<button onclick="window.print()" style="background:#c9a84c;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;cursor:pointer;font-weight:600;">🖨️ Imprimer / Enregistrer PDF</button>'
-    + '</div>'
-    + '</body></html>';
+    // ── Police et couleurs ──
+    doc.setFont('helvetica');
 
-  var moisLabel = d.moisNom || d.nomMois || 'Quittance';
-  var filename   = 'Quittance_' + moisLabel + '_' + d.annee + '_' + d.locNom.replace(/\s+/g, '_') + '.html';
+    // ── Titre aligné à droite ──
+    doc.setFontSize(13);
+    doc.setFont('helvetica','bold');
+    doc.text('QUITTANCE', W - mr, y, {align:'right'});
+    y += 6;
+    doc.text('DE LOYER', W - mr, y, {align:'right'});
+    y += 18;
 
-  // Méthode Blob — fonctionne sans autorisation popup
-  var blob = new Blob([html], {type: 'text/html;charset=utf-8'});
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
-  a.href     = url;
-  a.download = filename;
-  a.target   = '_blank';
-  a.rel      = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(function() {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 1000);
-  if (window._toast) window._toast('📄 Quittance ' + moisLabel + ' ' + d.annee + ' ouverte — Imprimer → Enregistrer en PDF');
+    // ── Corps ──
+    doc.setFontSize(11);
+    doc.setFont('helvetica','normal');
+
+    function line(txt, bold) {
+      if (bold) doc.setFont('helvetica','bold');
+      var lines = doc.splitTextToSize(txt, W - ml - mr);
+      doc.text(lines, ml, y);
+      y += lines.length * 6.5;
+      if (bold) doc.setFont('helvetica','normal');
+    }
+
+    function br(h2) { y += h2 || 5; }
+
+    line('Je soussigné(e), ' + d.bailNom + ',');
+    line('demeurant à ' + d.bailAdresse + ',');
+    br();
+    line('Certifie avoir reçu de :');
+    br(2);
+    line(d.locNom + ', demeurant au ' + d.locAdresse + ',', false);
+    br();
+    line('La somme de ' + d.total + ' EUR correspondant au paiement complet du :');
+    br(2);
+    // Liste
+    doc.text('-', ml + 5, y);
+    doc.setFont('helvetica','bold');
+    doc.text('Loyer : ' + d.loyer + ' EUR', ml + 12, y);
+    doc.setFont('helvetica','normal');
+    y += 6.5;
+    doc.text('-', ml + 5, y);
+    doc.setFont('helvetica','bold');
+    doc.text('Charges : ' + d.charges + ' EUR', ml + 12, y);
+    doc.setFont('helvetica','normal');
+    y += 8;
+
+    line('Pour la période du ' + d.periode + '.');
+    br();
+    var versement = 'Cette somme a ete versee en totalite le ' + d.datePaiement
+      + ", et aucune somme n'est due a ce jour pour la periode concernee.";
+    line(versement);
+    br(8);
+    line('Fait à ' + d.lieu + ', le ' + d.dateSign);
+    br(6);
+    line('Signature du bailleur :');
+    br(4);
+
+    // ── Signature ──
+    var sigData = localStorage.getItem('vesta-signature-b64') || SIGNATURE_BAILLEUR_B64 || '';
+    if (sigData) {
+      try {
+        // Extraire format
+        var fmt = sigData.match(/data:image\/([^;]+);/);
+        var imgFmt = fmt ? fmt[1].toUpperCase() : 'PNG';
+        if (imgFmt === 'JPEG') imgFmt = 'JPEG';
+        doc.addImage(sigData, imgFmt, ml, y, 50, 20);
+        y += 24;
+      } catch(e) {
+        // Ligne de secours
+        doc.setDrawColor(0);
+        doc.line(ml, y + 15, ml + 55, y + 15);
+        y += 20;
+      }
+    } else {
+      doc.setDrawColor(0);
+      doc.line(ml, y + 15, ml + 55, y + 15);
+      y += 20;
+    }
+
+    doc.save(filename);
+    if (window._toast) window._toast('✅ ' + filename + ' téléchargé !');
+  }
+
+  // Charger jsPDF si pas encore disponible
+  if (typeof window.jspdf !== 'undefined' && window.jspdf.jsPDF) {
+    _build(window.jspdf.jsPDF);
+  } else if (typeof window.jsPDF !== 'undefined') {
+    _build(window.jsPDF);
+  } else {
+    if (window._toast) window._toast('⏳ Chargement de jsPDF...');
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = function() {
+      var lib = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      if (lib) _build(lib);
+      else if (window._toast) window._toast('❌ Erreur chargement jsPDF');
+    };
+    s.onerror = function() {
+      if (window._toast) window._toast('❌ jsPDF non disponible - vérifiez la connexion');
+    };
+    document.head.appendChild(s);
+  }
 }
 window.genererQuittancePDF = genererQuittancePDF;
 window.genererQuittancePDF = genererQuittancePDF;
