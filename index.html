@@ -1058,10 +1058,14 @@ body {
        🧾 GÉNÉRATEUR DE QUITTANCES DE LOYER
   ══════════════════════════════════════════════════════ -->
   <div class="card mb" id="card-quittance" style="margin-top:18px;">
-    <div class="chd">
-      🧾 Générateur de quittances de loyer
-      <span class="chd-sub">T2 · 383 rue François Perrin · Limoges</span>
+    <div class="chd" onclick="toggleAccordion('quittance-body','quittance-arrow')"
+         style="cursor:pointer;user-select:none;justify-content:space-between;">
+      <span>🧾 Générateur de quittances de loyer
+        <span class="chd-sub">T2 · 383 rue François Perrin · Limoges</span>
+      </span>
+      <span id="quittance-arrow" style="font-size:12px;color:var(--muted);transition:transform .25s;display:inline-block;">▼</span>
     </div>
+    <div id="quittance-body" style="display:none;padding-top:4px;">
 
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:16px;">
 
@@ -1155,6 +1159,7 @@ body {
     </div>
 
     <div id="q-status" style="font-size:11px;color:var(--muted);margin-top:8px;"></div>
+    </div><!-- /quittance-body -->
   </div>
 
 </div>
@@ -16802,7 +16807,6 @@ function genererQuittancePDF() {
   var d = _qData();
   var sigImg = localStorage.getItem('vesta-signature-b64') || SIGNATURE_BAILLEUR_B64 || '';
 
-  // Bloc signature : image si dispo, sinon ligne
   var sigBlock = sigImg
     ? '<img src="' + sigImg + '" alt="Signature" style="max-width:200px;max-height:80px;display:block;margin-top:10px;">'
     : '<div style="width:220px;border-bottom:1px solid #111;margin-top:50px;height:1px;"></div>';
@@ -16823,6 +16827,7 @@ function genererQuittancePDF() {
     + '  @page{size:A4;margin:20mm;}'
     + '  body{font-size:13px;}'
     + '  .page{padding:0;max-width:100%;}'
+    + '  .no-print{display:none;}'
     + '}'
     + '</style></head><body>'
     + '<div class="page">'
@@ -16838,21 +16843,36 @@ function genererQuittancePDF() {
     + '</ul>'
     + '<p>Pour la période du <strong>' + d.periode + '</strong>.</p>'
     + '<p>Cette somme a été versée en totalité le <strong>' + d.datePaiement + '</strong>,'
-    + ' et aucune somme n\'est due \xe0 ce jour pour la p\xe9riode concern\xe9e.</p>'
+    + ' et aucune somme n\'est due à ce jour pour la période concernée.</p>'
     + '<div class="sig-section">'
     + '<p>Fait à <strong>' + d.lieu + '</strong>, le ' + d.dateSignature + '</p>'
     + '<p style="margin-top:12px;">Signature du bailleur&nbsp;:</p>'
     + sigBlock
     + '</div>'
     + '</div>'
-    + '<script>window.onload=function(){setTimeout(function(){window.print();},400);}<\/script>'
+    // Bouton imprimer visible dans le navigateur
+    + '<div class="no-print" style="text-align:center;padding:20px;font-family:sans-serif;">'
+    + '<p style="margin-bottom:12px;font-size:13px;color:#555;">Cliquez sur Imprimer et choisissez <strong>Enregistrer en PDF</strong></p>'
+    + '<button onclick="window.print()" style="background:#c9a84c;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;cursor:pointer;font-weight:600;">🖨️ Imprimer / Enregistrer PDF</button>'
+    + '</div>'
     + '</body></html>';
 
-  var win = window.open('', '_blank');
-  if (!win) { if (window._toast) window._toast('⚠️ Autorisez les popups pour générer le PDF'); return; }
-  win.document.write(html);
-  win.document.close();
+  // Méthode Blob — fonctionne sans autorisation popup
+  var blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.target = '_blank';
+  a.rel    = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function() {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 1000);
+  if (window._toast) window._toast('📄 Quittance ouverte — cliquez "Imprimer" puis "Enregistrer en PDF"');
 }
+window.genererQuittancePDF = genererQuittancePDF;
 window.genererQuittancePDF = genererQuittancePDF;
 
 // ── Charger / supprimer la signature ──────────────────────────
