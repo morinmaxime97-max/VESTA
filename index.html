@@ -497,6 +497,39 @@ body {
   }
 }
 
+/* ── Améliorations responsive complémentaires ─────────────────── */
+@media (max-width: 768px) {
+  main { padding: 14px 12px 80px !important; max-width: 100% !important; }
+  .card { border-radius: 10px !important; padding: 14px !important; margin-bottom: 12px !important; }
+  .k5, .k4, .k3 { grid-template-columns: 1fr 1fr !important; }
+  .g3, .g2 { grid-template-columns: 1fr !important; }
+  .brow { flex-wrap: wrap !important; gap: 6px !important; }
+  .brow .btn { font-size: 11px !important; padding: 7px 10px !important; }
+  h1 { font-size: 18px !important; }
+  input, select, textarea { font-size: 16px !important; }
+  #ov-ia .modal {
+    width: 100% !important; max-width: 100% !important;
+    height: 100dvh !important; max-height: 100dvh !important;
+    border-radius: 0 !important; margin: 0 !important;
+  }
+  .ov .modal {
+    width: 96vw !important; max-width: 96vw !important;
+    max-height: 90dvh !important;
+  }
+  #vesta-mini-bar { bottom: 64px !important; }
+  .k { padding: 12px !important; }
+  .k .kv { font-size: 18px !important; }
+  .k .kl { font-size: 9px !important; }
+}
+
+@media (max-width: 400px) {
+  main { padding: 10px 10px 78px !important; }
+  .krow, .k5, .k4, .k3 { grid-template-columns: 1fr !important; }
+  h1 { font-size: 15px !important; }
+  .card { padding: 12px !important; }
+}
+
+
 /* Pull-to-refresh indicator */
 #pwa-ptr {
   display: none;
