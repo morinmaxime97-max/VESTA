@@ -12297,8 +12297,8 @@ async function sauvegarderCleAPI() {
       var errMsg = testData.error.message || JSON.stringify(testData.error);
       // Rejeter SEULEMENT si c'est vraiment une clé invalide (401, API_KEY_INVALID)
       // Quota/rate limit/overload = clé valide mais limite atteinte → accepter quand même
-      var isRealAuthError = /API_KEY_INVALID|invalid.api.key|401|Unauthorized|invalid.*key/i.test(errMsg)
-        && !/quota|exceeded|RESOURCE_EXHAUSTED|rate.limit|overload|billing|SERVICE_UNAVAILABLE/i.test(errMsg);
+      var isRealAuthError = /\b(API_KEY_INVALID|invalid\.api\.key|401|Unauthorized)\b/i.test(errMsg)
+        && !/quota|exceeded|RESOURCE_EXHAUSTED|rate.limit|overload|billing|SERVICE_UNAVAILABLE|UNAVAILABLE|PERMISSION_DENIED|location|provider|upstream/i.test(errMsg);
       if (isRealAuthError) {
         if (st) { st.textContent = 'Clé invalide : ' + errMsg.slice(0,80); st.style.color='var(--red)'; }
         return;
@@ -13929,17 +13929,27 @@ try {
       // Rate limit AVANT auth (Gemini "exceeded quota" contient "invalid" → faux positif)
       // ── Classification des erreurs ─────────────────────────
       // 1. Rate limit / quota / indisponibilité → rotation automatique
-      var isRateErr = /rate.limit|Rate.limit|TPM|429|overloaded|quota|exceeded|billing|Provider returned error|provider.*error|upstream|service.*unavailable|503|502|504/i.test(errMsg);
-      // 2. Modèle introuvable → rotation
-      var isModelErr2 = /No endpoints found|model.*not.*available|not found|endpoint|decommissioned|no longer supported|deprecated/i.test(errMsg);
-      // 3. Erreur Gemini spécifique (RESOURCE_EXHAUSTED, USER_LOCATION, etc.) → rotation
-      var isGeminiErr = /RESOURCE_EXHAUSTED|USER_LOCATION_INVALID|PERMISSION_DENIED|SERVICE_UNAVAILABLE|UNAVAILABLE/i.test(errMsg);
-      // 4. Auth invalide → UNIQUEMENT si PAS un problème de dispo/quota
+      // ── Classification des erreurs — ordre de priorité strict ────
+      var errUp = errMsg.toUpperCase();
+
+      // 1. QUOTA / RATE LIMIT → rotation (jamais clé invalide)
+      var isRateErr = /rate.limit|Rate.limit|TPM|429|overloaded|RESOURCE_EXHAUSTED|quota|exceeded|billing|Provider returned error|upstream|503|502|504|TOO_MANY_REQUESTS/i.test(errMsg);
+
+      // 2. Modèle indisponible → rotation
+      var isModelErr2 = /No endpoints found|decommissioned|no longer supported|deprecated|not.*support/i.test(errMsg);
+
+      // 3. Erreurs Gemini de dispo (pas des erreurs de clé)
+      var isGeminiErr = /USER_LOCATION_INVALID|SERVICE_UNAVAILABLE|UNAVAILABLE|INTERNAL|invalid argument.*model|PERMISSION_DENIED/i.test(errMsg);
+
+      // 4. Vrai auth error — SEULEMENT si aucun des cas précédents
+      //    ET que le message contient explicitement des mots de clé invalide
+      //    ET PAS de mots qui indiquent un problème de quota/dispo
       var isAuthErr = !isRateErr && !isModelErr2 && !isGeminiErr
-        && /x-api-key|api_key|authentication|401|invalid.*key|API key|INVALID_ARGUMENT.*key|Unauthorized/i.test(errMsg)
-        && !/quota|billing|exceeded|limit|endpoint|provider/i.test(errMsg);
+        && /\b(401|API_KEY_INVALID|invalid.api.key|Unauthorized|api.key.not.valid)\b/i.test(errMsg)
+        && !/quota|billing|exceeded|limit|endpoint|provider|RESOURCE|location|location/i.test(errMsg);
+
       // 5. Modèle non supporté
-      var isModelErr = /model.*not.*found|not supported|tool call validation/.test(errMsg);
+      var isModelErr = !isRateErr && /model.*not.*found|not supported|tool call validation/i.test(errMsg);
 
       if (isAuthErr) {
         demanderCleAPI();
